@@ -78,6 +78,36 @@
   background: linear-gradient(135deg, #0f766e, #0369a1);
 }
 
+/* Notification bell */
+.bell-link {
+  position: relative;
+  padding: 10px 12px;
+}
+
+.notif-badge {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+}
+
+/* Dark overlay for incident attachments etc */
+.page-body input[type="file"] {
+  cursor: pointer;
+}
+
 .nav-button {
   border: 1px solid #cbd5e1;
 }

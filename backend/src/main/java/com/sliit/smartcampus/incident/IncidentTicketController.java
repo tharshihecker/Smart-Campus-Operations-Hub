@@ -1,0 +1,99 @@
+package com.sliit.smartcampus.incident;
+
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.security.Principal;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/incidents")
+public class IncidentTicketController {
+
+    private final IncidentTicketService incidentTicketService;
+
+    public IncidentTicketController(IncidentTicketService incidentTicketService) {
+        this.incidentTicketService = incidentTicketService;
+    }
+
+    private Long getCurrentUserId(Principal principal) {
+        return (Long) ((UsernamePasswordAuthenticationToken) principal).getCredentials();
+    }
+
+    /** POST /api/incidents – Create new ticket (multipart for file upload support) */
+    @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE, MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<IncidentTicketResponse> createTicket(
+            @RequestPart("title") String title,
+            @RequestPart("description") String description,
+            @RequestPart("category") String category,
+            @RequestPart(value = "priority", required = false) String priority,
+            @RequestPart("location") String location,
+            @RequestPart(value = "contactDetails", required = false) String contactDetails,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            Principal principal) {
+
+        Long userId = getCurrentUserId(principal);
+        IncidentTicketRequest req = new IncidentTicketRequest();
+        req.setTitle(title);
+        req.setDescription(description);
+        req.setCategory(category);
+        req.setPriority(priority != null ? TicketPriority.valueOf(priority.toUpperCase()) : TicketPriority.MEDIUM);
+        req.setLocation(location);
+        req.setContactDetails(contactDetails);
+
+        return ResponseEntity.status(201).body(incidentTicketService.createTicket(req, userId, files));
+    }
+
+    /** GET /api/incidents – My tickets */
+    @GetMapping
+    public ResponseEntity<List<IncidentTicketResponse>> getMyTickets(Principal principal) {
+        Long userId = getCurrentUserId(principal);
+        return ResponseEntity.ok(incidentTicketService.getMyTickets(userId));
+    }
+
+    /** GET /api/incidents/{id} */
+    @GetMapping("/{id}")
+    public ResponseEntity<IncidentTicketResponse> getTicket(@PathVariable Long id) {
+        return ResponseEntity.ok(incidentTicketService.getTicketById(id));
+    }
+
+    /** GET /api/incidents/{id}/comments */
+    @GetMapping("/{id}/comments")
+    public ResponseEntity<List<TicketCommentResponse>> getComments(@PathVariable Long id) {
+        return ResponseEntity.ok(incidentTicketService.getComments(id));
+    }
+
+    /** POST /api/incidents/{id}/comments */
+    @PostMapping("/{id}/comments")
+    public ResponseEntity<TicketCommentResponse> addComment(@PathVariable Long id,
+                                                            @RequestBody Map<String, String> body,
+                                                            Principal principal) {
+        Long userId = getCurrentUserId(principal);
+        String content = body.get("content");
+        if (content == null || content.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.status(201).body(incidentTicketService.addComment(id, content, userId));
+    }
+
+    /** PUT /api/incidents/comments/{commentId} */
+    @PutMapping("/comments/{commentId}")
+    public ResponseEntity<TicketCommentResponse> editComment(@PathVariable Long commentId,
+                                                             @RequestBody Map<String, String> body,
+                                                             Principal principal) {
+        Long userId = getCurrentUserId(principal);
+        return ResponseEntity.ok(incidentTicketService.editComment(commentId, body.get("content"), userId));
+    }
+
+    /** DELETE /api/incidents/comments/{commentId} */
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId, Principal principal) {
+        Long userId = getCurrentUserId(principal);
+        incidentTicketService.deleteComment(commentId, userId, false);
+        return ResponseEntity.noContent().build();
+    }
+}

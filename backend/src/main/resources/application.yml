@@ -2,13 +2,31 @@ spring:
   application:
     name: smartcampus-backend
   datasource:
-    url: jdbc:mysql://localhost:3306/paf
+    url: jdbc:mysql://localhost:3306/paf?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 20MB
+
 server:
   port: 8080
+
+app:
+  jwt:
+    secret: SmartCampusSLIIT2026VerySecretKeyForJWTAuthenticationMinimum256Bits
+    expiration-ms: 86400000   # 24 hours
+
+file:
+  upload-dir: uploads/
