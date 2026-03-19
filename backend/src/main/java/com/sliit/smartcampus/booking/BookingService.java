@@ -3,35 +3,39 @@ package com.sliit.smartcampus.booking;
 import com.sliit.smartcampus.facility.Facility;
 import com.sliit.smartcampus.facility.FacilityRepository;
 import com.sliit.smartcampus.facility.ResourceStatus;
+import com.sliit.smartcampus.notification.NotificationService;
+import com.sliit.smartcampus.notification.NotificationType;
 import com.sliit.smartcampus.user.User;
 import com.sliit.smartcampus.user.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Service
+@Transactional
 public class BookingService {
     private final BookingRepository bookingRepository;
     private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public BookingService(BookingRepository bookingRepository,
                           FacilityRepository facilityRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          NotificationService notificationService) {
         this.bookingRepository = bookingRepository;
         this.facilityRepository = facilityRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     public BookingResponse createBooking(BookingRequest request) {
-        Long requestFacilityId = request.getFacilityId();
-        if (requestFacilityId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "facilityId is required");
-        }
-        long facilityId = requestFacilityId;
+        Long facilityId = request.getFacilityId();
+        if (facilityId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "facilityId is required");
 
         Facility facility = facilityRepository.findById(facilityId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Facility not found"));
@@ -41,11 +45,8 @@ public class BookingService {
                     "Facility is not available for booking (status: " + facility.getStatus() + ")");
         }
 
-        Long requestUserId = request.getUserId();
-        if (requestUserId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId is required");
-        }
-        long userId = requestUserId;
+        Long userId = request.getUserId();
+        if (userId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId is required");
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
@@ -71,11 +72,9 @@ public class BookingService {
         }
 
         List<Booking> conflicts = bookingRepository.findConflictingBookings(
-                facilityId, request.getBookingDate(),
-                request.getStartTime(), request.getEndTime());
+                facilityId, request.getBookingDate(), request.getStartTime(), request.getEndTime());
         if (!conflicts.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Time slot conflicts with an existing booking");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Time slot conflicts with an existing approved/pending booking");
         }
 
         Booking booking = new Booking();
@@ -92,21 +91,25 @@ public class BookingService {
         return BookingResponse.from(bookingRepository.save(booking));
     }
 
+    @Transactional(readOnly = true)
     public List<BookingResponse> getUserBookings(long userId) {
         return bookingRepository.findByUserIdOrderByBookingDateDescStartTimeDesc(userId)
                 .stream().map(BookingResponse::from).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<BookingResponse> getFacilityBookings(long facilityId) {
         return bookingRepository.findByFacilityIdOrderByBookingDateDesc(facilityId)
                 .stream().map(BookingResponse::from).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<BookingResponse> getAllBookings() {
         return bookingRepository.findAllByOrderByCreatedAtDesc()
                 .stream().map(BookingResponse::from).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<BookingResponse> getBookingsByStatus(BookingStatus status) {
         return bookingRepository.findByStatusOrderByCreatedAtDesc(status)
                 .stream().map(BookingResponse::from).toList();
@@ -116,7 +119,7 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
 
-        if (booking.getUser().getId() == null || booking.getUser().getId() != userId) {
+        if (!booking.getUser().getId().equals(userId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only cancel your own bookings");
         }
 
@@ -136,7 +139,32 @@ public class BookingService {
         if (adminRemarks != null && !adminRemarks.isBlank()) {
             booking.setAdminRemarks(adminRemarks);
         }
-        return BookingResponse.from(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+
+        // Send notification to user
+        String facilityName = booking.getFacility().getName();
+        String title;
+        String message;
+        NotificationType type;
+
+        if (newStatus == BookingStatus.APPROVED) {
+            title = "Booking Approved ✓";
+            message = "Your booking for '" + facilityName + "' on " + booking.getBookingDate() + " has been approved.";
+            type = NotificationType.BOOKING_APPROVED;
+        } else if (newStatus == BookingStatus.REJECTED) {
+            title = "Booking Rejected";
+            message = "Your booking for '" + facilityName + "' has been rejected" +
+                      (adminRemarks != null ? ": " + adminRemarks : ".");
+            type = NotificationType.BOOKING_REJECTED;
+        } else {
+            title = "Booking Updated";
+            message = "Your booking for '" + facilityName + "' status changed to " + newStatus.name();
+            type = NotificationType.SYSTEM;
+        }
+
+        notificationService.createNotification(booking.getUser(), title, message, type, bookingId, "BOOKING");
+
+        return BookingResponse.from(saved);
     }
 
     public void deleteBooking(long bookingId) {

@@ -1,0 +1,25 @@
+package com.sliit.smartcampus.incident;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+public record IncidentTicketResponse(
+        Long id,
+        String title,
+        String description,
+        String category,
+        String priority,
+        String location,
+        String contactDetails,
+        String status,
+        String resolutionNotes,
+        String rejectionReason,
+        Long reporterId,
+        String reporterName,
+        Long assigneeId,
+        String assigneeName,
+        List<String> attachmentUrls,
+        List<TicketCommentResponse> comments,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
+) {}

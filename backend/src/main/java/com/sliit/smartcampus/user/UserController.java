@@ -1,5 +1,6 @@
 package com.sliit.smartcampus.user;
 
+import com.sliit.smartcampus.security.JwtUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -9,14 +10,15 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/user")
-@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/signup")
@@ -42,38 +44,35 @@ public class UserController {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole(UserRole.USER);
         user.setEnabled(true);
-        userRepository.save(user);
-        return ResponseEntity.ok("Signup successful");
+        User saved = userRepository.save(user);
+
+        String token = jwtUtil.generateToken(saved.getUsername(), saved.getRole().name(), saved.getId());
+        return ResponseEntity.ok(buildAuthResponse(saved, token));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User user) {
-        if (user.getUsername() == null || user.getPassword() == null) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+        String username = credentials.get("username");
+        String rawPassword = credentials.get("password");
+
+        if (username == null || rawPassword == null) {
             return ResponseEntity.badRequest().body("Missing username or password");
         }
 
-        String username = user.getUsername().trim();
-        String rawPassword = user.getPassword();
-
-        return userRepository.findByUsernameIgnoreCase(username)
-                .filter(foundUser -> foundUser.isEnabled() && passwordMatches(rawPassword, foundUser))
-                .map(foundUser -> ResponseEntity.ok((Object) Map.of(
-                        "message", "Login successful",
-                        "userId", Objects.requireNonNull(foundUser.getId()),
-                        "username", foundUser.getUsername(),
-                        "email", foundUser.getEmail(),
-                        "role", foundUser.getRole().name(),
-                        "fullName", foundUser.getFullName() != null ? foundUser.getFullName() : "",
-                        "department", foundUser.getDepartment() != null ? foundUser.getDepartment() : ""
-                )))
-                .orElse(ResponseEntity.status(401).body("Invalid credentials"));
+        return userRepository.findByUsernameIgnoreCase(username.trim())
+                .filter(u -> u.isEnabled() && passwordMatches(rawPassword, u))
+                .map(u -> {
+                    String token = jwtUtil.generateToken(u.getUsername(), u.getRole().name(), u.getId());
+                    return ResponseEntity.ok((Object) buildAuthResponse(u, token));
+                })
+                .orElse(ResponseEntity.status(401).body("Invalid credentials or account disabled"));
     }
 
     @GetMapping("/profile/{userId}")
-    public ResponseEntity<?> getProfile(@PathVariable long userId) {
+    public ResponseEntity<?> getProfile(@PathVariable Long userId) {
         return userRepository.findById(userId)
                 .map(u -> ResponseEntity.ok((Object) Map.of(
-                        "id", Objects.requireNonNull(u.getId()),
+                        "id", u.getId(),
                         "username", u.getUsername(),
                         "email", u.getEmail(),
                         "fullName", u.getFullName() != null ? u.getFullName() : "",
@@ -87,7 +86,7 @@ public class UserController {
     }
 
     @PutMapping("/profile/{userId}")
-    public ResponseEntity<?> updateProfile(@PathVariable long userId, @RequestBody Map<String, String> updates) {
+    public ResponseEntity<?> updateProfile(@PathVariable Long userId, @RequestBody Map<String, String> updates) {
         return userRepository.findById(userId)
                 .map(u -> {
                     if (updates.containsKey("fullName")) u.setFullName(updates.get("fullName"));
@@ -97,8 +96,8 @@ public class UserController {
                     if (updates.containsKey("email")) {
                         String newEmail = updates.get("email").trim();
                         var existing = userRepository.findByEmailIgnoreCase(newEmail);
-                        Long existingUserId = existing.map(User::getId).orElse(null);
-                        if (existingUserId != null && existingUserId != userId) {
+                        Long existingId = existing.map(User::getId).orElse(null);
+                        if (existingId != null && !existingId.equals(userId)) {
                             return ResponseEntity.badRequest().body((Object) "Email already in use");
                         }
                         u.setEmail(newEmail);
@@ -110,12 +109,12 @@ public class UserController {
     }
 
     @PutMapping("/change-password/{userId}")
-    public ResponseEntity<?> changePassword(@PathVariable long userId, @RequestBody Map<String, String> payload) {
+    public ResponseEntity<?> changePassword(@PathVariable Long userId, @RequestBody Map<String, String> payload) {
         String currentPassword = payload.get("currentPassword");
         String newPassword = payload.get("newPassword");
 
-        if (currentPassword == null || newPassword == null || newPassword.length() < 4) {
-            return ResponseEntity.badRequest().body("Invalid password data");
+        if (currentPassword == null || newPassword == null || newPassword.length() < 6) {
+            return ResponseEntity.badRequest().body("Invalid password data (min 6 chars)");
         }
 
         return userRepository.findById(userId)
@@ -130,19 +129,28 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    private boolean passwordMatches(String rawPassword, User foundUser) {
-        String storedPassword = foundUser.getPassword();
+    private Map<String, Object> buildAuthResponse(User u, String token) {
+        return Map.of(
+                "token", token,
+                "userId", Objects.requireNonNull(u.getId()),
+                "username", u.getUsername(),
+                "email", u.getEmail(),
+                "role", u.getRole().name(),
+                "fullName", u.getFullName() != null ? u.getFullName() : "",
+                "department", u.getDepartment() != null ? u.getDepartment() : ""
+        );
+    }
 
-        if (storedPassword != null && storedPassword.startsWith("$2")) {
-            return passwordEncoder.matches(rawPassword, storedPassword);
+    private boolean passwordMatches(String rawPassword, User user) {
+        String stored = user.getPassword();
+        if (stored != null && stored.startsWith("$2")) {
+            return passwordEncoder.matches(rawPassword, stored);
         }
-
-        if (rawPassword.equals(storedPassword)) {
-            foundUser.setPassword(passwordEncoder.encode(rawPassword));
-            userRepository.save(foundUser);
+        if (rawPassword.equals(stored)) {
+            user.setPassword(passwordEncoder.encode(rawPassword));
+            userRepository.save(user);
             return true;
         }
-
         return false;
     }
 }

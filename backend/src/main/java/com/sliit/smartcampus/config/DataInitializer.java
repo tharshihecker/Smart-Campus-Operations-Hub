@@ -6,6 +6,10 @@ import com.sliit.smartcampus.facility.Facility;
 import com.sliit.smartcampus.facility.FacilityRepository;
 import com.sliit.smartcampus.facility.ResourceStatus;
 import com.sliit.smartcampus.facility.ResourceType;
+import com.sliit.smartcampus.incident.IncidentTicket;
+import com.sliit.smartcampus.incident.IncidentTicketRepository;
+import com.sliit.smartcampus.incident.TicketPriority;
+import com.sliit.smartcampus.incident.TicketStatus;
 import com.sliit.smartcampus.resource.LearningResource;
 import com.sliit.smartcampus.resource.LearningResourceRepository;
 import com.sliit.smartcampus.service.CampusServiceItem;
@@ -23,6 +27,7 @@ import java.util.List;
 
 @Configuration
 public class DataInitializer {
+
     @Bean
     CommandLineRunner seedData(
             CampusEventRepository eventRepository,
@@ -30,20 +35,26 @@ public class DataInitializer {
             CampusServiceRepository serviceRepository,
             FacilityRepository facilityRepository,
             UserRepository userRepository,
+            IncidentTicketRepository incidentTicketRepository,
             PasswordEncoder passwordEncoder
     ) {
         return args -> {
             // Seed admin user
             if (userRepository.findByUsernameIgnoreCase("admin").isEmpty()) {
-                User admin = new User();
-                admin.setUsername("admin");
-                admin.setEmail("admin@smartcampus.lk");
-                admin.setPassword(passwordEncoder.encode("admin123"));
-                admin.setFullName("System Administrator");
-                admin.setDepartment("IT Services");
-                admin.setRole(UserRole.ADMIN);
-                admin.setEnabled(true);
-                userRepository.save(admin);
+                userRepository.save(buildUser("admin", "admin@smartcampus.lk", "admin123",
+                        "System Administrator", "IT Services", UserRole.ADMIN, passwordEncoder));
+            }
+
+            // Seed technician user
+            if (userRepository.findByUsernameIgnoreCase("techsupport").isEmpty()) {
+                userRepository.save(buildUser("techsupport", "tech@smartcampus.lk", "tech123",
+                        "Alex Technician", "Facilities & Maintenance", UserRole.TECHNICIAN, passwordEncoder));
+            }
+
+            // Seed demo user
+            if (userRepository.findByUsernameIgnoreCase("demouser").isEmpty()) {
+                userRepository.save(buildUser("demouser", "user@smartcampus.lk", "user123",
+                        "Demo Student", "Faculty of Computing", UserRole.USER, passwordEncoder));
             }
 
             if (eventRepository.count() == 0) {
@@ -51,9 +62,9 @@ public class DataInitializer {
                         new CampusEvent("Innovation Meetup", "Startup ideation and prototype discussion with faculty mentors.", "2026-03-10", "Engineering Auditorium"),
                         new CampusEvent("Career Accelerator", "Industry panel and CV clinic for internship and graduate roles.", "2026-03-14", "Main Hall"),
                         new CampusEvent("Wellness Week", "Guided activities on mental health, nutrition, and fitness.", "2026-03-20", "Student Center"),
-                        new CampusEvent("Tech Talk: AI in Education", "Guest lecture on artificial intelligence applications in modern education.", "2026-03-25", "Lecture Hall B"),
+                        new CampusEvent("Tech Talk: AI in Education", "Guest lecture on AI applications in modern education.", "2026-03-25", "Lecture Hall B"),
                         new CampusEvent("Hackathon 2026", "24-hour coding challenge with industry sponsors and prizes.", "2026-04-05", "Computing Center"),
-                        new CampusEvent("Cultural Festival", "Celebrating diversity through performances, food, and art exhibitions.", "2026-04-12", "Open Grounds")
+                        new CampusEvent("Cultural Festival", "Celebrating diversity through performances, food, and art.", "2026-04-12", "Open Grounds")
                 ));
             }
 
@@ -93,19 +104,61 @@ public class DataInitializer {
                         createFacility("360-Degree Camera RIG", ResourceType.CAMERA, 1, "Media Lab - Studio 3", LocalTime.of(9, 0), LocalTime.of(17, 0), ResourceStatus.ACTIVE, "Professional 360-degree camera rig for VR and immersive content.")
                 ));
             }
+
+            // Seed sample incident tickets
+            if (incidentTicketRepository.count() == 0) {
+                User reporter = userRepository.findByUsernameIgnoreCase("demouser").orElse(null);
+                User tech = userRepository.findByUsernameIgnoreCase("techsupport").orElse(null);
+                if (reporter != null && tech != null) {
+                    incidentTicketRepository.saveAll(List.of(
+                            buildTicket(reporter, null, "Projector Not Working in Hall A", "The projector in Engineering Lecture Hall A is displaying a 'No Signal' error. Cannot connect laptop via HDMI.", "AV Equipment", TicketPriority.HIGH, "Engineering Block A - Level 1", TicketStatus.OPEN),
+                            buildTicket(reporter, tech, "Water Leak in Computing Lab", "There is a water leak from the ceiling near workstation #12. Risk of equipment damage.", "Infrastructure", TicketPriority.CRITICAL, "Computing Center - Level 2", TicketStatus.IN_PROGRESS),
+                            buildTicket(reporter, tech, "Broken Air Conditioning", "AC unit in Board Room Alpha making loud noise and not cooling. Meeting scheduled for tomorrow.", "HVAC", TicketPriority.MEDIUM, "Admin Tower - Level 5", TicketStatus.RESOLVED)
+                    ));
+                }
+            }
         };
     }
 
-    private Facility createFacility(String name, ResourceType type, int capacity, String location, LocalTime availableFrom, LocalTime availableTo, ResourceStatus status, String description) {
-        Facility facility = new Facility();
-        facility.setName(name);
-        facility.setType(type);
-        facility.setCapacity(capacity);
-        facility.setLocation(location);
-        facility.setAvailableFrom(availableFrom);
-        facility.setAvailableTo(availableTo);
-        facility.setStatus(status);
-        facility.setDescription(description);
-        return facility;
+    private User buildUser(String username, String email, String password, String fullName,
+                           String department, UserRole role, PasswordEncoder encoder) {
+        User u = new User();
+        u.setUsername(username);
+        u.setEmail(email);
+        u.setPassword(encoder.encode(password));
+        u.setFullName(fullName);
+        u.setDepartment(department);
+        u.setRole(role);
+        u.setEnabled(true);
+        return u;
+    }
+
+    private Facility createFacility(String name, ResourceType type, int capacity, String location,
+                                    LocalTime from, LocalTime to, ResourceStatus status, String description) {
+        Facility f = new Facility();
+        f.setName(name);
+        f.setType(type);
+        f.setCapacity(capacity);
+        f.setLocation(location);
+        f.setAvailableFrom(from);
+        f.setAvailableTo(to);
+        f.setStatus(status);
+        f.setDescription(description);
+        return f;
+    }
+
+    private IncidentTicket buildTicket(User reporter, User assignee, String title, String description,
+                                       String category, TicketPriority priority, String location, TicketStatus status) {
+        IncidentTicket t = new IncidentTicket();
+        t.setReporter(reporter);
+        t.setAssignee(assignee);
+        t.setTitle(title);
+        t.setDescription(description);
+        t.setCategory(category);
+        t.setPriority(priority);
+        t.setLocation(location);
+        t.setStatus(status);
+        t.setContactDetails(reporter.getEmail());
+        return t;
     }
 }
