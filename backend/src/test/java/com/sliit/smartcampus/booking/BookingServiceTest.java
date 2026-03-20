@@ -64,7 +64,7 @@ class BookingServiceTest {
         BookingResponse response = bookingService.createBooking(req);
 
         assertThat(response).isNotNull();
-        assertThat(response.status()).isEqualTo("PENDING");
+        assertThat(response.status()).isEqualTo(BookingStatus.PENDING);
         assertThat(response.facilityName()).isEqualTo("Test Hall");
     }
 
@@ -109,7 +109,7 @@ class BookingServiceTest {
         BookingResponse created = bookingService.createBooking(req);
 
         BookingResponse cancelled = bookingService.cancelBooking(created.id(), testUser.getId());
-        assertThat(cancelled.status()).isEqualTo("CANCELLED");
+        assertThat(cancelled.status()).isEqualTo(BookingStatus.CANCELLED);
     }
 
     @Test

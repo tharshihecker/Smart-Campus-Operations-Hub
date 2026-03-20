@@ -102,9 +102,22 @@ public class IncidentTicketService {
 
     public IncidentTicketResponse updateStatus(Long ticketId, TicketStatus newStatus, String notes, String rejectionReason) {
         IncidentTicket ticket = findTicketOrThrow(ticketId);
+        TicketStatus oldStatus = ticket.getStatus();
+
         ticket.setStatus(newStatus);
         if (notes != null && !notes.isBlank()) ticket.setResolutionNotes(notes);
         if (rejectionReason != null && !rejectionReason.isBlank()) ticket.setRejectionReason(rejectionReason);
+
+        // SLA: record first response time (first move away from OPEN)
+        if (oldStatus == TicketStatus.OPEN && newStatus != TicketStatus.OPEN
+                && ticket.getFirstResponseAt() == null) {
+            ticket.setFirstResponseAt(java.time.LocalDateTime.now());
+        }
+        // SLA: record resolution time
+        if (newStatus == TicketStatus.RESOLVED && ticket.getResolvedAt() == null) {
+            ticket.setResolvedAt(java.time.LocalDateTime.now());
+        }
+
         IncidentTicket saved = ticketRepository.save(ticket);
 
         // Notify reporter
@@ -126,6 +139,10 @@ public class IncidentTicketService {
         ticket.setAssignee(technician);
         if (ticket.getStatus() == TicketStatus.OPEN) {
             ticket.setStatus(TicketStatus.IN_PROGRESS);
+            // SLA: record first response on assignment
+            if (ticket.getFirstResponseAt() == null) {
+                ticket.setFirstResponseAt(java.time.LocalDateTime.now());
+            }
         }
         IncidentTicket saved = ticketRepository.save(ticket);
 

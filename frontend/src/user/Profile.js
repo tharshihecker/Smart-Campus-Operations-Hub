@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { fetchProfile, updateProfile, changePassword } from '../api';
+import { fetchProfile, updateProfile, changePassword, updateNotificationPrefs } from '../api';
 import './Profile.css';
 
 function Profile() {
@@ -14,6 +14,9 @@ function Profile() {
   const [editForm, setEditForm] = useState({});
   const [saveMsg, setSaveMsg] = useState({ type: '', text: '' });
   const [saving, setSaving] = useState(false);
+
+  /* Notification Prefs */
+  const [prefsSaving, setPrefsSaving] = useState(false);
 
   /* Password change */
   const [showPwdForm, setShowPwdForm] = useState(false);
@@ -117,6 +120,19 @@ function Profile() {
     }
   };
 
+  /* ── Prefs handlers ── */
+  const handlePrefToggle = async (key, currentValue) => {
+    setPrefsSaving(true);
+    try {
+      await updateNotificationPrefs(userId, { [key]: !currentValue });
+      setProfile(prev => ({ ...prev, [key]: !currentValue }));
+    } catch (err) {
+      alert('Failed to update preference: ' + err.message);
+    } finally {
+      setPrefsSaving(false);
+    }
+  };
+
   /* ── Render ── */
   if (loading) return <section className="profile-shell"><p className="state-text">Loading profile...</p></section>;
   if (error) return <section className="profile-shell"><p className="state-text error">{error}</p></section>;
@@ -200,6 +216,38 @@ function Profile() {
             </div>
           </form>
         )}
+      </div>
+
+      {/* ── Notification Preferences Card ── */}
+      <div className="profile-card">
+        <h3><span className="card-icon">🔔</span>Notification Settings</h3>
+        <p style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          Choose what kind of email and dashboard notifications you want to receive.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {['notifBookingUpdates', 'notifTicketUpdates', 'notifComments'].map(key => {
+            const label = key === 'notifBookingUpdates' ? 'Booking Approvals & Updates'
+                        : key === 'notifTicketUpdates' ? 'Incident Ticket Status Changes'
+                        : 'New Comments on Tickets';
+            const isOn = profile[key];
+            return (
+              <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{label}</span>
+                <button
+                  type="button"
+                  disabled={prefsSaving}
+                  onClick={() => handlePrefToggle(key, isOn)}
+                  style={{
+                    position: 'relative', width: 44, height: 24, borderRadius: 12, border: 'none', cursor: prefsSaving ? 'wait' : 'pointer',
+                    background: isOn ? 'var(--brand-teal)' : 'var(--bg-card-hover)', transition: 'background 0.3s ease'
+                  }}
+                >
+                  <div style={{ position: 'absolute', top: 2, left: isOn ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.3s cubic-bezier(0.4,0,0.2,1)', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── Security Card ── */}

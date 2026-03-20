@@ -71,17 +71,23 @@ public class UserController {
     @GetMapping("/profile/{userId}")
     public ResponseEntity<?> getProfile(@PathVariable Long userId) {
         return userRepository.findById(userId)
-                .map(u -> ResponseEntity.ok((Object) Map.of(
-                        "id", u.getId(),
-                        "username", u.getUsername(),
-                        "email", u.getEmail(),
-                        "fullName", u.getFullName() != null ? u.getFullName() : "",
-                        "phone", u.getPhone() != null ? u.getPhone() : "",
-                        "department", u.getDepartment() != null ? u.getDepartment() : "",
-                        "bio", u.getBio() != null ? u.getBio() : "",
-                        "role", u.getRole().name(),
-                        "createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : ""
-                )))
+                .map(u -> {
+                    Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("id", u.getId());
+                    map.put("username", u.getUsername());
+                    map.put("email", u.getEmail());
+                    map.put("fullName", u.getFullName() != null ? u.getFullName() : "");
+                    map.put("phone", u.getPhone() != null ? u.getPhone() : "");
+                    map.put("department", u.getDepartment() != null ? u.getDepartment() : "");
+                    map.put("bio", u.getBio() != null ? u.getBio() : "");
+                    map.put("role", u.getRole().name());
+                    map.put("createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : "");
+                    map.put("oauthProvider", u.getOauthProvider() != null ? u.getOauthProvider() : "");
+                    map.put("notifBookingUpdates", u.isNotifBookingUpdates());
+                    map.put("notifTicketUpdates", u.isNotifTicketUpdates());
+                    map.put("notifComments", u.isNotifComments());
+                    return ResponseEntity.ok((Object) map);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -125,6 +131,20 @@ public class UserController {
                     u.setPassword(passwordEncoder.encode(newPassword));
                     userRepository.save(u);
                     return ResponseEntity.ok((Object) "Password changed successfully");
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/notification-prefs/{userId}")
+    public ResponseEntity<?> updateNotificationPrefs(@PathVariable Long userId,
+                                                      @RequestBody Map<String, Boolean> prefs) {
+        return userRepository.findById(userId)
+                .map(u -> {
+                    if (prefs.containsKey("notifBookingUpdates")) u.setNotifBookingUpdates(prefs.get("notifBookingUpdates"));
+                    if (prefs.containsKey("notifTicketUpdates")) u.setNotifTicketUpdates(prefs.get("notifTicketUpdates"));
+                    if (prefs.containsKey("notifComments")) u.setNotifComments(prefs.get("notifComments"));
+                    userRepository.save(u);
+                    return ResponseEntity.ok((Object) "Notification preferences updated");
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

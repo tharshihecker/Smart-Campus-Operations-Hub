@@ -27,6 +27,8 @@ app:
   jwt:
     secret: SmartCampusSLIIT2026VerySecretKeyForJWTAuthenticationMinimum256Bits
     expiration-ms: 86400000   # 24 hours
+  google:
+    client-id: 525229368487-uae4vna5146dmah7lmshjna5rm985cr1.apps.googleusercontent.com
 
 file:
   upload-dir: uploads/

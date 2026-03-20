@@ -37,7 +37,7 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public long getUnreadCount(Long userId) {
-        return notificationRepository.countByUserIdAndReadFalse(userId);
+        return notificationRepository.countByUserIdAndIsReadFalse(userId);
     }
 
     public void markAsRead(Long notificationId, Long userId) {
@@ -46,12 +46,12 @@ public class NotificationService {
         if (!n.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("Cannot modify another user's notification");
         }
-        n.setRead(true);
+        n.setRead(true); // This will call setRead on isRead field
         notificationRepository.save(n);
     }
 
     public void markAllAsRead(Long userId) {
-        List<Notification> unread = notificationRepository.findByUserIdAndReadFalseOrderByCreatedAtDesc(userId);
+        List<Notification> unread = notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId);
         unread.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(unread);
     }

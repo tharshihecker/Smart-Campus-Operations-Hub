@@ -35,7 +35,7 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints
-                .requestMatchers("/api/user/signup", "/api/user/login").permitAll()
+                .requestMatchers("/api/user/signup", "/api/user/login", "/api/auth/google").permitAll()
                 // Public read-only endpoints
                 .requestMatchers(HttpMethod.GET, "/api/facilities/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()

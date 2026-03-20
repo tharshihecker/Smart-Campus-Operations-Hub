@@ -16,8 +16,8 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
-    private String password;
+    @Column
+    private String password; // nullable for OAuth-only accounts
 
     @Column(length = 120)
     private String fullName;
@@ -30,6 +30,22 @@ public class User {
 
     @Column(length = 500)
     private String bio;
+
+    @Column(length = 200)
+    private String googleId;
+
+    @Column(length = 30)
+    private String oauthProvider; // "GOOGLE" or null for local
+
+    // Notification preferences
+    @Column(nullable = false)
+    private boolean notifBookingUpdates = true;
+
+    @Column(nullable = false)
+    private boolean notifTicketUpdates = true;
+
+    @Column(nullable = false)
+    private boolean notifComments = true;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -71,6 +87,16 @@ public class User {
     public void setDepartment(String department) { this.department = department; }
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
+    public String getGoogleId() { return googleId; }
+    public void setGoogleId(String googleId) { this.googleId = googleId; }
+    public String getOauthProvider() { return oauthProvider; }
+    public void setOauthProvider(String oauthProvider) { this.oauthProvider = oauthProvider; }
+    public boolean isNotifBookingUpdates() { return notifBookingUpdates; }
+    public void setNotifBookingUpdates(boolean notifBookingUpdates) { this.notifBookingUpdates = notifBookingUpdates; }
+    public boolean isNotifTicketUpdates() { return notifTicketUpdates; }
+    public void setNotifTicketUpdates(boolean notifTicketUpdates) { this.notifTicketUpdates = notifTicketUpdates; }
+    public boolean isNotifComments() { return notifComments; }
+    public void setNotifComments(boolean notifComments) { this.notifComments = notifComments; }
     public UserRole getRole() { return role; }
     public void setRole(UserRole role) { this.role = role; }
     public boolean isEnabled() { return enabled; }
@@ -80,3 +106,4 @@ public class User {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }
+

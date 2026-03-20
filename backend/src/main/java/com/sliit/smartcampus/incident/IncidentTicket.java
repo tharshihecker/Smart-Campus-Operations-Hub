@@ -59,6 +59,10 @@ public class IncidentTicket {
     @Column(length = 500)
     private String rejectionReason;
 
+    // SLA tracking
+    private LocalDateTime firstResponseAt;  // First time status moves from OPEN
+    private LocalDateTime resolvedAt;        // When status becomes RESOLVED
+
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TicketAttachment> attachments = new ArrayList<>();
 
@@ -105,6 +109,10 @@ public class IncidentTicket {
     public void setResolutionNotes(String resolutionNotes) { this.resolutionNotes = resolutionNotes; }
     public String getRejectionReason() { return rejectionReason; }
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
+    public LocalDateTime getFirstResponseAt() { return firstResponseAt; }
+    public void setFirstResponseAt(LocalDateTime firstResponseAt) { this.firstResponseAt = firstResponseAt; }
+    public LocalDateTime getResolvedAt() { return resolvedAt; }
+    public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
     public List<TicketAttachment> getAttachments() { return attachments; }
     public void setAttachments(List<TicketAttachment> attachments) { this.attachments = attachments; }
     public List<TicketComment> getComments() { return comments; }
@@ -112,3 +120,4 @@ public class IncidentTicket {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }
+
