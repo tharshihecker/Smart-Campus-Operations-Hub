@@ -59,10 +59,22 @@ function buildQuery(params) {
 export async function signup(data) { return request("/user/signup", data); }
 export async function login(data) { return request("/user/login", data); }
 
+/**
+ * Google OAuth 2.0 login – sends the Google access token to our backend.
+ * The backend verifies via Google's userinfo endpoint.
+ * @param {string} accessToken – from @react-oauth/google implicit flow
+ */
+export async function googleLogin(accessToken) {
+  return request("/auth/google", { accessToken: accessToken });
+}
+
 /* ── User Profile ────────────────────────────────────── */
 export async function fetchProfile(userId) { return fetchJson(`/user/profile/${userId}`); }
 export async function updateProfile(userId, data) { return sendJson("PUT", `/user/profile/${userId}`, data); }
 export async function changePassword(userId, data) { return sendJson("PUT", `/user/change-password/${userId}`, data); }
+export async function updateNotificationPrefs(userId, prefs) {
+  return sendJson("PUT", `/user/notification-prefs/${userId}`, prefs);
+}
 
 /* ── Home Dashboard ──────────────────────────────────── */
 export async function fetchHomeSummary() { return fetchJson("/home/summary"); }
@@ -92,6 +104,10 @@ export async function createBooking(data) { return sendJson("POST", "/bookings",
 export async function fetchUserBookings(userId) { return fetchJson(`/bookings/user/${userId}`); }
 export async function fetchFacilityBookings(facilityId) { return fetchJson(`/bookings/facility/${facilityId}`); }
 export async function cancelBooking(bookingId, userId) { return sendJson("PUT", `/bookings/${bookingId}/cancel?userId=${userId}`); }
+export async function fetchBookingQR(bookingId) { return fetchJson(`/bookings/${bookingId}/qr`); }
+export async function checkinBooking(bookingId, userId) {
+  return sendJson("POST", `/bookings/${bookingId}/checkin?userId=${userId}`);
+}
 
 /* ── Bookings (admin) ─────────────────────────────────── */
 export async function fetchAllBookings(status) {
@@ -115,6 +131,9 @@ export async function toggleUserStatus(id) { return sendJson("PUT", `/admin/user
 export async function deleteUser(id) { return sendJson("DELETE", `/admin/users/${id}`); }
 export async function fetchUserRoles() { return fetchJson("/admin/users/roles"); }
 export async function fetchUserStats() { return fetchJson("/admin/users/stats"); }
+
+/* ── Admin: Analytics ─────────────────────────────────── */
+export async function fetchAnalytics() { return fetchJson("/admin/analytics"); }
 
 /* ── Admin: Events ────────────────────────────────────── */
 export async function fetchAdminEvents() { return fetchJson("/admin/events"); }

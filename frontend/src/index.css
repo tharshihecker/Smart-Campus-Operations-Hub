@@ -1,22 +1,171 @@
+/* ========================================================
+   Smart Campus – Global Design System
+   Premium dark-mode glassmorphism UI framework
+   ======================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+
 :root {
-  color-scheme: light;
+  /* Color palette */
+  --brand-teal: #0d9488;
+  --brand-blue: #0369a1;
+  --brand-purple: #7c3aed;
+  --brand-amber: #d97706;
+
+  /* Surface colors */
+  --bg-base: #0a0f1e;
+  --bg-surface: #111827;
+  --bg-card: #1a2236;
+  --bg-card-hover: #1e293b;
+  --bg-glass: rgba(255,255,255,0.04);
+  --bg-glass-hover: rgba(255,255,255,0.08);
+
+  /* Text */
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-accent: #38bdf8;
+
+  /* Borders */
+  --border-subtle: rgba(255,255,255,0.08);
+  --border-medium: rgba(255,255,255,0.14);
+  --border-focus: rgba(56,189,248,0.5);
+
+  /* Gradients */
+  --gradient-brand: linear-gradient(135deg, var(--brand-teal), var(--brand-blue));
+  --gradient-purple: linear-gradient(135deg, #7c3aed, #0369a1);
+  --gradient-hero: linear-gradient(135deg, #0a0f1e 0%, #0d1f3c 50%, #0a1628 100%);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 30px rgba(13,148,136,0.2);
+
+  /* Radius */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-smooth: 0.25s cubic-bezier(0.4,0,0.2,1);
 }
 
-* {
-  box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.6;
   min-height: 100vh;
-  font-family: "Manrope", "Poppins", "Segoe UI", sans-serif;
-  color: #0f172a;
-  background:
-    radial-gradient(circle at 8% 15%, rgba(14, 165, 233, 0.14), transparent 32%),
-    radial-gradient(circle at 88% 0%, rgba(15, 118, 110, 0.13), transparent 28%),
-    linear-gradient(170deg, #f8fbff 0%, #ecf4ff 45%, #f8fafc 100%);
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(13,148,136,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(3,105,161,0.06) 0%, transparent 50%);
 }
 
-#root {
-  min-height: 100vh;
+/* ── Utility ──────────────────────────────────────────── */
+.glass-card {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
+
+.gradient-text {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand-teal); }
+
+/* ── Links ────────────────────────────────────────────── */
+a { color: var(--text-accent); text-decoration: none; transition: color var(--transition-fast); }
+a:hover { color: #7dd3fc; }
+
+/* ── Inputs base ──────────────────────────────────────── */
+input, textarea, select {
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  width: 100%;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--brand-teal);
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.15);
+}
+input::placeholder, textarea::placeholder { color: var(--text-muted); }
+select option { background: var(--bg-surface); color: var(--text-primary); }
+
+/* ── Buttons base ─────────────────────────────────────── */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all var(--transition-smooth);
+}
+
+.btn-primary {
+  background: var(--gradient-brand);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(13,148,136,0.35);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(13,148,136,0.5);
+}
+.btn-secondary {
+  background: var(--bg-glass);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+}
+.btn-secondary:hover { background: var(--bg-glass-hover); }
+
+.btn-danger {
+  background: rgba(239,68,68,0.15);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.3);
+}
+.btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+/* ── Status badges ────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.badge-pending { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+.badge-approved, .badge-active, .badge-resolved { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.badge-rejected, .badge-cancelled { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.badge-open, .badge-in_progress { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+.badge-closed { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+.badge-checked_in { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+
+/* ── State messages ───────────────────────────────────── */
+.state-text { color: var(--text-secondary); text-align: center; padding: 2rem; font-size: 0.95rem; }
+.state-text.error { color: #f87171; }
+
+/* ── Animated dots loader ─────────────────────────────── */
+@keyframes pulse-dot { 0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }

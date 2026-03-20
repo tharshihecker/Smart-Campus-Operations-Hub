@@ -27,8 +27,8 @@ public class Notification {
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
-    @Column(nullable = false)
-    private boolean read = false;
+    @Column(name = "is_read", nullable = false)
+    private boolean isRead = false;
 
     // Reference to the related entity (booking ID or ticket ID)
     private Long referenceId;
@@ -52,8 +52,8 @@ public class Notification {
     public void setMessage(String message) { this.message = message; }
     public NotificationType getType() { return type; }
     public void setType(NotificationType type) { this.type = type; }
-    public boolean isRead() { return read; }
-    public void setRead(boolean read) { this.read = read; }
+    public boolean isRead() { return isRead; }
+    public void setRead(boolean isRead) { this.isRead = isRead; }
     public Long getReferenceId() { return referenceId; }
     public void setReferenceId(Long referenceId) { this.referenceId = referenceId; }
     public String getReferenceType() { return referenceType; }
