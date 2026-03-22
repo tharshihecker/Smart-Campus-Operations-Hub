@@ -221,7 +221,7 @@ function Profile() {
       {/* ── Notification Preferences Card ── */}
       <div className="profile-card">
         <h3><span className="card-icon">🔔</span>Notification Settings</h3>
-        <p style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+        <p style={{ marginBottom: '1rem', color: '#333333', fontSize: '0.9rem', fontWeight: 600 }}>
           Choose what kind of email and dashboard notifications you want to receive.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -232,7 +232,7 @@ function Profile() {
             const isOn = profile[key];
             return (
               <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{label}</span>
+                <span style={{ fontWeight: 700, color: '#222222', fontSize: '0.95rem' }}>{label}</span>
                 <button
                   type="button"
                   disabled={prefsSaving}

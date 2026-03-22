@@ -33,36 +33,36 @@ function QRModal({ booking, onClose }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xl)', padding: 32, maxWidth: 380, width: '100%', textAlign: 'center' }}>
-        <h3 style={{ margin: '0 0 4px', fontFamily: "'Outfit', sans-serif", color: 'var(--text-primary)' }}>📱 Booking QR Code</h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.87rem', marginBottom: 20 }}>{booking.facilityName} · {booking.bookingDate}</p>
+      <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 'var(--radius-xl)', padding: 32, maxWidth: 380, width: '100%', textAlign: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+        <h3 style={{ margin: '0 0 4px', fontFamily: "'Outfit', sans-serif", color: '#222222', fontWeight: 700 }}>📱 Booking QR Code</h3>
+        <p style={{ color: '#666666', fontSize: '0.87rem', marginBottom: 20, fontWeight: 600 }}>{booking.facilityName} · {booking.bookingDate}</p>
 
-        {loading && <p style={{ color: 'var(--text-muted)' }}>Generating QR code…</p>}
+        {loading && <p style={{ color: '#333333', fontWeight: 500 }}>Generating QR code…</p>}
         {!loading && qrData?.qrBase64 && (
           <>
             <img src={qrData.qrBase64} alt="Booking QR Code"
-              style={{ width: 200, height: 200, border: '8px solid #fff', borderRadius: 12, margin: '0 auto 16px', display: 'block' }} />
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 16 }}>
+              style={{ width: 200, height: 200, border: '8px solid #f0f0f0', borderRadius: 12, margin: '0 auto 16px', display: 'block' }} />
+            <p style={{ fontSize: '0.8rem', color: '#333333', marginBottom: 16, fontWeight: 500 }}>
               Show this QR code at the facility entrance for check-in.
             </p>
           </>
         )}
         {!loading && !qrData?.qrBase64 && (
-          <p style={{ color: '#f87171', margin: '12px 0' }}>Failed to load QR code.</p>
+          <p style={{ color: '#d32f2f', margin: '12px 0', fontWeight: 600 }}>Failed to load QR code.</p>
         )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {isToday && booking.status === 'APPROVED' && !checkinMsg && (
-            <button type="button" className="btn-primary" onClick={handleCheckin} style={{ width: '100%' }}>
+            <button type="button" onClick={handleCheckin} style={{ width: '100%', padding: '10px 0', background: 'linear-gradient(135deg, #4f8cff, #3a6fd8)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
               ✅ Check In Now
             </button>
           )}
           {checkinMsg && (
-            <p style={{ color: '#34d399', fontWeight: 700, padding: '10px', background: 'rgba(52,211,153,0.1)', borderRadius: 8 }}>
+            <p style={{ color: '#1a7a3a', fontWeight: 700, padding: '10px', background: '#e6f9ee', borderRadius: 8, border: '1px solid #10b981', margin: 0 }}>
               {checkinMsg}
             </p>
           )}
-          <button type="button" className="btn-secondary" onClick={onClose} style={{ width: '100%' }}>
+          <button type="button" onClick={onClose} style={{ width: '100%', padding: '10px 0', background: '#f0f0f0', border: '1px solid #d0d0d0', borderRadius: 8, color: '#333333', cursor: 'pointer', fontWeight: 600 }}>
             Close
           </button>
         </div>
@@ -137,8 +137,31 @@ function MyBookings() {
 
   return (
     <section className="profile-shell">
-      <h2>My Bookings</h2>
-      <p className="profile-subtitle">Manage your facility reservations and check bookings status.</p>
+     <div style={{
+  background: '#ffffff',
+  padding: '20px 24px',
+  borderRadius: '12px',
+  marginBottom: '20px',
+  border: '1px solid #e5e7eb'
+}}>
+  <h2 style={{
+    margin: 0,
+    fontSize: '1.6rem',
+    fontWeight: 800,
+    color: '#000000'
+  }}>
+    My Bookings
+  </h2>
+
+  <p style={{
+    marginTop: '6px',
+    fontSize: '0.95rem',
+    fontWeight: 600,
+    color: '#333333'
+  }}>
+    Manage your facility reservations and check bookings status.
+  </p>
+</div>
 
       {actionMsg.text && <div className={`profile-alert ${actionMsg.type}`}>{actionMsg.text}</div>}
 
@@ -198,7 +221,7 @@ function MyBookings() {
                 padding: '4px 12px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
                 border: statusFilter === s ? '2px solid var(--brand-teal)' : '1.5px solid var(--border-subtle)',
                 background: statusFilter === s ? 'rgba(13,148,136,0.15)' : 'transparent',
-                color: statusFilter === s ? '#5eead4' : 'var(--text-secondary)',
+                color: statusFilter === s ? '#5eead4' : '#333333',
                 transition: 'all 0.15s ease',
               }}>
               {s || 'All'}
@@ -209,7 +232,7 @@ function MyBookings() {
         {loading && <p className="state-text">Loading bookings…</p>}
         {error && <p className="state-text error">{error}</p>}
         {!loading && !error && filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+          <div style={{ textAlign: 'center', padding: '2.5rem', color: '#444444', fontWeight: 500 }}>
             <p style={{ fontSize: '2.5rem', marginBottom: 10 }}>📭</p>
             <p>{statusFilter ? `No ${statusFilter} bookings found.` : 'No bookings yet. Click "Book a Facility" to get started!'}</p>
           </div>
@@ -220,16 +243,16 @@ function MyBookings() {
             {filtered.map(b => (
               <div key={b.id} style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.1rem 1.2rem', background: 'var(--bg-glass)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                  <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>{b.facilityName || `Facility #${b.facilityId}`}</h4>
+                  <h4 style={{ margin: 0, fontSize: '1rem', color: '#222222', fontWeight: 700 }}>{b.facilityName || `Facility #${b.facilityId}`}</h4>
                   {statusBadge(b.status)}
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', fontSize: '0.85rem', color: '#333333', fontWeight: 500 }}>
                   <span>📅 {b.bookingDate}</span>
                   <span>🕐 {b.startTime} – {b.endTime}</span>
                   {b.attendeeCount && <span>👥 {b.attendeeCount}</span>}
                   <span>📍 {b.facilityLocation}</span>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)' }}><strong style={{ color: 'var(--text-primary)' }}>Purpose:</strong> {b.purpose}</p>
+                <p style={{ margin: 0, fontSize: '0.88rem', color: '#333333', fontWeight: 500 }}><strong style={{ color: '#222222', fontWeight: 700 }}>Purpose:</strong> {b.purpose}</p>
                 {b.adminRemarks && (
                   <p style={{ margin: 0, fontSize: '0.84rem', color: '#38bdf8', background: 'rgba(56,189,248,0.08)', padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(56,189,248,0.2)' }}>
                     <strong>Admin Remarks:</strong> {b.adminRemarks}
@@ -247,7 +270,7 @@ function MyBookings() {
                     </button>
                   )}
                 </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                <div style={{ fontSize: '0.72rem', color: '#444444', marginTop: 2, fontWeight: 500 }}>
                   Created: {new Date(b.createdAt).toLocaleString()}
                 </div>
               </div>

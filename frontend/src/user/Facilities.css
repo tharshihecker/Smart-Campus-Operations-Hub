@@ -8,7 +8,7 @@
 
 .facility-shell h2 {
   margin: 0;
-  color: #0f172a;
+  color: #222222;
 }
 
 .facility-subtitle {
@@ -34,6 +34,7 @@
   border: 1px solid #cbd5e1;
   font-size: 0.95rem;
   background: #ffffff;
+  color: #222222;
 }
 
 .facility-grid {

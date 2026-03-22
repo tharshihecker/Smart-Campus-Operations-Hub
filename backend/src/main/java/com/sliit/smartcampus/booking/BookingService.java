@@ -34,8 +34,29 @@ public class BookingService {
     }
 
     public BookingResponse createBooking(BookingRequest request) {
+        // Validate required fields
         String facilityId = request.getFacilityId();
         if (facilityId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "facilityId is required");
+
+        String userId = request.getUserId();
+        if (userId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId is required");
+
+        if (request.getBookingDate() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "bookingDate is required");
+        }
+
+        if (request.getStartTime() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "startTime is required");
+        }
+
+        if (request.getEndTime() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "endTime is required");
+        }
+
+        // Validate time ordering
+        if (!request.getStartTime().isBefore(request.getEndTime())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start time must be before end time");
+        }
 
         Facility facility = facilityRepository.findById(facilityId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Facility not found"));
@@ -45,15 +66,8 @@ public class BookingService {
                     "Facility is not available for booking (status: " + facility.getStatus() + ")");
         }
 
-        String userId = request.getUserId();
-        if (userId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId is required");
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-        if (!request.getStartTime().isBefore(request.getEndTime())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start time must be before end time");
-        }
 
         if (request.getBookingDate().isBefore(LocalDate.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot book for a past date");

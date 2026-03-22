@@ -108,8 +108,45 @@ input:focus, textarea:focus, select:focus {
   border-color: var(--brand-teal);
   box-shadow: 0 0 0 3px rgba(13,148,136,0.15);
 }
-input::placeholder, textarea::placeholder { color: var(--text-muted); }
+input::placeholder, textarea::placeholder { 
+  color: #666666;
+  opacity: 0.8;
+  font-weight: 500;
+}
 select option { background: var(--bg-surface); color: var(--text-primary); }
+
+/* Override input colors for white background sections */
+.content-shell input, .content-shell textarea, .content-shell select,
+.facility-shell input, .facility-shell textarea, .facility-shell select,
+.dashboard-card input, .dashboard-card textarea, .dashboard-card select {
+  color: #222222;
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+.content-shell input::placeholder, .content-shell textarea::placeholder,
+.facility-shell input::placeholder, .facility-shell textarea::placeholder,
+.dashboard-card input::placeholder, .dashboard-card textarea::placeholder {
+  color: #666666;
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+.content-shell input:focus, .content-shell textarea:focus, .content-shell select:focus,
+.facility-shell input:focus, .facility-shell textarea:focus, .facility-shell select:focus,
+.dashboard-card input:focus, .dashboard-card textarea:focus, .dashboard-card select:focus {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13,148,136,0.15);
+}
+
+/* Override text colors for white background sections */
+.content-shell h2, .content-shell h3, .content-shell h4, .content-shell h5, .content-shell h6,
+.facility-shell h2, .facility-shell h3, .facility-shell h4, .facility-shell h5, .facility-shell h6,
+.profile-shell h2, .profile-shell h3, .profile-shell h4, .profile-shell h5, .profile-shell h6,
+.admin-panel h2, .admin-panel h3, .admin-panel h4, .admin-panel h5, .admin-panel h6,
+.dashboard-card h2, .dashboard-card h3, .dashboard-card h4, .dashboard-card h5, .dashboard-card h6 {
+  color: #222222 !important;
+}
 
 /* ── Buttons base ─────────────────────────────────────── */
 button {

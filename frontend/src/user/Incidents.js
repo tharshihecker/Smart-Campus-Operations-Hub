@@ -33,24 +33,24 @@ function PriorityBadge({ priority }) {
 function TicketCard({ ticket, onSelect }) {
   return (
     <div onClick={() => onSelect(ticket)} style={{
-      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+      background: '#ffffff', border: '1px solid #e2e8f0',
       borderRadius: 12, padding: '18px 20px', cursor: 'pointer',
       transition: 'all 0.2s', marginBottom: 12
     }}
-    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(139,92,246,0.5)'}
-    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+    onMouseEnter={e => e.currentTarget.style.borderColor = '#4f8cff'}
+    onMouseLeave={e => e.currentTarget.style.borderColor = '#e2e8f0'}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
         <div>
-          <p style={{ fontWeight: 700, marginBottom: 4, color: '#e2e8f0' }}>{ticket.title}</p>
-          <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 8 }}>{ticket.category} • {ticket.location}</p>
+          <p style={{ fontWeight: 700, marginBottom: 4, color: '#222222' }}>{ticket.title}</p>
+          <p style={{ fontSize: 13, color: '#666666', marginBottom: 8 }}>{ticket.category} • {ticket.location}</p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
           <PriorityBadge priority={ticket.priority} />
           <StatusBadge status={ticket.status} />
         </div>
       </div>
-      <p style={{ fontSize: 12, color: '#64748b' }}>
+      <p style={{ fontSize: 12, color: '#888888' }}>
         {ticket.assigneeName ? `Assigned to: ${ticket.assigneeName}` : 'Unassigned'} •{' '}
         {new Date(ticket.createdAt).toLocaleDateString()}
       </p>
@@ -87,18 +87,18 @@ function CreateTicketModal({ onClose, onCreated }) {
   };
 
   const inputStyle = {
-    width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 8, padding: '10px 14px', color: '#e2e8f0', fontSize: 14, boxSizing: 'border-box'
+    width: '100%', background: '#ffffff', border: '1px solid #cbd5e1',
+    borderRadius: 8, padding: '10px 14px', color: '#222222', fontSize: 14, boxSizing: 'border-box'
   };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-      <div style={{ background: '#1e2437', borderRadius: 16, padding: 32, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <h2 style={{ color: '#8b5cf6', marginBottom: 24 }}>Report New Incident</h2>
-        {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid #ef4444', borderRadius: 8, padding: 10, marginBottom: 16, color: '#fca5a5', fontSize: 13 }}>{error}</div>}
+      <div style={{ background: '#ffffff', borderRadius: 16, padding: 32, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+        <h2 style={{ color: '#222222', marginBottom: 24, fontWeight: 700 }}>Report New Incident</h2>
+        {error && <div style={{ background: '#fbeaea', border: '1px solid #ef4444', borderRadius: 8, padding: 10, marginBottom: 16, color: '#b33030', fontSize: 13, fontWeight: 600 }}>{error}</div>}
         <form onSubmit={submit}>
           <div style={{ display: 'grid', gap: 14 }}>
-            <input style={inputStyle} placeholder="Title *" value={form.title} onChange={handle('title')} />
+            <input style={{...inputStyle, '::placeholder': { color: '#999999' }}} placeholder="Title *" value={form.title} onChange={handle('title')} />
             <textarea style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }} placeholder="Description *" value={form.description} onChange={handle('description')} />
             <input style={inputStyle} placeholder="Location *" value={form.location} onChange={handle('location')} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -111,21 +111,21 @@ function CreateTicketModal({ onClose, onCreated }) {
             </div>
             <input style={inputStyle} placeholder="Contact details (email/phone)" value={form.contactDetails} onChange={handle('contactDetails')} />
             <div>
-              <label style={{ display: 'block', marginBottom: 6, color: '#94a3b8', fontSize: 13 }}>
+              <label style={{ display: 'block', marginBottom: 6, color: '#222222', fontSize: 13, fontWeight: 600 }}>
                 Evidence Images (max 3)
               </label>
               <input type="file" accept="image/*" multiple onChange={e => setFiles(Array.from(e.target.files).slice(0, 3))}
                 style={{ ...inputStyle, padding: '8px 14px', cursor: 'pointer' }} />
-              {files.length > 0 && <p style={{ color: '#64748b', fontSize: 12, marginTop: 4 }}>{files.length} file(s) selected</p>}
+              {files.length > 0 && <p style={{ color: '#666666', fontSize: 12, marginTop: 4, fontWeight: 500 }}>{files.length} file(s) selected</p>}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
             <button type="button" onClick={onClose}
-              style={{ flex: 1, padding: '10px 0', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#94a3b8', cursor: 'pointer', fontWeight: 600 }}>
+              style={{ flex: 1, padding: '10px 0', background: '#f0f0f0', border: '1px solid #d0d0d0', borderRadius: 8, color: '#333333', cursor: 'pointer', fontWeight: 600 }}>
               Cancel
             </button>
             <button type="submit" disabled={loading}
-              style={{ flex: 2, padding: '10px 0', background: loading ? '#4c1d95' : 'linear-gradient(135deg, #7c3aed, #4f46e5)', border: 'none', borderRadius: 8, color: '#fff', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 14 }}>
+              style={{ flex: 2, padding: '10px 0', background: loading ? '#5a9cff' : 'linear-gradient(135deg, #4f8cff, #3a6fd8)', border: 'none', borderRadius: 8, color: '#fff', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 14 }}>
               {loading ? 'Submitting...' : 'Submit Incident'}
             </button>
           </div>
@@ -170,54 +170,54 @@ function TicketDetailPanel({ ticket, onClose, onUpdate }) {
   };
 
   const inputStyle = {
-    width: '100%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 8, padding: '10px 14px', color: '#e2e8f0', fontSize: 14, boxSizing: 'border-box', resize: 'vertical'
+    width: '100%', background: '#ffffff', border: '1px solid #cbd5e1',
+    borderRadius: 8, padding: '10px 14px', color: '#222222', fontSize: 14, boxSizing: 'border-box', resize: 'vertical'
   };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', zIndex: 999, padding: 0 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: '#1a1f2e', width: '100%', maxWidth: 500, height: '100vh', overflowY: 'auto', padding: 28, borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
+      <div style={{ background: '#ffffff', width: '100%', maxWidth: 500, height: '100vh', overflowY: 'auto', padding: 28, borderLeft: '1px solid #e2e8f0', boxShadow: '-10px 0 25px rgba(0,0,0,0.1)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ color: '#e2e8f0', margin: 0 }}>Ticket #{ticket.id}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 22, cursor: 'pointer' }}>✕</button>
+          <h3 style={{ color: '#222222', margin: 0, fontWeight: 700 }}>Ticket #{ticket.id}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888888', fontSize: 22, cursor: 'pointer' }}>✕</button>
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <p style={{ fontWeight: 700, fontSize: 18, color: '#e2e8f0', marginBottom: 8 }}>{ticket.title}</p>
+          <p style={{ fontWeight: 700, fontSize: 18, color: '#222222', marginBottom: 8 }}>{ticket.title}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
             <PriorityBadge priority={ticket.priority} />
             <StatusBadge status={ticket.status} />
           </div>
-          <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 14, marginBottom: 12 }}>
-            <p style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>{ticket.description}</p>
+          <div style={{ background: '#f8faff', borderRadius: 8, padding: 14, marginBottom: 12, border: '1px solid #e2e8f0' }}>
+            <p style={{ color: '#333333', fontSize: 13, margin: 0 }}>{ticket.description}</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13, color: '#64748b' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13, color: '#666666' }}>
             <span>📍 {ticket.location}</span>
             <span>🏷 {ticket.category}</span>
             {ticket.assigneeName && <span>👷 {ticket.assigneeName}</span>}
             {ticket.contactDetails && <span>📞 {ticket.contactDetails}</span>}
           </div>
           {ticket.resolutionNotes && (
-            <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 8, padding: 10, marginTop: 10 }}>
-              <p style={{ color: '#10b981', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>RESOLUTION NOTES</p>
-              <p style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>{ticket.resolutionNotes}</p>
+            <div style={{ background: '#e6f9ee', border: '1px solid #10b981', borderRadius: 8, padding: 10, marginTop: 10 }}>
+              <p style={{ color: '#1a7a3a', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>RESOLUTION NOTES</p>
+              <p style={{ color: '#333333', fontSize: 13, margin: 0 }}>{ticket.resolutionNotes}</p>
             </div>
           )}
           {ticket.rejectionReason && (
-            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: 10, marginTop: 10 }}>
-              <p style={{ color: '#ef4444', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>REJECTION REASON</p>
-              <p style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>{ticket.rejectionReason}</p>
+            <div style={{ background: '#fbeaea', border: '1px solid #ef4444', borderRadius: 8, padding: 10, marginTop: 10 }}>
+              <p style={{ color: '#b33030', fontSize: 12, fontWeight: 700, marginBottom: 4 }}>REJECTION REASON</p>
+              <p style={{ color: '#333333', fontSize: 13, margin: 0 }}>{ticket.rejectionReason}</p>
             </div>
           )}
           {ticket.attachmentUrls?.length > 0 && (
             <div style={{ marginTop: 12 }}>
-              <p style={{ color: '#64748b', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>ATTACHMENTS</p>
+              <p style={{ color: '#222222', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>ATTACHMENTS</p>
               <div style={{ display: 'flex', gap: 8 }}>
                 {ticket.attachmentUrls.map((url, i) => (
                   <a key={i} href={url} target="_blank" rel="noreferrer">
                     <img src={url} alt={`attachment-${i+1}`}
-                      style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)' }}
+                      style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }}
                       onError={e => e.target.style.display='none'} />
                   </a>
                 ))}
@@ -226,33 +226,33 @@ function TicketDetailPanel({ ticket, onClose, onUpdate }) {
           )}
         </div>
 
-        <hr style={{ borderColor: 'rgba(255,255,255,0.08)', marginBottom: 20 }} />
+        <hr style={{ borderColor: '#e2e8f0', marginBottom: 20 }} />
 
         <div>
-          <p style={{ fontWeight: 700, color: '#94a3b8', fontSize: 13, marginBottom: 12 }}>COMMENTS ({comments.length})</p>
+          <p style={{ fontWeight: 700, color: '#222222', fontSize: 13, marginBottom: 12 }}>COMMENTS ({comments.length})</p>
           {comments.map(c => (
-            <div key={c.id} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div key={c.id} style={{ background: '#f8faff', borderRadius: 8, padding: 12, marginBottom: 8, border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ color: '#8b5cf6', fontSize: 13, fontWeight: 600 }}>{c.authorName}</span>
-                <span style={{ color: '#64748b', fontSize: 11 }}>{new Date(c.createdAt).toLocaleString()}</span>
+                <span style={{ color: '#4f8cff', fontSize: 13, fontWeight: 600 }}>{c.authorName}</span>
+                <span style={{ color: '#999999', fontSize: 11 }}>{new Date(c.createdAt).toLocaleString()}</span>
               </div>
               {editingId === c.id ? (
                 <div>
                   <textarea value={editContent} onChange={e => setEditContent(e.target.value)} style={{ ...inputStyle, minHeight: 60 }} />
                   <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                    <button onClick={() => saveEdit(c.id)} style={{ padding: '4px 12px', background: '#7c3aed', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 12 }}>Save</button>
-                    <button onClick={() => setEditingId(null)} style={{ padding: '4px 12px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#94a3b8', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+                    <button onClick={() => saveEdit(c.id)} style={{ padding: '4px 12px', background: '#4f8cff', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 12 }}>Save</button>
+                    <button onClick={() => setEditingId(null)} style={{ padding: '4px 12px', background: '#f0f0f0', border: '1px solid #d0d0d0', borderRadius: 6, color: '#333333', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
                   </div>
                 </div>
               ) : (
                 <div>
-                  <p style={{ color: '#d1d5db', fontSize: 13, margin: 0 }}>{c.content}</p>
+                  <p style={{ color: '#333333', fontSize: 13, margin: 0 }}>{c.content}</p>
                   {c.authorId === currentUserId && (
                     <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                       <button onClick={() => { setEditingId(c.id); setEditContent(c.content); }}
-                        style={{ fontSize: 11, color: '#8b5cf6', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>✏ Edit</button>
+                        style={{ fontSize: 11, color: '#4f8cff', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>✏ Edit</button>
                       <button onClick={() => removeComment(c.id)}
-                        style={{ fontSize: 11, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>🗑 Delete</button>
+                        style={{ fontSize: 11, color: '#d32f2f', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>🗑 Delete</button>
                     </div>
                   )}
                 </div>
@@ -264,7 +264,7 @@ function TicketDetailPanel({ ticket, onClose, onUpdate }) {
             <textarea value={newComment} onChange={e => setNewComment(e.target.value)}
               placeholder="Add a comment..." style={{ ...inputStyle, minHeight: 70 }} />
             <button onClick={submitComment} disabled={addingComment || !newComment.trim()}
-              style={{ marginTop: 8, padding: '9px 20px', background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', border: 'none', borderRadius: 8, color: '#fff', cursor: addingComment ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 14 }}>
+              style={{ marginTop: 8, padding: '9px 20px', background: 'linear-gradient(135deg, #4f8cff, #3a6fd8)', border: 'none', borderRadius: 8, color: '#fff', cursor: addingComment ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 14 }}>
               {addingComment ? 'Posting...' : 'Post Comment'}
             </button>
           </div>
@@ -294,28 +294,57 @@ export default function Incidents() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-        <div>
-          <h2 style={{ color: '#e2e8f0', margin: 0 }}>My Incident Tickets</h2>
-          <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: 14 }}>Report and track campus maintenance issues</p>
-        </div>
+       <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 28
+      }}>
+
+        {/* WHITE CARD HEADER */}
+        <div style={{
+          background: '#ffffff',
+          padding: '20px 24px',
+          borderRadius: '12px',
+          border: '1px solid #e5e7eb',
+          flex: 1
+        }}>
+          <h2 style={{
+            margin: 0,
+            fontSize: '1.6rem',
+            fontWeight: 800,
+            color: '#000000'
+          }}>
+            My Incident Tickets
+          </h2>
+
+          <p style={{
+            marginTop: '6px',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: '#333333'
+          }}>
+            Report and track campus maintenance issues
+          </p>
+        
         <button onClick={() => setShowCreate(true)} style={{
-          background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', border: 'none',
+          background: 'linear-gradient(135deg, #4f8cff, #3a6fd8)', border: 'none',
           borderRadius: 10, padding: '10px 22px', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 14
         }}>+ New Ticket</button>
+      </div>
       </div>
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12, marginBottom: 24 }}>
         {[
-          { label: 'Total', val: tickets.length, color: '#8b5cf6' },
+          { label: 'Total', val: tickets.length, color: '#4f8cff' },
           { label: 'Open', val: tickets.filter(t => t.status === 'OPEN').length, color: '#3b82f6' },
           { label: 'In Progress', val: tickets.filter(t => t.status === 'IN_PROGRESS').length, color: '#f59e0b' },
           { label: 'Resolved', val: tickets.filter(t => t.status === 'RESOLVED').length, color: '#10b981' },
         ].map(s => (
-          <div key={s.label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 16, textAlign: 'center' }}>
+          <div key={s.label} style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16, textAlign: 'center' }}>
             <p style={{ fontSize: 24, fontWeight: 800, color: s.color, margin: 0 }}>{s.val}</p>
-            <p style={{ color: '#64748b', fontSize: 12, margin: '4px 0 0' }}>{s.label}</p>
+            <p style={{ color: '#666666', fontSize: 12, margin: '4px 0 0', fontWeight: 500 }}>{s.label}</p>
           </div>
         ))}
       </div>
@@ -324,18 +353,18 @@ export default function Incidents() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         {['ALL', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REJECTED'].map(s => (
           <button key={s} onClick={() => setFilter(s)} style={{
-            padding: '6px 14px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.12)',
-            background: filter === s ? '#7c3aed' : 'rgba(255,255,255,0.04)',
-            color: filter === s ? '#fff' : '#94a3b8', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+            padding: '6px 14px', borderRadius: 999, border: '1px solid #d0d0d0',
+            background: filter === s ? '#4f8cff' : '#f8f8f8',
+            color: filter === s ? '#fff' : '#333333', cursor: 'pointer', fontSize: 12, fontWeight: 600,
             transition: 'all 0.15s'
           }}>{s.replace('_', ' ')}</button>
         ))}
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', color: '#64748b', padding: 60 }}>Loading tickets...</div>
+        <div style={{ textAlign: 'center', color: '#666666', padding: 60 }}>Loading tickets...</div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', color: '#64748b', padding: 60, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 12 }}>
+        <div style={{ textAlign: 'center', color: '#666666', padding: 60, border: '1px dashed #e2e8f0', borderRadius: 12 }}>
           <p style={{ fontSize: 40, margin: 0 }}>🔧</p>
           <p style={{ marginTop: 8 }}>{filter !== 'ALL' ? 'No tickets with this status' : 'No incident tickets yet. Report an issue!'}</p>
         </div>
