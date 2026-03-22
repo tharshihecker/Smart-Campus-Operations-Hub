@@ -19,7 +19,7 @@ async function request(path, data) {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || "Request failed");
+    throw parseErrorResponse(text);
   }
   const ct = res.headers.get("content-type");
   return ct?.includes("application/json") ? res.json() : res.text();
@@ -27,7 +27,10 @@ async function request(path, data) {
 
 async function fetchJson(path) {
   const res = await fetch(`${API_BASE}${path}`, { headers: getAuthHeader() });
-  if (!res.ok) throw new Error("Failed to fetch data");
+  if (!res.ok) {
+    const text = await res.text();
+    throw parseErrorResponse(text);
+  }
   return res.json();
 }
 
@@ -39,11 +42,31 @@ async function sendJson(method, path, data) {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || "Request failed");
+    throw parseErrorResponse(text);
   }
   if (res.status === 204) return null;
   const ct = res.headers.get("content-type");
   return ct?.includes("application/json") ? res.json() : res.text();
+}
+
+function parseErrorResponse(text) {
+  try {
+    const json = JSON.parse(text);
+    // Handle Spring Boot error response format
+    if (json.message) {
+      return new Error(json.message);
+    }
+    if (json.error) {
+      return new Error(json.error);
+    }
+  } catch (e) {
+    // Not JSON, use raw text
+  }
+  // Clean up HTML error pages
+  if (text.includes("<html>") || text.includes("<!DOCTYPE")) {
+    return new Error("Server error - please try again later");
+  }
+  return new Error(text || "Request failed");
 }
 
 function buildQuery(params) {

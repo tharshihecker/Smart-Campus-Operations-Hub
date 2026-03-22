@@ -90,6 +90,7 @@
   border: 1px solid #cbd5e1;
   font-size: 0.95rem;
   background: #ffffff;
+  color: #222222;
   transition: border-color 0.2s;
 }
 

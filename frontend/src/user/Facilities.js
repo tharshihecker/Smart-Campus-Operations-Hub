@@ -185,16 +185,27 @@ function Facilities() {
                       </p>
                     )}
                     <form onSubmit={submitBooking} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-                        <input type="date" name="bookingDate" min={todayStr} value={bookingForm.bookingDate} onChange={handleBookingChange} required style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem' }} />
-                        <input type="time" name="startTime" value={bookingForm.startTime} onChange={handleBookingChange} required style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem' }} />
-                        <input type="time" name="endTime" value={bookingForm.endTime} onChange={handleBookingChange} required style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem' }} />
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.4rem' }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#222222', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Date *</label>
+                          <input type="date" name="bookingDate" min={todayStr} value={bookingForm.bookingDate} onChange={handleBookingChange} required style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem', color: '#222222', background: '#fff' }} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                          <div>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#222222', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '0.3rem' }}>Start Time *</label>
+                            <input type="time" name="startTime" value={bookingForm.startTime} onChange={handleBookingChange} required style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem', color: '#222222', background: '#fff', width: '100%' }} />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#222222', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '0.3rem' }}>End Time *</label>
+                            <input type="time" name="endTime" value={bookingForm.endTime} onChange={handleBookingChange} required style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem', color: '#222222', background: '#fff', width: '100%' }} />
+                          </div>
+                        </div>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.5rem' }}>
-                        <input name="purpose" value={bookingForm.purpose} onChange={handleBookingChange} placeholder="Purpose (e.g. Workshop)" required style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem' }} />
-                        <input type="number" name="attendeeCount" min="1" max={facility.capacity} value={bookingForm.attendeeCount} onChange={handleBookingChange} style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem' }} />
+                        <input name="purpose" value={bookingForm.purpose} onChange={handleBookingChange} placeholder="Purpose (e.g. Workshop)" required style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem', color: '#222222', background: '#fff' }} />
+                        <input type="number" name="attendeeCount" min="1" max={facility.capacity} value={bookingForm.attendeeCount} onChange={handleBookingChange} style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem', color: '#222222', background: '#fff' }} />
                       </div>
-                      <input name="notes" value={bookingForm.notes} onChange={handleBookingChange} placeholder="Additional notes (optional)" style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem' }} />
+                      <input name="notes" value={bookingForm.notes} onChange={handleBookingChange} placeholder="Additional notes (optional)" style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem', color: '#222222', background: '#fff' }} />
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button type="submit" disabled={bookingLoading} style={{ padding: '0.45rem 1.2rem', background: '#4f8cff', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
                           {bookingLoading ? 'Submitting...' : 'Submit Booking'}
