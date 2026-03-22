@@ -1,22 +1,23 @@
 package com.sliit.smartcampus.facility;
 
-import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 public class FacilityService {
     private final FacilityRepository facilityRepository;
+    private final MongoTemplate mongoTemplate;
 
-    public FacilityService(FacilityRepository facilityRepository) {
+    public FacilityService(FacilityRepository facilityRepository, MongoTemplate mongoTemplate) {
         this.facilityRepository = facilityRepository;
+        this.mongoTemplate = mongoTemplate;
     }
 
     public List<FacilityResponse> search(FacilityFilter filter, String sortBy, String sortDir) {
@@ -24,13 +25,15 @@ public class FacilityService {
         String safeSortField = allowedSortField(sortBy);
         Sort sort = Sort.by(direction, safeSortField);
 
-        return facilityRepository.findAll(buildSpecification(filter), sort)
+        Query query = buildQuery(filter).with(sort);
+
+        return mongoTemplate.find(query, Facility.class)
                 .stream()
                 .map(FacilityResponse::from)
                 .toList();
     }
 
-    public FacilityResponse getById(long id) {
+    public FacilityResponse getById(String id) {
         return facilityRepository.findById(id)
                 .map(FacilityResponse::from)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Facility not found"));
@@ -43,7 +46,7 @@ public class FacilityService {
         return FacilityResponse.from(facilityRepository.save(facility));
     }
 
-    public FacilityResponse update(long id, FacilityRequest request) {
+    public FacilityResponse update(String id, FacilityRequest request) {
         validateAvailabilityWindow(request);
         Facility facility = facilityRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Facility not found"));
@@ -51,48 +54,46 @@ public class FacilityService {
         return FacilityResponse.from(facilityRepository.save(facility));
     }
 
-    public void delete(long id) {
+    public void delete(String id) {
         if (!facilityRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Facility not found");
         }
         facilityRepository.deleteById(id);
     }
 
-    private Specification<Facility> buildSpecification(FacilityFilter filter) {
-        return (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
+    private Query buildQuery(FacilityFilter filter) {
+        Query query = new Query();
 
-            if (filter.keyword() != null && !filter.keyword().isBlank()) {
-                String keyword = "%" + filter.keyword().trim().toLowerCase(Locale.ROOT) + "%";
-                predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("name")), keyword),
-                        cb.like(cb.lower(root.get("description")), keyword)
-                ));
-            }
+        if (filter.keyword() != null && !filter.keyword().isBlank()) {
+            String keyword = filter.keyword().trim();
+            query.addCriteria(new Criteria().orOperator(
+                    Criteria.where("name").regex(keyword, "i"),
+                    Criteria.where("description").regex(keyword, "i")
+            ));
+        }
 
-            if (filter.type() != null) {
-                predicates.add(cb.equal(root.get("type"), filter.type()));
-            }
+        if (filter.type() != null) {
+            query.addCriteria(Criteria.where("type").is(filter.type()));
+        }
 
-            if (filter.minCapacity() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("capacity"), filter.minCapacity()));
-            }
+        if (filter.minCapacity() != null && filter.maxCapacity() != null) {
+            query.addCriteria(Criteria.where("capacity").gte(filter.minCapacity()).lte(filter.maxCapacity()));
+        } else if (filter.minCapacity() != null) {
+            query.addCriteria(Criteria.where("capacity").gte(filter.minCapacity()));
+        } else if (filter.maxCapacity() != null) {
+            query.addCriteria(Criteria.where("capacity").lte(filter.maxCapacity()));
+        }
 
-            if (filter.maxCapacity() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("capacity"), filter.maxCapacity()));
-            }
+        if (filter.location() != null && !filter.location().isBlank()) {
+            String location = filter.location().trim();
+            query.addCriteria(Criteria.where("location").regex(location, "i"));
+        }
 
-            if (filter.location() != null && !filter.location().isBlank()) {
-                String location = "%" + filter.location().trim().toLowerCase(Locale.ROOT) + "%";
-                predicates.add(cb.like(cb.lower(root.get("location")), location));
-            }
+        if (filter.status() != null) {
+            query.addCriteria(Criteria.where("status").is(filter.status()));
+        }
 
-            if (filter.status() != null) {
-                predicates.add(cb.equal(root.get("status"), filter.status()));
-            }
-
-            return cb.and(predicates.toArray(Predicate[]::new));
-        };
+        return query;
     }
 
     private String allowedSortField(String sortBy) {

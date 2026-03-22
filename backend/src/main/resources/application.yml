@@ -1,19 +1,9 @@
 spring:
   application:
     name: smartcampus-backend
-  datasource:
-    url: jdbc:mysql://localhost:3306/paf?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: 1234
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
-        format_sql: true
+  data:
+    mongodb:
+      uri: mongodb+srv://herozeroyaaro_db_user:7LpLSMO1hepDes7r@cluster0.i7rsr1d.mongodb.net/smartcampus?appName=Cluster0
   servlet:
     multipart:
       enabled: true
@@ -30,5 +20,7 @@ app:
   google:
     client-id: 525229368487-uae4vna5146dmah7lmshjna5rm985cr1.apps.googleusercontent.com
 
-file:
-  upload-dir: uploads/
+cloudinary:
+  cloud-name: dxpmhs4r8
+  api-key: "738223427257681"
+  api-secret: "rHRazNvXXKIN18ZlA8Dd8VYkfz4"

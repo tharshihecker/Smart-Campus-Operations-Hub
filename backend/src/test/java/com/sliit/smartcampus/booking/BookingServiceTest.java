@@ -118,7 +118,7 @@ class BookingServiceTest {
                 LocalTime.of(9, 0), LocalTime.of(10, 0));
         BookingResponse created = bookingService.createBooking(req);
 
-        assertThatThrownBy(() -> bookingService.cancelBooking(created.id(), 99999L))
+        assertThatThrownBy(() -> bookingService.cancelBooking(created.id(), "wrong-user-id"))
                 .isInstanceOf(ResponseStatusException.class);
     }
 

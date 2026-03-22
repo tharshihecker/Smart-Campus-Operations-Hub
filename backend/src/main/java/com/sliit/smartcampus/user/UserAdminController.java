@@ -29,14 +29,14 @@ public class UserAdminController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> getUser(@PathVariable long id) {
+    public ResponseEntity<Map<String, Object>> getUser(@PathVariable String id) {
         return userRepository.findById(id)
                 .map(u -> ResponseEntity.ok(toMap(u)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}/role")
-    public ResponseEntity<?> updateRole(@PathVariable long id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> updateRole(@PathVariable String id, @RequestBody Map<String, String> body) {
         return userRepository.findById(id)
                 .map(u -> {
                     try {
@@ -52,7 +52,7 @@ public class UserAdminController {
     }
 
     @PutMapping("/{id}/toggle-status")
-    public ResponseEntity<?> toggleStatus(@PathVariable long id) {
+    public ResponseEntity<?> toggleStatus(@PathVariable String id) {
         return userRepository.findById(id)
                 .map(u -> {
                     u.setEnabled(!u.isEnabled());
@@ -64,7 +64,7 @@ public class UserAdminController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable long id) {
+    public void deleteUser(@PathVariable String id) {
         if (!userRepository.existsById(id)) {
             throw new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }

@@ -7,10 +7,10 @@ import java.time.LocalTime;
 
 public class BookingRequest {
     @NotNull
-    private Long facilityId;
+    private String facilityId;
 
     @NotNull
-    private Long userId;
+    private String userId;
 
     @NotNull
     private LocalDate bookingDate;
@@ -27,10 +27,10 @@ public class BookingRequest {
     private String notes;
     private Integer attendeeCount;
 
-    public Long getFacilityId() { return facilityId; }
-    public void setFacilityId(Long facilityId) { this.facilityId = facilityId; }
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
+    public String getFacilityId() { return facilityId; }
+    public void setFacilityId(String facilityId) { this.facilityId = facilityId; }
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
     public LocalDate getBookingDate() { return bookingDate; }
     public void setBookingDate(LocalDate bookingDate) { this.bookingDate = bookingDate; }
     public LocalTime getStartTime() { return startTime; }

@@ -70,7 +70,7 @@ function AssignModal({ ticket, technicians, onClose, onUpdated }) {
 
   const submit = async e => {
     e.preventDefault(); setLoading(true);
-    try { const updated = await assignIncidentTechnician(ticket.id, parseInt(techId)); onUpdated(updated); onClose(); }
+    try { const updated = await assignIncidentTechnician(ticket.id, techId); onUpdated(updated); onClose(); }
     catch {} finally { setLoading(false); }
   };
 

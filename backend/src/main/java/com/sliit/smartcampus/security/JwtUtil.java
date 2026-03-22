@@ -21,7 +21,7 @@ public class JwtUtil {
         this.expirationMs = expirationMs;
     }
 
-    public String generateToken(String username, String role, Long userId) {
+    public String generateToken(String username, String role, String userId) {
         return Jwts.builder()
                 .subject(username)
                 .claim("role", role)
@@ -40,10 +40,9 @@ public class JwtUtil {
         return (String) parseClaims(token).get("role");
     }
 
-    public Long extractUserId(String token) {
+    public String extractUserId(String token) {
         Object userId = parseClaims(token).get("userId");
-        if (userId instanceof Integer i) return i.longValue();
-        return (Long) userId;
+        return userId != null ? String.valueOf(userId) : null;
     }
 
     public boolean validateToken(String token) {

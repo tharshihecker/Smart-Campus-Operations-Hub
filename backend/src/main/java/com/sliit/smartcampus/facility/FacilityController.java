@@ -29,7 +29,7 @@ public class FacilityController {
     }
 
     @GetMapping("/{id}")
-    public FacilityResponse getById(@PathVariable long id) {
+    public FacilityResponse getById(@PathVariable String id) {
         return facilityService.getById(id);
     }
 

@@ -89,7 +89,7 @@ function Facilities() {
     try {
       await createBooking({
         facilityId: bookingFacility.id,
-        userId: Number(userId),
+        userId: userId,
         ...bookingForm,
       });
       setBookingMsg({ type: 'success', text: 'Booking submitted! Awaiting admin approval.' });

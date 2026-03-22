@@ -27,7 +27,7 @@ public class CampusEventAdminController {
     }
 
     @PutMapping("/{id}")
-    public CampusEvent update(@PathVariable long id, @RequestBody CampusEvent event) {
+    public CampusEvent update(@PathVariable String id, @RequestBody CampusEvent event) {
         CampusEvent existing = eventRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
         existing.setTitle(event.getTitle());
@@ -39,7 +39,7 @@ public class CampusEventAdminController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable long id) {
+    public void delete(@PathVariable String id) {
         if (!eventRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found");
         }

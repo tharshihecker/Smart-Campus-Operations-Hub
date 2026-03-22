@@ -1,7 +1,9 @@
 package com.sliit.smartcampus.incident;
 
 import com.sliit.smartcampus.user.User;
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -9,84 +11,66 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "incident_tickets")
+@Document(collection = "incident_tickets")
 public class IncidentTicket {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "reporter_id", nullable = false)
+    @DBRef
     private User reporter;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "assignee_id")
+    @DBRef
     private User assignee;
 
     @NotBlank
-    @Column(nullable = false)
     private String title;
 
     @NotBlank
-    @Column(nullable = false, length = 2000)
     private String description;
 
     @NotBlank
-    @Column(nullable = false, length = 100)
     private String category;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private TicketPriority priority = TicketPriority.MEDIUM;
 
     @NotBlank
-    @Column(nullable = false, length = 200)
     private String location;
 
-    @Column(length = 200)
     private String contactDetails;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private TicketStatus status = TicketStatus.OPEN;
 
-    @Column(length = 2000)
     private String resolutionNotes;
 
-    @Column(length = 500)
     private String rejectionReason;
 
     // SLA tracking
     private LocalDateTime firstResponseAt;  // First time status moves from OPEN
     private LocalDateTime resolvedAt;        // When status becomes RESOLVED
 
-    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
+    @DBRef
     private List<TicketAttachment> attachments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
+    @DBRef
     private List<TicketComment> comments = new ArrayList<>();
 
-    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
+    public void setCreatedAt() {
+        if(createdAt == null) createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
 
-    @PreUpdate
-    protected void onUpdate() {
+    public void setUpdatedAt() {
         updatedAt = LocalDateTime.now();
     }
 
     // Getters and Setters
-    public Long getId() { return id; }
+    public String getId() { return id; }
     public User getReporter() { return reporter; }
     public void setReporter(User reporter) { this.reporter = reporter; }
     public User getAssignee() { return assignee; }

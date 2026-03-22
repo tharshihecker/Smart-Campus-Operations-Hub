@@ -1,49 +1,40 @@
 package com.sliit.smartcampus.notification;
 
 import com.sliit.smartcampus.user.User;
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "notifications")
+@Document(collection = "notifications")
 public class Notification {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @DBRef
     private User user;
 
-    @Column(nullable = false, length = 200)
     private String title;
 
-    @Column(nullable = false, length = 1000)
     private String message;
 
-    @Column(nullable = false, length = 30)
-    @Enumerated(EnumType.STRING)
     private NotificationType type;
 
-    @Column(name = "is_read", nullable = false)
     private boolean isRead = false;
 
     // Reference to the related entity (booking ID or ticket ID)
-    private Long referenceId;
+    private String referenceId;
 
-    @Column(length = 50)
     private String referenceType; // "BOOKING" or "TICKET"
 
-    @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    @PrePersist
-    void onCreate() { createdAt = LocalDateTime.now(); }
+    public void setCreatedAt() { if (createdAt == null) createdAt = LocalDateTime.now(); }
 
     // Getters and Setters
-    public Long getId() { return id; }
+    public String getId() { return id; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
     public String getTitle() { return title; }
@@ -54,8 +45,8 @@ public class Notification {
     public void setType(NotificationType type) { this.type = type; }
     public boolean isRead() { return isRead; }
     public void setRead(boolean isRead) { this.isRead = isRead; }
-    public Long getReferenceId() { return referenceId; }
-    public void setReferenceId(Long referenceId) { this.referenceId = referenceId; }
+    public String getReferenceId() { return referenceId; }
+    public void setReferenceId(String referenceId) { this.referenceId = referenceId; }
     public String getReferenceType() { return referenceType; }
     public void setReferenceType(String referenceType) { this.referenceType = referenceType; }
     public LocalDateTime getCreatedAt() { return createdAt; }

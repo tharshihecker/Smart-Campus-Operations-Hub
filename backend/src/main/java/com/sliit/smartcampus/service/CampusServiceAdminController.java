@@ -27,7 +27,7 @@ public class CampusServiceAdminController {
     }
 
     @PutMapping("/{id}")
-    public CampusServiceItem update(@PathVariable long id, @RequestBody CampusServiceItem item) {
+    public CampusServiceItem update(@PathVariable String id, @RequestBody CampusServiceItem item) {
         CampusServiceItem existing = serviceRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Service not found"));
         existing.setTitle(item.getTitle());
@@ -38,7 +38,7 @@ public class CampusServiceAdminController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable long id) {
+    public void delete(@PathVariable String id) {
         if (!serviceRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Service not found");
         }

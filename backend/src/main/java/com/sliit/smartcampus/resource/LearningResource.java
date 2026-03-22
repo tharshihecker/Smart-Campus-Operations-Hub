@@ -1,21 +1,17 @@
 package com.sliit.smartcampus.resource;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
-@Table(name = "learning_resources")
+@Document(collection = "learning_resources")
 public class LearningResource {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, length = 1000)
     private String description;
 
-    @Column(nullable = false)
     private String category;
 
     public LearningResource() {
@@ -27,7 +23,7 @@ public class LearningResource {
         this.category = category;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 

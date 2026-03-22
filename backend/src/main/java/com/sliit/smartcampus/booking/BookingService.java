@@ -34,7 +34,7 @@ public class BookingService {
     }
 
     public BookingResponse createBooking(BookingRequest request) {
-        Long facilityId = request.getFacilityId();
+        String facilityId = request.getFacilityId();
         if (facilityId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "facilityId is required");
 
         Facility facility = facilityRepository.findById(facilityId)
@@ -45,7 +45,7 @@ public class BookingService {
                     "Facility is not available for booking (status: " + facility.getStatus() + ")");
         }
 
-        Long userId = request.getUserId();
+        String userId = request.getUserId();
         if (userId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId is required");
 
         User user = userRepository.findById(userId)
@@ -92,13 +92,13 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public List<BookingResponse> getUserBookings(long userId) {
+    public List<BookingResponse> getUserBookings(String userId) {
         return bookingRepository.findByUserIdOrderByBookingDateDescStartTimeDesc(userId)
                 .stream().map(BookingResponse::from).toList();
     }
 
     @Transactional(readOnly = true)
-    public List<BookingResponse> getFacilityBookings(long facilityId) {
+    public List<BookingResponse> getFacilityBookings(String facilityId) {
         return bookingRepository.findByFacilityIdOrderByBookingDateDesc(facilityId)
                 .stream().map(BookingResponse::from).toList();
     }
@@ -115,7 +115,7 @@ public class BookingService {
                 .stream().map(BookingResponse::from).toList();
     }
 
-    public BookingResponse cancelBooking(long bookingId, long userId) {
+    public BookingResponse cancelBooking(String bookingId, String userId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
 
@@ -131,7 +131,7 @@ public class BookingService {
         return BookingResponse.from(bookingRepository.save(booking));
     }
 
-    public BookingResponse updateBookingStatus(long bookingId, BookingStatus newStatus, String adminRemarks) {
+    public BookingResponse updateBookingStatus(String bookingId, BookingStatus newStatus, String adminRemarks) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
 
@@ -167,7 +167,7 @@ public class BookingService {
         return BookingResponse.from(saved);
     }
 
-    public void deleteBooking(long bookingId) {
+    public void deleteBooking(String bookingId) {
         if (!bookingRepository.existsById(bookingId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found");
         }

@@ -11,15 +11,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${file.upload-dir}")
-    private String uploadDir;
-
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Serve uploaded files (ticket attachments)
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + System.getProperty("user.dir") + "/" + uploadDir);
-    }
+    // Local file serving removed, using Cloudinary
 
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {

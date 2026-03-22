@@ -25,7 +25,7 @@ public class BookingAdminController {
 
     @PutMapping("/{bookingId}/status")
     public BookingResponse updateStatus(
-            @PathVariable long bookingId,
+            @PathVariable String bookingId,
             @RequestBody Map<String, String> body) {
         BookingStatus newStatus = BookingStatus.valueOf(body.get("status"));
         String adminRemarks = body.get("adminRemarks");
@@ -34,7 +34,7 @@ public class BookingAdminController {
 
     @DeleteMapping("/{bookingId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable long bookingId) {
+    public void delete(@PathVariable String bookingId) {
         bookingService.deleteBooking(bookingId);
     }
 

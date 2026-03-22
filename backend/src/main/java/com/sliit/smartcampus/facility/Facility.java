@@ -1,6 +1,7 @@
 package com.sliit.smartcampus.facility;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -8,49 +9,37 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalTime;
 
-@Entity
-@Table(name = "facilities")
+@Document(collection = "facilities")
 public class Facility {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     @NotBlank
-    @Column(nullable = false)
     private String name;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
     private ResourceType type;
 
     @NotNull
     @Min(1)
     @Max(10000)
-    @Column(nullable = false)
     private Integer capacity;
 
     @NotBlank
-    @Column(nullable = false)
     private String location;
 
     @NotNull
-    @Column(nullable = false)
     private LocalTime availableFrom;
 
     @NotNull
-    @Column(nullable = false)
     private LocalTime availableTo;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
     private ResourceStatus status;
 
-    @Column(nullable = false, length = 1000)
     private String description;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 

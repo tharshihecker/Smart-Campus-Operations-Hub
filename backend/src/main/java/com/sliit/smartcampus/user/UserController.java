@@ -69,7 +69,7 @@ public class UserController {
     }
 
     @GetMapping("/profile/{userId}")
-    public ResponseEntity<?> getProfile(@PathVariable Long userId) {
+    public ResponseEntity<?> getProfile(@PathVariable String userId) {
         return userRepository.findById(userId)
                 .map(u -> {
                     Map<String, Object> map = new java.util.HashMap<>();
@@ -92,7 +92,7 @@ public class UserController {
     }
 
     @PutMapping("/profile/{userId}")
-    public ResponseEntity<?> updateProfile(@PathVariable Long userId, @RequestBody Map<String, String> updates) {
+    public ResponseEntity<?> updateProfile(@PathVariable String userId, @RequestBody Map<String, String> updates) {
         return userRepository.findById(userId)
                 .map(u -> {
                     if (updates.containsKey("fullName")) u.setFullName(updates.get("fullName"));
@@ -102,7 +102,7 @@ public class UserController {
                     if (updates.containsKey("email")) {
                         String newEmail = updates.get("email").trim();
                         var existing = userRepository.findByEmailIgnoreCase(newEmail);
-                        Long existingId = existing.map(User::getId).orElse(null);
+                        String existingId = existing.map(User::getId).orElse(null);
                         if (existingId != null && !existingId.equals(userId)) {
                             return ResponseEntity.badRequest().body((Object) "Email already in use");
                         }
@@ -115,7 +115,7 @@ public class UserController {
     }
 
     @PutMapping("/change-password/{userId}")
-    public ResponseEntity<?> changePassword(@PathVariable Long userId, @RequestBody Map<String, String> payload) {
+    public ResponseEntity<?> changePassword(@PathVariable String userId, @RequestBody Map<String, String> payload) {
         String currentPassword = payload.get("currentPassword");
         String newPassword = payload.get("newPassword");
 
@@ -136,7 +136,7 @@ public class UserController {
     }
 
     @PutMapping("/notification-prefs/{userId}")
-    public ResponseEntity<?> updateNotificationPrefs(@PathVariable Long userId,
+    public ResponseEntity<?> updateNotificationPrefs(@PathVariable String userId,
                                                       @RequestBody Map<String, Boolean> prefs) {
         return userRepository.findById(userId)
                 .map(u -> {

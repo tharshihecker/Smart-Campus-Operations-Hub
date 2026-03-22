@@ -27,13 +27,13 @@ public class IncidentAdminController {
 
     /** GET /api/admin/incidents/{id} */
     @GetMapping("/{id}")
-    public ResponseEntity<IncidentTicketResponse> getTicket(@PathVariable Long id) {
+    public ResponseEntity<IncidentTicketResponse> getTicket(@PathVariable String id) {
         return ResponseEntity.ok(incidentTicketService.getTicketById(id));
     }
 
     /** PUT /api/admin/incidents/{id}/status – Update ticket status */
     @PutMapping("/{id}/status")
-    public ResponseEntity<IncidentTicketResponse> updateStatus(@PathVariable Long id,
+    public ResponseEntity<IncidentTicketResponse> updateStatus(@PathVariable String id,
                                                                @RequestBody Map<String, String> body) {
         TicketStatus status = TicketStatus.valueOf(body.get("status"));
         String notes = body.get("resolutionNotes");
@@ -43,25 +43,25 @@ public class IncidentAdminController {
 
     /** PUT /api/admin/incidents/{id}/assign – Assign technician */
     @PutMapping("/{id}/assign")
-    public ResponseEntity<IncidentTicketResponse> assignTechnician(@PathVariable Long id,
-                                                                    @RequestBody Map<String, Long> body) {
-        Long techId = body.get("technicianId");
+    public ResponseEntity<IncidentTicketResponse> assignTechnician(@PathVariable String id,
+                                                                    @RequestBody Map<String, String> body) {
+        String techId = body.get("technicianId");
         return ResponseEntity.ok(incidentTicketService.assignTechnician(id, techId));
     }
 
     /** POST /api/admin/incidents/{id}/comments – Admin add comment */
     @PostMapping("/{id}/comments")
-    public ResponseEntity<TicketCommentResponse> addComment(@PathVariable Long id,
+    public ResponseEntity<TicketCommentResponse> addComment(@PathVariable String id,
                                                             @RequestBody Map<String, String> body,
-                                                            @RequestParam Long adminId) {
+                                                            @RequestParam String adminId) {
         return ResponseEntity.status(201).body(
                 incidentTicketService.addComment(id, body.get("content"), adminId));
     }
 
     /** DELETE /api/admin/incidents/comments/{commentId} */
     @DeleteMapping("/comments/{commentId}")
-    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId,
-                                              @RequestParam Long adminId) {
+    public ResponseEntity<Void> deleteComment(@PathVariable String commentId,
+                                              @RequestParam String adminId) {
         incidentTicketService.deleteComment(commentId, adminId, true);
         return ResponseEntity.noContent().build();
     }

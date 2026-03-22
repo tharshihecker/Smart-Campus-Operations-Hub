@@ -141,7 +141,7 @@ function TicketDetailPanel({ ticket, onClose, onUpdate }) {
   const [editingId, setEditingId] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [addingComment, setAddingComment] = useState(false);
-  const currentUserId = parseInt(localStorage.getItem('smartcampus_user_id') || '0');
+  const currentUserId = localStorage.getItem('smartcampus_user_id');
 
   const loadComments = useCallback(async () => {
     try { setComments(await fetchIncidentComments(ticket.id)); } catch {}
@@ -215,8 +215,8 @@ function TicketDetailPanel({ ticket, onClose, onUpdate }) {
               <p style={{ color: '#64748b', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>ATTACHMENTS</p>
               <div style={{ display: 'flex', gap: 8 }}>
                 {ticket.attachmentUrls.map((url, i) => (
-                  <a key={i} href={`http://localhost:8080${url}`} target="_blank" rel="noreferrer">
-                    <img src={`http://localhost:8080${url}`} alt={`attachment-${i+1}`}
+                  <a key={i} href={url} target="_blank" rel="noreferrer">
+                    <img src={url} alt={`attachment-${i+1}`}
                       style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)' }}
                       onError={e => e.target.style.display='none'} />
                   </a>
