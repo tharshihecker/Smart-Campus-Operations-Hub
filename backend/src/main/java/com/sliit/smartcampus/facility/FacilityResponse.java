@@ -3,7 +3,7 @@ package com.sliit.smartcampus.facility;
 import java.time.LocalTime;
 
 public record FacilityResponse(
-        Long id,
+        String id,
         String name,
         ResourceType type,
         Integer capacity,

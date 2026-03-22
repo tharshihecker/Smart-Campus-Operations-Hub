@@ -41,17 +41,17 @@ public class BookingController {
     }
 
     @GetMapping("/user/{userId}")
-    public List<BookingResponse> getUserBookings(@PathVariable long userId) {
+    public List<BookingResponse> getUserBookings(@PathVariable String userId) {
         return bookingService.getUserBookings(userId);
     }
 
     @GetMapping("/facility/{facilityId}")
-    public List<BookingResponse> getFacilityBookings(@PathVariable long facilityId) {
+    public List<BookingResponse> getFacilityBookings(@PathVariable String facilityId) {
         return bookingService.getFacilityBookings(facilityId);
     }
 
     @PutMapping("/{bookingId}/cancel")
-    public BookingResponse cancel(@PathVariable long bookingId, @RequestParam long userId) {
+    public BookingResponse cancel(@PathVariable String bookingId, @RequestParam String userId) {
         return bookingService.cancelBooking(bookingId, userId);
     }
 
@@ -60,7 +60,7 @@ public class BookingController {
      * The QR encodes: "SMARTCAMPUS-BOOKING:{bookingId}:{facilityName}:{date}"
      */
     @GetMapping("/{bookingId}/qr")
-    public ResponseEntity<?> getBookingQR(@PathVariable long bookingId, Authentication auth) {
+    public ResponseEntity<?> getBookingQR(@PathVariable String bookingId, Authentication auth) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
 
@@ -70,7 +70,7 @@ public class BookingController {
 
         try {
             String qrContent = String.format(
-                    "SMARTCAMPUS-BOOKING\nID: %d\nFacility: %s\nDate: %s\nTime: %s - %s\nUser: %s",
+                    "SMARTCAMPUS-BOOKING\nID: %s\nFacility: %s\nDate: %s\nTime: %s - %s\nUser: %s",
                     booking.getId(),
                     booking.getFacility().getName(),
                     booking.getBookingDate(),
@@ -102,7 +102,7 @@ public class BookingController {
      * Only valid on the actual booking date.
      */
     @PostMapping("/{bookingId}/checkin")
-    public ResponseEntity<?> checkIn(@PathVariable long bookingId, @RequestParam long userId) {
+    public ResponseEntity<?> checkIn(@PathVariable String bookingId, @RequestParam String userId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
 

@@ -2,67 +2,54 @@ package com.sliit.smartcampus.booking;
 
 import com.sliit.smartcampus.facility.Facility;
 import com.sliit.smartcampus.user.User;
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-@Entity
-@Table(name = "bookings")
+@Document(collection = "bookings")
 public class Booking {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "facility_id", nullable = false)
+    @DBRef
     private Facility facility;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id", nullable = false)
+    @DBRef
     private User user;
 
-    @Column(nullable = false)
     private LocalDate bookingDate;
 
-    @Column(nullable = false)
     private LocalTime startTime;
 
-    @Column(nullable = false)
     private LocalTime endTime;
 
-    @Column(length = 500)
     private String purpose;
 
-    @Column(length = 300)
     private String notes;
 
     private Integer attendeeCount;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private BookingStatus status = BookingStatus.PENDING;
 
-    @Column(length = 500)
     private String adminRemarks;
 
-    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
+    public void setCreatedAt() {
+        if(createdAt == null) createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
 
-    @PreUpdate
-    protected void onUpdate() {
+    public void setUpdatedAt() {
         updatedAt = LocalDateTime.now();
     }
 
-    public Long getId() { return id; }
+    public String getId() { return id; }
     public Facility getFacility() { return facility; }
     public void setFacility(Facility facility) { this.facility = facility; }
     public User getUser() { return user; }

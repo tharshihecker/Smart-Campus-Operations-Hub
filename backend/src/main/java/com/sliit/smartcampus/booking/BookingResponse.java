@@ -5,11 +5,11 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 public record BookingResponse(
-        Long id,
-        Long facilityId,
+        String id,
+        String facilityId,
         String facilityName,
         String facilityLocation,
-        Long userId,
+        String userId,
         String userName,
         LocalDate bookingDate,
         LocalTime startTime,

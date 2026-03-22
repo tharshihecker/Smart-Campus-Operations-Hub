@@ -57,11 +57,11 @@ public class AnalyticsController {
 
         // ── Top 5 facilities by booking count ──
         List<Booking> allBookings = bookingRepository.findAllByOrderByCreatedAtDesc();
-        Map<Long, Long> facilityBookingCount = allBookings.stream()
+        Map<String, Long> facilityBookingCount = allBookings.stream()
                 .collect(Collectors.groupingBy(b -> b.getFacility().getId(), Collectors.counting()));
 
         List<Map<String, Object>> topFacilities = facilityBookingCount.entrySet().stream()
-                .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(5)
                 .map(e -> {
                     Optional<Facility> fOpt = facilityRepository.findById(e.getKey());

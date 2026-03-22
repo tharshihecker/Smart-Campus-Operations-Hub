@@ -1,11 +1,11 @@
 package com.sliit.smartcampus.incident;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface TicketCommentRepository extends JpaRepository<TicketComment, Long> {
-    List<TicketComment> findByTicketIdAndDeletedFalseOrderByCreatedAtAsc(Long ticketId);
+public interface TicketCommentRepository extends MongoRepository<TicketComment, String> {
+    List<TicketComment> findByTicketIdAndDeletedFalseOrderByCreatedAtAsc(String ticketId);
 }

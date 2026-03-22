@@ -20,13 +20,13 @@ public class FacilityAdminController {
     }
 
     @PutMapping("/{id}")
-    public FacilityResponse update(@PathVariable long id, @Valid @RequestBody FacilityRequest request) {
+    public FacilityResponse update(@PathVariable String id, @Valid @RequestBody FacilityRequest request) {
         return facilityService.update(id, request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable long id) {
+    public void delete(@PathVariable String id) {
         facilityService.delete(id);
     }
 }

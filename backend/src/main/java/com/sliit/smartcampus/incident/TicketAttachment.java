@@ -1,32 +1,28 @@
 package com.sliit.smartcampus.incident;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
-@Table(name = "ticket_attachments")
+@Document(collection = "ticket_attachments")
 public class TicketAttachment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ticket_id", nullable = false)
+    @DBRef
     private IncidentTicket ticket;
 
-    @Column(nullable = false)
     private String fileName;
 
-    @Column(nullable = false)
     private String filePath;
 
-    @Column(nullable = false, length = 50)
     private String contentType;
 
     private Long fileSize;
 
     // Getters and Setters
-    public Long getId() { return id; }
+    public String getId() { return id; }
     public IncidentTicket getTicket() { return ticket; }
     public void setTicket(IncidentTicket ticket) { this.ticket = ticket; }
     public String getFileName() { return fileName; }

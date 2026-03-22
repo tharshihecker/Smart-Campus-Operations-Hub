@@ -1,7 +1,6 @@
 package com.sliit.smartcampus.facility;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface FacilityRepository extends JpaRepository<Facility, Long>, JpaSpecificationExecutor<Facility> {
+public interface FacilityRepository extends MongoRepository<Facility, String> {
 }

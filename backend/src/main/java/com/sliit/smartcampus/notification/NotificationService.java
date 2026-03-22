@@ -18,7 +18,7 @@ public class NotificationService {
     }
 
     public void createNotification(User user, String title, String message,
-                                    NotificationType type, Long referenceId, String referenceType) {
+                                    NotificationType type, String referenceId, String referenceType) {
         Notification n = new Notification();
         n.setUser(user);
         n.setTitle(title);
@@ -30,17 +30,17 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
-    public List<NotificationResponse> getUserNotifications(Long userId) {
+    public List<NotificationResponse> getUserNotifications(String userId) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
                 .stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
-    public long getUnreadCount(Long userId) {
+    public long getUnreadCount(String userId) {
         return notificationRepository.countByUserIdAndIsReadFalse(userId);
     }
 
-    public void markAsRead(Long notificationId, Long userId) {
+    public void markAsRead(String notificationId, String userId) {
         Notification n = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new IllegalArgumentException("Notification not found"));
         if (!n.getUser().getId().equals(userId)) {
@@ -50,13 +50,13 @@ public class NotificationService {
         notificationRepository.save(n);
     }
 
-    public void markAllAsRead(Long userId) {
+    public void markAllAsRead(String userId) {
         List<Notification> unread = notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId);
         unread.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(unread);
     }
 
-    public void deleteNotification(Long notificationId, Long userId) {
+    public void deleteNotification(String notificationId, String userId) {
         Notification n = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new IllegalArgumentException("Notification not found"));
         if (!n.getUser().getId().equals(userId)) {

@@ -1,24 +1,19 @@
 package com.sliit.smartcampus.event;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
-@Table(name = "campus_events")
+@Document(collection = "campus_events")
 public class CampusEvent {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, length = 1000)
     private String description;
 
-    @Column(nullable = false)
     private String eventDate;
 
-    @Column(nullable = false)
     private String location;
 
     public CampusEvent() {
@@ -31,7 +26,7 @@ public class CampusEvent {
         this.location = location;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 

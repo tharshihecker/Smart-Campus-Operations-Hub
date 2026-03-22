@@ -3,6 +3,7 @@ package com.sliit.smartcampus.incident;
 import com.sliit.smartcampus.exception.ResourceNotFoundException;
 import com.sliit.smartcampus.notification.NotificationService;
 import com.sliit.smartcampus.notification.NotificationType;
+import com.sliit.smartcampus.service.CloudinaryService;
 import com.sliit.smartcampus.user.User;
 import com.sliit.smartcampus.user.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,9 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,21 +23,21 @@ public class IncidentTicketService {
     private final TicketCommentRepository commentRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
-
-    @Value("${file.upload-dir}")
-    private String uploadDir;
+    private final CloudinaryService cloudinaryService;
 
     public IncidentTicketService(IncidentTicketRepository ticketRepository,
                                   TicketCommentRepository commentRepository,
                                   UserRepository userRepository,
-                                  NotificationService notificationService) {
+                                  NotificationService notificationService,
+                                  CloudinaryService cloudinaryService) {
         this.ticketRepository = ticketRepository;
         this.commentRepository = commentRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.cloudinaryService = cloudinaryService;
     }
 
-    public IncidentTicketResponse createTicket(IncidentTicketRequest request, Long reporterId, List<MultipartFile> files) {
+    public IncidentTicketResponse createTicket(IncidentTicketRequest request, String reporterId, List<MultipartFile> files) {
         User reporter = userRepository.findById(reporterId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", reporterId));
 
@@ -76,13 +74,13 @@ public class IncidentTicketService {
     }
 
     @Transactional(readOnly = true)
-    public List<IncidentTicketResponse> getMyTickets(Long userId) {
+    public List<IncidentTicketResponse> getMyTickets(String userId) {
         return ticketRepository.findByReporterIdOrderByCreatedAtDesc(userId)
                 .stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
-    public IncidentTicketResponse getTicketById(Long ticketId) {
+    public IncidentTicketResponse getTicketById(String ticketId) {
         return toResponse(findTicketOrThrow(ticketId));
     }
 
@@ -90,17 +88,20 @@ public class IncidentTicketService {
     public List<IncidentTicketResponse> getAllTickets(String status, String priority, String category) {
         TicketStatus ts = status != null ? TicketStatus.valueOf(status) : null;
         TicketPriority tp = priority != null ? TicketPriority.valueOf(priority) : null;
-        return ticketRepository.findWithFilters(ts, tp, category)
-                .stream().map(this::toResponse).toList();
+        return ticketRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(t -> ts == null || t.getStatus() == ts)
+                .filter(t -> tp == null || t.getPriority() == tp)
+                .filter(t -> category == null || category.isBlank() || t.getCategory().toLowerCase().contains(category.toLowerCase()))
+                .map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
-    public List<IncidentTicketResponse> getAssignedTickets(Long technicianId) {
+    public List<IncidentTicketResponse> getAssignedTickets(String technicianId) {
         return ticketRepository.findByAssigneeIdOrderByCreatedAtDesc(technicianId)
                 .stream().map(this::toResponse).toList();
     }
 
-    public IncidentTicketResponse updateStatus(Long ticketId, TicketStatus newStatus, String notes, String rejectionReason) {
+    public IncidentTicketResponse updateStatus(String ticketId, TicketStatus newStatus, String notes, String rejectionReason) {
         IncidentTicket ticket = findTicketOrThrow(ticketId);
         TicketStatus oldStatus = ticket.getStatus();
 
@@ -132,7 +133,7 @@ public class IncidentTicketService {
         return toResponse(saved);
     }
 
-    public IncidentTicketResponse assignTechnician(Long ticketId, Long technicianId) {
+    public IncidentTicketResponse assignTechnician(String ticketId, String technicianId) {
         IncidentTicket ticket = findTicketOrThrow(ticketId);
         User technician = userRepository.findById(technicianId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", technicianId));
@@ -158,7 +159,7 @@ public class IncidentTicketService {
         return toResponse(saved);
     }
 
-    public TicketCommentResponse addComment(Long ticketId, String content, Long authorId) {
+    public TicketCommentResponse addComment(String ticketId, String content, String authorId) {
         IncidentTicket ticket = findTicketOrThrow(ticketId);
         User author = userRepository.findById(authorId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", authorId));
@@ -183,7 +184,7 @@ public class IncidentTicketService {
         return toCommentResponse(saved);
     }
 
-    public TicketCommentResponse editComment(Long commentId, String content, Long authorId) {
+    public TicketCommentResponse editComment(String commentId, String content, String authorId) {
         TicketComment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment", commentId));
         if (!comment.getAuthor().getId().equals(authorId)) {
@@ -193,7 +194,7 @@ public class IncidentTicketService {
         return toCommentResponse(commentRepository.save(comment));
     }
 
-    public void deleteComment(Long commentId, Long authorId, boolean isAdmin) {
+    public void deleteComment(String commentId, String authorId, boolean isAdmin) {
         TicketComment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment", commentId));
         if (!isAdmin && !comment.getAuthor().getId().equals(authorId)) {
@@ -204,34 +205,25 @@ public class IncidentTicketService {
     }
 
     @Transactional(readOnly = true)
-    public List<TicketCommentResponse> getComments(Long ticketId) {
+    public List<TicketCommentResponse> getComments(String ticketId) {
         return commentRepository.findByTicketIdAndDeletedFalseOrderByCreatedAtAsc(ticketId)
                 .stream().map(this::toCommentResponse).toList();
     }
 
-    private IncidentTicket findTicketOrThrow(Long ticketId) {
+    private IncidentTicket findTicketOrThrow(String ticketId) {
         return ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new ResourceNotFoundException("IncidentTicket", ticketId));
     }
 
     private TicketAttachment saveAttachment(MultipartFile file, IncidentTicket ticket) throws IOException {
-        String uploadPath = uploadDir + "tickets/" + ticket.getId() + "/";
-        Path dirPath = Paths.get(uploadPath);
-        Files.createDirectories(dirPath);
+        String secureUrl = cloudinaryService.uploadImage(file);
 
         String originalName = file.getOriginalFilename();
-        String ext = "";
-        if (originalName != null && originalName.contains(".")) {
-            ext = originalName.substring(originalName.lastIndexOf("."));
-        }
-        String uniqueName = UUID.randomUUID() + ext;
-        Path filePath = dirPath.resolve(uniqueName);
-        Files.copy(file.getInputStream(), filePath);
 
         TicketAttachment att = new TicketAttachment();
         att.setTicket(ticket);
         att.setFileName(originalName);
-        att.setFilePath(uploadPath + uniqueName);
+        att.setFilePath(secureUrl);
         att.setContentType(file.getContentType());
         att.setFileSize(file.getSize());
         return att;
@@ -239,7 +231,7 @@ public class IncidentTicketService {
 
     private IncidentTicketResponse toResponse(IncidentTicket t) {
         List<String> attachmentUrls = t.getAttachments().stream()
-                .map(a -> "/uploads/tickets/" + t.getId() + "/" + Paths.get(a.getFilePath()).getFileName().toString())
+                .map(TicketAttachment::getFilePath)
                 .toList();
 
         List<TicketCommentResponse> comments = commentRepository

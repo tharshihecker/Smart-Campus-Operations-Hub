@@ -1,34 +1,31 @@
 package com.sliit.smartcampus.booking;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-public interface BookingRepository extends JpaRepository<Booking, Long> {
-    List<Booking> findByUserIdOrderByBookingDateDescStartTimeDesc(long userId);
-    List<Booking> findByFacilityIdOrderByBookingDateDesc(long facilityId);
+public interface BookingRepository extends MongoRepository<Booking, String> {
+    List<Booking> findByUserIdOrderByBookingDateDescStartTimeDesc(String userId);
+    List<Booking> findByFacilityIdOrderByBookingDateDesc(String facilityId);
     List<Booking> findByStatusOrderByCreatedAtDesc(BookingStatus status);
     List<Booking> findAllByOrderByCreatedAtDesc();
 
     long countByStatus(BookingStatus status);
 
-    @Query("SELECT b FROM Booking b WHERE b.facility.id = :facilityId AND b.bookingDate = :date " +
-           "AND b.status IN ('PENDING','APPROVED') " +
-           "AND ((b.startTime < :endTime AND b.endTime > :startTime))")
+    @Query("{ 'facility.id': ?0, 'bookingDate': ?1, 'status': { $in: ['PENDING','APPROVED'] }, 'startTime': { $lt: ?3 }, 'endTime': { $gt: ?2 } }")
     List<Booking> findConflictingBookings(
-            @Param("facilityId") long facilityId,
-            @Param("date") LocalDate date,
-            @Param("startTime") LocalTime startTime,
-            @Param("endTime") LocalTime endTime
+            String facilityId,
+            LocalDate date,
+            LocalTime startTime,
+            LocalTime endTime
     );
 
-    @Query("SELECT COUNT(b) FROM Booking b WHERE b.bookingDate = :date AND b.status IN ('PENDING','APPROVED')")
-    long countBookingsForDate(@Param("date") LocalDate date);
+    @Query(value = "{ 'bookingDate': ?0, 'status': { $in: ['PENDING','APPROVED'] } }", count = true)
+    long countBookingsForDate(LocalDate date);
 
-    @Query("SELECT b FROM Booking b WHERE b.bookingDate >= :startDate AND b.bookingDate <= :endDate ORDER BY b.bookingDate, b.startTime")
-    List<Booking> findBookingsInRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    @Query(value = "{ 'bookingDate': { $gte: ?0, $lte: ?1 } }", sort = "{ 'bookingDate': 1, 'startTime': 1 }")
+    List<Booking> findBookingsInRange(LocalDate startDate, LocalDate endDate);
 }

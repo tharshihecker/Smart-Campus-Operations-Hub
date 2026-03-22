@@ -302,3 +302,13 @@
   .brand-block h1 { font-size: 0.95rem; }
   .auth-panel { padding: 24px 20px; }
 }
+
+/* ── Global Input Text Color Fix for White Backgrounds ────────────────── */
+input, select, textarea, option, input[type="file"] {
+  color: #000000 !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}

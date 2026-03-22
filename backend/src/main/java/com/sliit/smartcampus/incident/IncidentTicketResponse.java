@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record IncidentTicketResponse(
-        Long id,
+        String id,
         String title,
         String description,
         String category,
@@ -14,9 +14,9 @@ public record IncidentTicketResponse(
         String status,
         String resolutionNotes,
         String rejectionReason,
-        Long reporterId,
+        String reporterId,
         String reporterName,
-        Long assigneeId,
+        String assigneeId,
         String assigneeName,
         List<String> attachmentUrls,
         List<TicketCommentResponse> comments,

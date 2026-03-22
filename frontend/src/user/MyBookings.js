@@ -121,7 +121,7 @@ function MyBookings() {
     e.preventDefault();
     setFormLoading(true); setActionMsg({ type: '', text: '' });
     try {
-      await createBooking({ ...bookingForm, userId: Number(userId) });
+      await createBooking({ ...bookingForm, userId: userId });
       setActionMsg({ type: 'success', text: '✅ Booking submitted! Awaiting admin approval.' });
       setShowForm(false);
       setBookingForm({ facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });

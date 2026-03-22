@@ -1,52 +1,45 @@
 package com.sliit.smartcampus.incident;
 
 import com.sliit.smartcampus.user.User;
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 import jakarta.validation.constraints.NotBlank;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "ticket_comments")
+@Document(collection = "ticket_comments")
 public class TicketComment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ticket_id", nullable = false)
+    @DBRef
     private IncidentTicket ticket;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "author_id", nullable = false)
+    @DBRef
     private User author;
 
     @NotBlank
-    @Column(nullable = false, length = 2000)
     private String content;
 
-    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
-    @Column(nullable = false)
     private boolean deleted = false;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
+    public void setCreatedAt() {
+        if(createdAt == null) createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
 
-    @PreUpdate
-    protected void onUpdate() {
+    public void setUpdatedAt() {
         updatedAt = LocalDateTime.now();
     }
 
     // Getters and Setters
-    public Long getId() { return id; }
+    public String getId() { return id; }
     public IncidentTicket getTicket() { return ticket; }
     public void setTicket(IncidentTicket ticket) { this.ticket = ticket; }
     public User getAuthor() { return author; }

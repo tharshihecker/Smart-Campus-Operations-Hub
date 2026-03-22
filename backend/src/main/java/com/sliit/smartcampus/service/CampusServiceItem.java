@@ -1,21 +1,17 @@
 package com.sliit.smartcampus.service;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
-@Table(name = "campus_services")
+@Document(collection = "campus_services")
 public class CampusServiceItem {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, length = 1000)
     private String description;
 
-    @Column(nullable = false)
     private String status;
 
     public CampusServiceItem() {
@@ -27,7 +23,7 @@ public class CampusServiceItem {
         this.status = status;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 

@@ -1,6 +1,6 @@
 package com.sliit.smartcampus.event;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface CampusEventRepository extends JpaRepository<CampusEvent, Long> {
+public interface CampusEventRepository extends MongoRepository<CampusEvent, String> {
 }

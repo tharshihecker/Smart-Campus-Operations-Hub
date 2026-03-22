@@ -27,7 +27,7 @@ public class LearningResourceAdminController {
     }
 
     @PutMapping("/{id}")
-    public LearningResource update(@PathVariable long id, @RequestBody LearningResource resource) {
+    public LearningResource update(@PathVariable String id, @RequestBody LearningResource resource) {
         LearningResource existing = resourceRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found"));
         existing.setTitle(resource.getTitle());
@@ -38,7 +38,7 @@ public class LearningResourceAdminController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable long id) {
+    public void delete(@PathVariable String id) {
         if (!resourceRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found");
         }
