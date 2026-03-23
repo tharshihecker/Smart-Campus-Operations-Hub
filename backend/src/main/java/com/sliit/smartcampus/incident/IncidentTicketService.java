@@ -24,17 +24,20 @@ public class IncidentTicketService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final CloudinaryService cloudinaryService;
+    private final TicketAttachmentRepository attachmentRepository;
 
     public IncidentTicketService(IncidentTicketRepository ticketRepository,
                                   TicketCommentRepository commentRepository,
                                   UserRepository userRepository,
                                   NotificationService notificationService,
-                                  CloudinaryService cloudinaryService) {
+                                  CloudinaryService cloudinaryService,
+                                  TicketAttachmentRepository attachmentRepository) {
         this.ticketRepository = ticketRepository;
         this.commentRepository = commentRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.cloudinaryService = cloudinaryService;
+        this.attachmentRepository = attachmentRepository;
     }
 
     public IncidentTicketResponse createTicket(IncidentTicketRequest request, String reporterId, List<MultipartFile> files) {
@@ -50,6 +53,7 @@ public class IncidentTicketService {
         ticket.setLocation(request.getLocation());
         ticket.setContactDetails(request.getContactDetails());
         ticket.setStatus(TicketStatus.OPEN);
+        ticket.setCreatedAt();
 
         IncidentTicket saved = ticketRepository.save(ticket);
 
@@ -61,6 +65,7 @@ public class IncidentTicketService {
                 if (!file.isEmpty()) {
                     try {
                         TicketAttachment att = saveAttachment(file, saved);
+                        att = attachmentRepository.save(att);
                         saved.getAttachments().add(att);
                     } catch (IOException e) {
                         // log and continue
@@ -119,6 +124,7 @@ public class IncidentTicketService {
             ticket.setResolvedAt(java.time.LocalDateTime.now());
         }
 
+        ticket.setUpdatedAt();
         IncidentTicket saved = ticketRepository.save(ticket);
 
         // Notify reporter
@@ -145,6 +151,7 @@ public class IncidentTicketService {
                 ticket.setFirstResponseAt(java.time.LocalDateTime.now());
             }
         }
+        ticket.setUpdatedAt();
         IncidentTicket saved = ticketRepository.save(ticket);
 
         // Notify reporter
@@ -168,6 +175,7 @@ public class IncidentTicketService {
         comment.setTicket(ticket);
         comment.setAuthor(author);
         comment.setContent(content);
+        comment.setCreatedAt();
         TicketComment saved = commentRepository.save(comment);
 
         // Notify reporter if comment is by someone else
@@ -191,6 +199,7 @@ public class IncidentTicketService {
             throw new IllegalArgumentException("You can only edit your own comments");
         }
         comment.setContent(content);
+        comment.setUpdatedAt();
         return toCommentResponse(commentRepository.save(comment));
     }
 
@@ -201,6 +210,7 @@ public class IncidentTicketService {
             throw new IllegalArgumentException("You can only delete your own comments");
         }
         comment.setDeleted(true);
+        comment.setUpdatedAt();
         commentRepository.save(comment);
     }
 
