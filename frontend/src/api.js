@@ -203,6 +203,12 @@ export async function updateIncidentStatus(id, status, resolutionNotes, rejectio
 export async function assignIncidentTechnician(id, technicianId) {
   return sendJson("PUT", `/admin/incidents/${id}/assign`, { technicianId });
 }
+export async function addAdminIncidentComment(id, content, adminId) { 
+  return sendJson("POST", `/admin/incidents/${id}/comments?adminId=${adminId}`, { content }); 
+}
+export async function deleteAdminIncidentComment(commentId, adminId) { 
+  return sendJson("DELETE", `/admin/incidents/comments/${commentId}?adminId=${adminId}`); 
+}
 export async function fetchIncidentStatuses() { return fetchJson("/admin/incidents/statuses"); }
 export async function fetchIncidentPriorities() { return fetchJson("/admin/incidents/priorities"); }
 
