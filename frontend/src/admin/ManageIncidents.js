@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   fetchAllIncidents, updateIncidentStatus, assignIncidentTechnician,
   fetchAllUsers, fetchIncidentComments, addAdminIncidentComment,
@@ -8,11 +8,13 @@ import {
 const TICKET_STATUSES = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REJECTED'];
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 
+/* Statuses that are "terminal" — read-only, no editing */
+const TERMINAL = new Set(['CLOSED', 'REJECTED']);
+
 /* ─── Safe Date Parser (fixes 01/Jan/1970 bug) ─── */
 function safeDate(val) {
   if (!val) return null;
   if (typeof val === 'string') return new Date(val);
-  // epoch-seconds (10-digit) → convert to ms
   const ms = typeof val === 'number' && val < 1e10 ? val * 1000 : val;
   return new Date(ms);
 }
@@ -31,7 +33,6 @@ function fmtDateTime(val) {
 const ADMIN_STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
   .adm-inc * { font-family: 'Inter', sans-serif !important; box-sizing: border-box; }
-  /* Fix dropdown dark bg */
   .adm-inc select { background-color: #ffffff !important; color: #111827 !important; }
   .adm-inc select option { background-color: #ffffff !important; color: #111827 !important; }
   .adm-inc table tr:hover td { background: #eff6ff !important; }
@@ -48,9 +49,11 @@ const ADMIN_STYLE = `
   .adm-priority-critical { animation: admPulse 1.8s infinite; }
   .adm-comment-card { transition: background 0.15s; }
   .adm-comment-card:hover { background: #f0f4ff !important; }
+  .adm-pulse-dot { animation: admDotPulse 2s infinite; }
   @keyframes admFadeIn { from{opacity:0;}to{opacity:1;} }
   @keyframes admSlideIn { from{transform:translateX(60px);opacity:0;}to{transform:translateX(0);opacity:1;} }
   @keyframes admPulse { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.35);}50%{box-shadow:0 0 0 6px rgba(220,38,38,0);} }
+  @keyframes admDotPulse { 0%,100%{opacity:1;}50%{opacity:0.3;} }
 `;
 
 function useAdminStyle() {
@@ -86,7 +89,7 @@ function PriorityBadge({ priority }) {
   );
 }
 
-/* ─── Simple Photo Modal — fixed size, no zoom controls ─── */
+/* ─── Simple Photo Modal ─── */
 function PhotoModal({ url, onClose }) {
   useEffect(() => {
     const h = e => { if (e.key === 'Escape') onClose(); };
@@ -95,21 +98,9 @@ function PhotoModal({ url, onClose }) {
   }, [onClose]);
 
   return (
-    <div className="adm-lightbox" onClick={onClose} style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
-    }}>
-      <button onClick={onClose} style={{
-        position: 'absolute', top: 18, right: 22, background: 'rgba(255,255,255,0.18)',
-        border: 'none', color: '#fff', fontSize: 22, borderRadius: '50%',
-        width: 42, height: 42, cursor: 'pointer', fontWeight: 800,
-        display: 'flex', alignItems: 'center', justifyContent: 'center'
-      }}>✕</button>
-      <img src={url} alt="full" onClick={e => e.stopPropagation()} style={{
-        maxWidth: '88vw', maxHeight: '88vh', borderRadius: 14,
-        objectFit: 'contain', boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-        border: '2px solid rgba(255,255,255,0.15)'
-      }} />
+    <div className="adm-lightbox" onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+      <button onClick={onClose} style={{ position: 'absolute', top: 18, right: 22, background: 'rgba(255,255,255,0.18)', border: 'none', color: '#fff', fontSize: 22, borderRadius: '50%', width: 42, height: 42, cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+      <img src={url} alt="full" onClick={e => e.stopPropagation()} style={{ maxWidth: '88vw', maxHeight: '88vh', borderRadius: 14, objectFit: 'contain', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', border: '2px solid rgba(255,255,255,0.15)' }} />
     </div>
   );
 }
@@ -136,7 +127,7 @@ function AdminAttachments({ urls }) {
   );
 }
 
-/* ─── Status Update Modal ─── */
+/* ─── Status Update Modal (only for non-terminal tickets) ─── */
 function StatusModal({ ticket, onClose, onUpdated }) {
   const [status, setStatus] = useState(ticket.status);
   const [notes, setNotes] = useState(ticket.resolutionNotes || '');
@@ -204,7 +195,7 @@ function StatusModal({ ticket, onClose, onUpdated }) {
   );
 }
 
-/* ─── Assign Technician Modal ─── */
+/* ─── Assign Technician Modal (only for non-terminal tickets) ─── */
 function AssignModal({ ticket, technicians, onClose, onUpdated }) {
   const [techId, setTechId] = useState(ticket.assigneeId || '');
   const [loading, setLoading] = useState(false);
@@ -244,13 +235,13 @@ function AssignModal({ ticket, technicians, onClose, onUpdated }) {
   );
 }
 
-/* ─── 🆕 Unique Feature: SLA Badge ─── */
+/* ─── SLA Badge ─── */
 function SLABadge({ createdAt, status }) {
-  if (status === 'RESOLVED' || status === 'CLOSED' || status === 'REJECTED') return null;
+  if (TERMINAL.has(status) || status === 'RESOLVED') return null;
   const d = safeDate(createdAt);
   if (!d || isNaN(d)) return null;
   const hoursOpen = (Date.now() - d.getTime()) / 3600000;
-  if (hoursOpen < 24) return null; // only show if overdue
+  if (hoursOpen < 24) return null;
   const days = Math.floor(hoursOpen / 24);
   const bg = days >= 3 ? '#dc2626' : '#d97706';
   return (
@@ -262,6 +253,7 @@ function SLABadge({ createdAt, status }) {
 
 /* ─── Ticket Detail Slide Panel (Admin) ─── */
 function TicketDetailPanel({ ticket, onClose }) {
+  const isTerminal = TERMINAL.has(ticket.status);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [editingId, setEditingId] = useState(null);
@@ -301,11 +293,23 @@ function TicketDetailPanel({ ticket, onClose }) {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div>
-            <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>Admin View</span>
+            <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              {isTerminal ? '📜 View Only' : 'Admin View'}
+            </span>
             <h3 style={{ color: '#111827', margin: 0, fontWeight: 900, fontSize: 20 }}>Ticket #{ticket.id}</h3>
           </div>
           <button onClick={onClose} style={{ background: '#f3f4f6', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 20, cursor: 'pointer', color: '#374151', fontWeight: 700 }}>✕</button>
         </div>
+
+        {/* Read-only banner for terminal tickets */}
+        {isTerminal && (
+          <div style={{ background: ticket.status === 'CLOSED' ? '#f0fdf4' : '#fef2f2', border: `1.5px solid ${ticket.status === 'CLOSED' ? '#059669' : '#dc2626'}`, borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 18 }}>{ticket.status === 'CLOSED' ? '🔒' : '🚫'}</span>
+            <p style={{ margin: 0, fontWeight: 800, color: ticket.status === 'CLOSED' ? '#065f46' : '#991b1b', fontSize: 13 }}>
+              This ticket is <strong>{ticket.status}</strong>. No further actions are available — view only.
+            </p>
+          </div>
+        )}
 
         <p style={{ fontWeight: 900, fontSize: 18, color: '#111827', marginBottom: 10, lineHeight: 1.4 }}>{ticket.title}</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, alignItems: 'center' }}>
@@ -363,13 +367,15 @@ function TicketDetailPanel({ ticket, onClose }) {
             <p style={{ color: '#6b7280', fontSize: 13, margin: 0, fontWeight: 600 }}>No comments yet.</p>
           </div>
         )}
-        {comments.map(c => (
-          <div key={c.id} className="adm-comment-card" style={{ background: '#f8faff', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: '1.5px solid #e5e7eb' }}>
+        {comments.map(c => {
+          const isEscalation = c.content && c.content.includes('ESCALATION REQUEST');
+          return (
+          <div key={c.id} className="adm-comment-card" style={{ background: isEscalation ? '#fef2f2' : '#f8faff', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: `1.5px solid ${isEscalation ? '#fca5a5' : '#e5e7eb'}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ color: '#2563eb', fontSize: 13, fontWeight: 800 }}>👤 {c.authorName}</span>
+              <span style={{ color: isEscalation ? '#dc2626' : '#2563eb', fontSize: 13, fontWeight: 800 }}>👤 {c.authorName}</span>
               <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 600 }}>{fmtDateTime(c.createdAt)}</span>
             </div>
-            {editingId === c.id ? (
+            {editingId === c.id && !isTerminal ? (
               <div>
                 <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="adm-inc-input" style={{ ...TS, minHeight: 60 }} />
                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
@@ -379,25 +385,118 @@ function TicketDetailPanel({ ticket, onClose }) {
               </div>
             ) : (
               <div>
-                <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600 }}>{c.content}</p>
-                <div style={{ display: 'flex', gap: 10, marginTop: 7 }}>
-                  {c.authorId === currentUserId && (
-                    <button onClick={() => { setEditingId(c.id); setEditContent(c.content); }} style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>✏ Edit</button>
-                  )}
-                  <button onClick={() => removeComment(c.id)} style={{ fontSize: 11, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>🗑 Delete</button>
-                </div>
+                <p style={{ color: isEscalation ? '#991b1b' : '#111827', fontSize: 13, margin: 0, fontWeight: isEscalation ? 800 : 600 }}>{c.content}</p>
+                {!isTerminal && (
+                  <div style={{ display: 'flex', gap: 10, marginTop: 7 }}>
+                    {c.authorId === currentUserId && (
+                      <button onClick={() => { setEditingId(c.id); setEditContent(c.content); }} style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>✏ Edit</button>
+                    )}
+                    <button onClick={() => removeComment(c.id)} style={{ fontSize: 11, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>🗑 Delete</button>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        ))}
-        <div style={{ marginTop: 14 }}>
-          <textarea value={newComment} onChange={e => setNewComment(e.target.value)} className="adm-inc-input"
-            placeholder="Write an admin comment..." style={{ ...TS, minHeight: 72 }} />
-          <button onClick={submitComment} disabled={addingComment || !newComment.trim()} className="adm-inc-btn"
-            style={{ marginTop: 8, padding: '10px 22px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', borderRadius: 8, color: '#fff', cursor: addingComment ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 14 }}>
-            {addingComment ? '⏳ Posting...' : '💬 Post Comment'}
-          </button>
+        )})}
+
+        {/* Add comment — only for active tickets */}
+        {!isTerminal && (
+          <div style={{ marginTop: 14 }}>
+            <textarea value={newComment} onChange={e => setNewComment(e.target.value)} className="adm-inc-input"
+              placeholder="Write an admin comment..." style={{ ...TS, minHeight: 72 }} />
+            <button onClick={submitComment} disabled={addingComment || !newComment.trim()} className="adm-inc-btn"
+              style={{ marginTop: 8, padding: '10px 22px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', borderRadius: 8, color: '#fff', cursor: addingComment ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 14 }}>
+              {addingComment ? '⏳ Posting...' : '💬 Post Comment'}
+            </button>
+          </div>
+        )}
+        {isTerminal && (
+          <p style={{ color: '#9ca3af', fontSize: 12, fontWeight: 600, textAlign: 'center', padding: '12px 0' }}>
+            🔒 Ticket is {ticket.status.toLowerCase()} — commenting disabled
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Ticket Row ─── */
+function TicketRow({ t, idx, onView, onStatus, onAssign }) {
+  const isTerminal = TERMINAL.has(t.status);
+  return (
+    <tr style={{ borderBottom: '1px solid #f3f4f6', background: idx % 2 === 0 ? '#ffffff' : '#fafbff' }}>
+      <td style={{ padding: '13px 14px', color: '#6b7280', fontSize: 12, fontWeight: 700 }}>#{t.id}</td>
+      <td style={{ padding: '13px 14px', maxWidth: 220 }}>
+        <p style={{ margin: 0, fontWeight: 800, color: '#111827', fontSize: 13 }}>{t.title}</p>
+        <p style={{ margin: '2px 0 0', color: '#4b5563', fontSize: 11, fontWeight: 600 }}>📍 {t.location}</p>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 3 }}>
+          {t.attachmentUrls?.length > 0 && (
+            <span style={{ fontSize: 10, color: '#2563eb', fontWeight: 800, background: '#eff6ff', padding: '1px 6px', borderRadius: 4 }}>
+              📎 {t.attachmentUrls.length} photo{t.attachmentUrls.length > 1 ? 's' : ''}
+            </span>
+          )}
+          <SLABadge createdAt={t.createdAt} status={t.status} />
         </div>
+      </td>
+      <td style={{ padding: '13px 14px', color: '#1f2937', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t.category}</td>
+      <td style={{ padding: '13px 14px' }}><PriorityBadge priority={t.priority} /></td>
+      <td style={{ padding: '13px 14px' }}><StatusBadge status={t.status} /></td>
+      <td style={{ padding: '13px 14px', color: '#1f2937', fontSize: 12, fontWeight: 700 }}>{t.reporterName || '—'}</td>
+      <td style={{ padding: '13px 14px', fontSize: 12, fontWeight: 700 }}>
+        {t.assigneeName
+          ? <span style={{ color: '#059669', fontWeight: 800 }}>👷 {t.assigneeName}</span>
+          : <span style={{ color: '#9ca3af', fontWeight: 600 }}>Unassigned</span>}
+      </td>
+      <td style={{ padding: '13px 14px', color: '#4b5563', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{fmtDate(t.createdAt)}</td>
+      <td style={{ padding: '13px 14px' }}>
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+          <button onClick={() => onView(t)} className="adm-inc-btn" style={{ padding: '5px 10px', background: '#eff6ff', border: '1.5px solid #2563eb', borderRadius: 6, color: '#1d4ed8', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>
+            👁 View
+          </button>
+          {!isTerminal && (
+            <>
+              <button onClick={() => onStatus(t)} className="adm-inc-btn" style={{ padding: '5px 10px', background: '#fffbeb', border: '1.5px solid #d97706', borderRadius: 6, color: '#92400e', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>🔄 Status</button>
+              <button onClick={() => onAssign(t)} className="adm-inc-btn" style={{ padding: '5px 10px', background: '#ecfdf5', border: '1.5px solid #059669', borderRadius: 6, color: '#065f46', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>👷 Assign</button>
+            </>
+          )}
+          {isTerminal && (
+            <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 700, padding: '5px 8px', background: '#f3f4f6', borderRadius: 6 }}>
+              🔒 {t.status === 'CLOSED' ? 'Closed' : 'Rejected'}
+            </span>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+/* ─── Tickets Table ─── */
+function TicketsTable({ displayed, onView, onStatus, onAssign, emptyMsg }) {
+  if (displayed.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: 40, background: '#ffffff', border: '1.5px dashed #d1d5db', borderRadius: 14 }}>
+        <p style={{ fontSize: 38, margin: 0 }}>📭</p>
+        <p style={{ marginTop: 10, color: '#111827', fontWeight: 800, fontSize: 15 }}>{emptyMsg}</p>
+      </div>
+    );
+  }
+  return (
+    <div style={{ background: '#ffffff', borderRadius: 14, border: '1.5px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#ffffff' }}>
+          <thead>
+            <tr style={{ background: '#f0f4ff', borderBottom: '2px solid #dbeafe' }}>
+              {['#', 'Title / Location', 'Category', 'Priority', 'Status', 'Reporter', 'Assignee', 'Date', 'Actions'].map(h => (
+                <th key={h} style={{ textAlign: 'left', padding: '12px 14px', color: '#111827', fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {displayed.map((t, idx) => (
+              <TicketRow key={t.id} t={t} idx={idx} onView={onView} onStatus={onStatus} onAssign={onAssign} />
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -416,9 +515,12 @@ export default function ManageIncidents() {
   const [assignModal, setAssignModal] = useState(null);
   const [detailModal, setDetailModal] = useState(null);
   const [sortBy, setSortBy] = useState('newest');
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const pollRef = useRef(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [t, u] = await Promise.all([
         fetchAllIncidents({ status: statusFilter || undefined, priority: priorityFilter || undefined }),
@@ -426,11 +528,18 @@ export default function ManageIncidents() {
       ]);
       setTickets(t);
       setTechnicians(u.filter(u => u.role === 'TECHNICIAN' || u.role === 'ADMIN'));
+      setLastRefresh(new Date());
     } catch { setTickets([]); }
-    finally { setLoading(false); }
+    finally { if (!silent) setLoading(false); }
   }, [statusFilter, priorityFilter]);
 
   useEffect(() => { load(); }, [load]);
+
+  /* ── Auto-poll every 30 seconds (silent) ── */
+  useEffect(() => {
+    pollRef.current = setInterval(() => load(true), 30000);
+    return () => clearInterval(pollRef.current);
+  }, [load]);
 
   const onUpdated = updated => setTickets(prev => prev.map(t => t.id === updated.id ? updated : t));
 
@@ -443,27 +552,32 @@ export default function ManageIncidents() {
 
   const SS = { background: '#ffffff', border: '1.5px solid #d1d5db', borderRadius: 8, padding: '9px 14px', color: '#111827', fontSize: 13, cursor: 'pointer', fontWeight: 700, backgroundColor: '#ffffff' };
 
-  const displayed = tickets
+  const sortFn = (a, b) => {
+    if (sortBy === 'newest') return (safeDate(b.createdAt) || 0) - (safeDate(a.createdAt) || 0);
+    if (sortBy === 'oldest') return (safeDate(a.createdAt) || 0) - (safeDate(b.createdAt) || 0);
+    if (sortBy === 'critical') { const po = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 }; return (po[a.priority] ?? 9) - (po[b.priority] ?? 9); }
+    return 0;
+  };
+
+  const baseFiltered = tickets
     .filter(t => !statusFilter || t.status === statusFilter)
     .filter(t => !priorityFilter || t.priority === priorityFilter)
-    .filter(t => !search || [t.title, t.reporterName, t.category, t.location].some(f => (f || '').toLowerCase().includes(search.toLowerCase())))
-    .sort((a, b) => {
-      if (sortBy === 'newest') return (safeDate(b.createdAt) || 0) - (safeDate(a.createdAt) || 0);
-      if (sortBy === 'oldest') return (safeDate(a.createdAt) || 0) - (safeDate(b.createdAt) || 0);
-      if (sortBy === 'critical') { const po = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 }; return (po[a.priority] ?? 9) - (po[b.priority] ?? 9); }
-      return 0;
-    });
+    .filter(t => !search || [t.title, t.reporterName, t.category, t.location].some(f => (f || '').toLowerCase().includes(search.toLowerCase())));
 
-  // 🆕 Overdue tickets count
+  /* Split active vs history */
+  const activeTickets  = baseFiltered.filter(t => !TERMINAL.has(t.status)).sort(sortFn);
+  const historyTickets = baseFiltered.filter(t => TERMINAL.has(t.status)).sort(sortFn);
+
+  /* Overdue count */
   const overdueCount = tickets.filter(t => {
-    if (t.status === 'RESOLVED' || t.status === 'CLOSED' || t.status === 'REJECTED') return false;
+    if (TERMINAL.has(t.status) || t.status === 'RESOLVED') return false;
     const d = safeDate(t.createdAt);
     return d && (Date.now() - d.getTime()) > 24 * 3600000;
   }).length;
 
   const exportCSV = () => {
     const rows = [['ID', 'Title', 'Category', 'Priority', 'Status', 'Reporter', 'Assignee', 'Location', 'Created']];
-    displayed.forEach(t => rows.push([t.id, t.title, t.category, t.priority, t.status, t.reporterName || '', t.assigneeName || '', t.location, fmtDate(t.createdAt)]));
+    [...activeTickets, ...historyTickets].forEach(t => rows.push([t.id, t.title, t.category, t.priority, t.status, t.reporterName || '', t.assigneeName || '', t.location, fmtDate(t.createdAt)]));
     const csv = rows.map(r => r.map(x => `"${x}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'incidents.csv'; a.click();
@@ -472,25 +586,30 @@ export default function ManageIncidents() {
   return (
     <div className="adm-inc" style={{ padding: '0 0 40px' }}>
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div style={{ background: '#ffffff', borderRadius: 16, padding: '22px 26px', marginBottom: 20, border: '1.5px solid #e5e7eb', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h2 style={{ color: '#111827', margin: 0, fontWeight: 900, fontSize: '1.6rem' }}>🛡 Manage Incidents</h2>
             <p style={{ color: '#374151', margin: '5px 0 0', fontSize: 14, fontWeight: 600 }}>Review, assign, and resolve maintenance tickets</p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {/* Live indicator */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#f0fdf4', border: '1.5px solid #059669', borderRadius: 8 }}>
+              <div className="adm-pulse-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#065f46' }}>Live • {lastRefresh.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+            </div>
             <button onClick={exportCSV} className="adm-inc-btn" style={{ padding: '9px 18px', background: '#ecfdf5', border: '1.5px solid #059669', borderRadius: 8, color: '#065f46', cursor: 'pointer', fontWeight: 800, fontSize: 13 }}>
               📥 Export CSV
             </button>
-            <button onClick={load} className="adm-inc-btn" style={{ padding: '9px 18px', background: '#eff6ff', border: '1.5px solid #2563eb', borderRadius: 8, color: '#1d4ed8', cursor: 'pointer', fontWeight: 800, fontSize: 13 }}>
+            <button onClick={() => load()} className="adm-inc-btn" style={{ padding: '9px 18px', background: '#eff6ff', border: '1.5px solid #2563eb', borderRadius: 8, color: '#1d4ed8', cursor: 'pointer', fontWeight: 800, fontSize: 13 }}>
               ↻ Refresh
             </button>
           </div>
         </div>
       </div>
 
-      {/* 🆕 Overdue Alert */}
+      {/* ── Overdue Alert ── */}
       {overdueCount > 0 && (
         <div style={{ background: '#fef2f2', border: '1.5px solid #dc2626', borderRadius: 12, padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 22 }}>⚠️</span>
@@ -501,7 +620,7 @@ export default function ManageIncidents() {
         </div>
       )}
 
-      {/* Stats */}
+      {/* ── Stats ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 20 }}>
         {stats.map(s => (
           <div key={s.label} className="adm-inc-card" style={{ background: s.bg, border: `1.5px solid ${s.color}33`, borderRadius: 12, padding: '18px 16px', textAlign: 'center' }}>
@@ -512,7 +631,7 @@ export default function ManageIncidents() {
         ))}
       </div>
 
-      {/* Filters */}
+      {/* ── Filters ── */}
       <div style={{ background: '#ffffff', borderRadius: 12, padding: '16px 20px', marginBottom: 20, border: '1.5px solid #e5e7eb', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 12 }}>
           <div>
@@ -545,76 +664,102 @@ export default function ManageIncidents() {
           </div>
         </div>
         <p style={{ color: '#374151', fontSize: 12, fontWeight: 700, margin: 0 }}>
-          Showing <strong style={{ color: '#111827' }}>{displayed.length}</strong> of <strong style={{ color: '#111827' }}>{tickets.length}</strong> tickets
+          Active: <strong style={{ color: '#111827' }}>{activeTickets.length}</strong> &nbsp;|&nbsp; History: <strong style={{ color: '#4b5563' }}>{historyTickets.length}</strong>
         </p>
       </div>
 
-      {/* Table / Empty */}
+      {/* ── Active Tickets Table ── */}
       {loading ? (
         <div style={{ textAlign: 'center', color: '#374151', padding: 50, background: '#ffffff', borderRadius: 12, border: '1.5px solid #e5e7eb', fontWeight: 700, fontSize: 15 }}>
           ⏳ Loading tickets...
         </div>
-      ) : displayed.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 50, background: '#ffffff', border: '1.5px dashed #d1d5db', borderRadius: 14 }}>
-          <p style={{ fontSize: 42, margin: 0 }}>📭</p>
-          <p style={{ marginTop: 12, color: '#111827', fontWeight: 800, fontSize: 16 }}>No tickets found</p>
-          <p style={{ color: '#374151', fontWeight: 600, fontSize: 13 }}>Try adjusting filters or click Refresh.</p>
-        </div>
       ) : (
-        <div style={{ background: '#ffffff', borderRadius: 14, border: '1.5px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#ffffff' }}>
-              <thead>
-                <tr style={{ background: '#f0f4ff', borderBottom: '2px solid #dbeafe' }}>
-                  {['#', 'Title / Location', 'Category', 'Priority', 'Status', 'Reporter', 'Assignee', 'Date', 'Actions'].map(h => (
-                    <th key={h} style={{ textAlign: 'left', padding: '12px 14px', color: '#111827', fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {displayed.map((t, idx) => (
-                  <tr key={t.id} style={{ borderBottom: '1px solid #f3f4f6', background: idx % 2 === 0 ? '#ffffff' : '#fafbff' }}>
-                    <td style={{ padding: '13px 14px', color: '#6b7280', fontSize: 12, fontWeight: 700 }}>#{t.id}</td>
-                    <td style={{ padding: '13px 14px', maxWidth: 220 }}>
-                      <p style={{ margin: 0, fontWeight: 800, color: '#111827', fontSize: 13 }}>{t.title}</p>
-                      <p style={{ margin: '2px 0 0', color: '#4b5563', fontSize: 11, fontWeight: 600 }}>📍 {t.location}</p>
-                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 3 }}>
-                        {t.attachmentUrls?.length > 0 && (
-                          <span style={{ fontSize: 10, color: '#2563eb', fontWeight: 800, background: '#eff6ff', padding: '1px 6px', borderRadius: 4 }}>
-                            📎 {t.attachmentUrls.length} photo{t.attachmentUrls.length > 1 ? 's' : ''}
-                          </span>
-                        )}
-                        <SLABadge createdAt={t.createdAt} status={t.status} />
-                      </div>
-                    </td>
-                    <td style={{ padding: '13px 14px', color: '#1f2937', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t.category}</td>
-                    <td style={{ padding: '13px 14px' }}><PriorityBadge priority={t.priority} /></td>
-                    <td style={{ padding: '13px 14px' }}><StatusBadge status={t.status} /></td>
-                    <td style={{ padding: '13px 14px', color: '#1f2937', fontSize: 12, fontWeight: 700 }}>{t.reporterName || '—'}</td>
-                    <td style={{ padding: '13px 14px', fontSize: 12, fontWeight: 700 }}>
-                      {t.assigneeName
-                        ? <span style={{ color: '#059669', fontWeight: 800 }}>👷 {t.assigneeName}</span>
-                        : <span style={{ color: '#9ca3af', fontWeight: 600 }}>Unassigned</span>}
-                    </td>
-                    <td style={{ padding: '13px 14px', color: '#4b5563', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{fmtDate(t.createdAt)}</td>
-                    <td style={{ padding: '13px 14px' }}>
-                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                        <button onClick={() => setDetailModal(t)} className="adm-inc-btn" style={{ padding: '5px 10px', background: '#eff6ff', border: '1.5px solid #2563eb', borderRadius: 6, color: '#1d4ed8', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>👁 View</button>
-                        <button onClick={() => setStatusModal(t)} className="adm-inc-btn" style={{ padding: '5px 10px', background: '#fffbeb', border: '1.5px solid #d97706', borderRadius: 6, color: '#92400e', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>🔄 Status</button>
-                        <button onClick={() => setAssignModal(t)} className="adm-inc-btn" style={{ padding: '5px 10px', background: '#ecfdf5', border: '1.5px solid #059669', borderRadius: 6, color: '#065f46', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>👷 Assign</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Section header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+  
+  <span
+    style={{
+      fontSize: 13,
+      fontWeight: 900,
+      background: '#111827',   // dark background
+      color: '#ffffff',        // white text
+      padding: '4px 10px',
+      borderRadius: 6,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5
+    }}
+  >
+    📂 Active Tickets
+  </span>
+
+  <span
+    style={{
+      background: '#2563eb',
+      color: '#fff',
+      fontSize: 11,
+      fontWeight: 800,
+      padding: '2px 10px',
+      borderRadius: 999
+    }}
+  >
+    {activeTickets.length}
+  </span>
+
+  <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+
+</div>
+
+          <TicketsTable
+            displayed={activeTickets}
+            onView={setDetailModal}
+            onStatus={setStatusModal}
+            onAssign={setAssignModal}
+            emptyMsg="No active tickets found"
+          />
+
+          {/* ── History Section ── */}
+          <div style={{ marginTop: 32 }}>
+            <button
+              onClick={() => setHistoryOpen(h => !h)}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: 12, width: '100%' }}>
+              <span style={{ fontSize: 13, fontWeight: 900, color: '#fbfbfbff', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {historyOpen ? '▼' : '▶'} 📜 Closed &amp; Rejected History
+              </span>
+              <span style={{ background: historyTickets.length > 0 ? '#136eeeff' : '#d1d5db', color: '#fff', fontSize: 11, fontWeight: 800, padding: '2px 10px', borderRadius: 999 }}>
+                {historyTickets.length}
+              </span>
+              <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+              <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 700 }}>
+                {historyOpen ? 'Click to collapse' : 'Click to expand'}
+              </span>
+            </button>
+
+            {historyOpen && (
+              <div>
+                {/* Info banner */}
+                <div style={{ background: '#f9fafb', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: '10px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span>🔒</span>
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#070707ff' }}>
+                    These tickets are finalized (Closed or Rejected). They are read-only — you can view details but cannot change status or assign technicians.
+                  </p>
+                </div>
+                <TicketsTable
+                  displayed={historyTickets}
+                  onView={setDetailModal}
+                  onStatus={() => {}} /* disabled */
+                  onAssign={() => {}} /* disabled */
+                  emptyMsg="No closed or rejected tickets"
+                />
+              </div>
+            )}
           </div>
-        </div>
+        </>
       )}
 
-      {detailModal && <TicketDetailPanel ticket={detailModal} onClose={() => setDetailModal(null)} onUpdate={onUpdated} />}
-      {statusModal && <StatusModal ticket={statusModal} onClose={() => setStatusModal(null)} onUpdated={onUpdated} />}
-      {assignModal && <AssignModal ticket={assignModal} technicians={technicians} onClose={() => setAssignModal(null)} onUpdated={onUpdated} />}
+      {detailModal && <TicketDetailPanel ticket={detailModal} onClose={() => setDetailModal(null)} />}
+      {statusModal && !TERMINAL.has(statusModal.status) && <StatusModal ticket={statusModal} onClose={() => setStatusModal(null)} onUpdated={onUpdated} />}
+      {assignModal && !TERMINAL.has(assignModal.status) && <AssignModal ticket={assignModal} technicians={technicians} onClose={() => setAssignModal(null)} onUpdated={onUpdated} />}
     </div>
   );
 }

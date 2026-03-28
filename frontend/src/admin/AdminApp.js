@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import FacilitiesAdmin from './FacilitiesAdmin';
 import AdminHome from './AdminHome';
@@ -9,6 +9,8 @@ import ManageServices from './ManageServices';
 import ManageResources from './ManageResources';
 import ManageBookings from './ManageBookings';
 import ManageIncidents from './ManageIncidents';
+import Notifications from '../user/Notifications';
+import { fetchUnreadCount } from '../api';
 import '../App.css';
 
 const ADMIN_AUTH_KEY = 'smartcampus_admin_auth';
@@ -16,6 +18,36 @@ const ADMIN_AUTH_KEY = 'smartcampus_admin_auth';
 function ProtectedAdminRoute({ isAuthenticated, children }) {
   if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
   return children;
+}
+
+function AdminNotificationBell({ userId, isAuthenticated }) {
+  const [count, setCount] = useState(0);
+
+  const loadCount = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const data = await fetchUnreadCount();
+      setCount(data.count || 0);
+    } catch {}
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    loadCount();
+    const timer = setInterval(loadCount, 30000); // Poll every 30s
+    const handleUpdate = () => loadCount();
+    window.addEventListener('updateNotifCount', handleUpdate);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('updateNotifCount', handleUpdate);
+    };
+  }, [loadCount]);
+
+  return (
+    <NavLink to="/admin/notifications" className={({ isActive }) => `nav-link bell-link ${isActive ? 'active' : ''}`}>
+      🔔
+      {count > 0 && <span className="notif-badge">{count > 99 ? '99+' : count}</span>}
+    </NavLink>
+  );
 }
 
 function AdminTopNav({ isAuthenticated, onLogout }) {
@@ -47,6 +79,7 @@ function AdminTopNav({ isAuthenticated, onLogout }) {
                 </div>
               )}
             </div>
+            <AdminNotificationBell isAuthenticated={isAuthenticated} userId={localStorage.getItem('smartcampus_user_id')} />
             <button type="button" className="nav-button" onClick={onLogout}>Logout</button>
           </>
         ) : (
@@ -100,6 +133,7 @@ function AdminApp() {
           <Route path="/events" element={protectedRoute(ManageEvents)} />
           <Route path="/services" element={protectedRoute(ManageServices)} />
           <Route path="/resources" element={protectedRoute(ManageResources)} />
+          <Route path="/notifications" element={protectedRoute(() => <Notifications isAdmin={true} />)} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       </main>

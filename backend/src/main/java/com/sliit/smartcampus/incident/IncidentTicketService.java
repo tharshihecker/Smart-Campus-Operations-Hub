@@ -189,6 +189,34 @@ public class IncidentTicketService {
             );
         }
 
+        boolean isEscalation = content.contains("ESCALATION REQUEST");
+        
+        if (isEscalation) {
+            ticket.setPriority(com.sliit.smartcampus.incident.TicketPriority.CRITICAL);
+            ticket.setUpdatedAt();
+            ticketRepository.save(ticket);
+        }
+
+        // Notify all ADMIN users when a non-admin user comments on a ticket
+        if (author.getRole() != com.sliit.smartcampus.user.UserRole.ADMIN) {
+            String notifTitle = isEscalation ? "🚨 EMERGENCY ESCALATION: Ticket #" + ticket.getId() : "💬 New User Comment on Ticket #" + ticket.getId();
+            String snippet = isEscalation ? "User flagged issue as critically urgent!" : (content.length() > 50 ? content.substring(0, 50) + "..." : content);
+            String notifMsg = author.getFullName() + " on '" + ticket.getTitle() + "': " + snippet;
+
+            List<User> admins = userRepository.findByRole(com.sliit.smartcampus.user.UserRole.ADMIN);
+            for (User admin : admins) {
+                if (!admin.getId().equals(authorId)) {
+                    notificationService.createNotification(
+                            admin,
+                            notifTitle,
+                            notifMsg,
+                            NotificationType.TICKET_COMMENT_ADDED,
+                            ticketId, "TICKET"
+                    );
+                }
+            }
+        }
+
         return toCommentResponse(saved);
     }
 
