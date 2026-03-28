@@ -36,7 +36,12 @@ function NotificationBell({ userId, isAuthenticated }) {
   useEffect(() => {
     loadCount();
     const timer = setInterval(loadCount, 30000); // Poll every 30s
-    return () => clearInterval(timer);
+    const handleUpdate = () => loadCount();
+    window.addEventListener('updateNotifCount', handleUpdate);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('updateNotifCount', handleUpdate);
+    };
   }, [loadCount]);
 
   return (

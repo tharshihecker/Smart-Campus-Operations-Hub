@@ -492,10 +492,12 @@ function TicketDetailPanel({ ticket, onClose }) {
             <p style={{ color: '#6b7280', fontSize: 13, margin: 0, fontWeight: 600 }}>No comments yet.</p>
           </div>
         )}
-        {comments.map(c => (
-          <div key={c.id} className="inc-comment-card" style={{ background: '#f8faff', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: '1.5px solid #e5e7eb' }}>
+        {comments.map(c => {
+          const isEscalation = c.content && c.content.includes('ESCALATION REQUEST');
+          return (
+          <div key={c.id} className="inc-comment-card" style={{ background: isEscalation ? '#fef2f2' : '#f8faff', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: `1.5px solid ${isEscalation ? '#fca5a5' : '#e5e7eb'}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ color: '#2563eb', fontSize: 13, fontWeight: 800 }}>👤 {c.authorName}</span>
+              <span style={{ color: isEscalation ? '#dc2626' : '#2563eb', fontSize: 13, fontWeight: 800 }}>👤 {c.authorName}</span>
               <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 600 }}>{fmtDateTime(c.createdAt)}</span>
             </div>
             {editingId === c.id ? (
@@ -508,7 +510,7 @@ function TicketDetailPanel({ ticket, onClose }) {
               </div>
             ) : (
               <div>
-                <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600 }}>{c.content}</p>
+                <p style={{ color: isEscalation ? '#991b1b' : '#111827', fontSize: 13, margin: 0, fontWeight: isEscalation ? 800 : 600 }}>{c.content}</p>
                 {c.authorId === currentUserId && (
                   <div style={{ display: 'flex', gap: 10, marginTop: 7 }}>
                     <button onClick={() => { setEditingId(c.id); setEditContent(c.content); }} style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>✏ Edit</button>
@@ -518,7 +520,7 @@ function TicketDetailPanel({ ticket, onClose }) {
               </div>
             )}
           </div>
-        ))}
+        )})}
         <div style={{ marginTop: 14 }}>
           <textarea value={newComment} onChange={e => setNewComment(e.target.value)} className="inc-input"
             placeholder="Write your comment..." style={{ ...TS, minHeight: 72 }} />
@@ -542,14 +544,29 @@ export default function Incidents() {
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
 
-  const loadTickets = useCallback(async () => {
-    setLoading(true);
-    try { setTickets(await fetchMyIncidents()); }
-    catch { setTickets([]); }
-    finally { setLoading(false); }
+  const loadTickets = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const data = await fetchMyIncidents();
+      setTickets(data);
+      // Auto-update the selected ticket if it's open in detail panel
+      setSelected(prev => {
+        if (!prev) return prev;
+        const updated = data.find(t => t.id === prev.id);
+        return updated || prev;
+      });
+    }
+    catch { if (!silent) setTickets([]); }
+    finally { if (!silent) setLoading(false); }
   }, []);
 
   useEffect(() => { loadTickets(); }, [loadTickets]);
+
+  /* Auto-poll every 30 seconds so admin updates show dynamically */
+  useEffect(() => {
+    const interval = setInterval(() => loadTickets(true), 30000);
+    return () => clearInterval(interval);
+  }, [loadTickets]);
 
   const filterLabels = { ALL: 'All', OPEN: 'Open', IN_PROGRESS: 'In Progress', RESOLVED: 'Resolved', CLOSED: 'Closed', REJECTED: 'Rejected' };
   const filterColors = { OPEN: '#2563eb', IN_PROGRESS: '#d97706', RESOLVED: '#059669', CLOSED: '#4b5563', REJECTED: '#dc2626' };
