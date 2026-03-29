@@ -33,7 +33,7 @@ function AdminNotificationBell({ userId, isAuthenticated }) {
 
   useEffect(() => {
     loadCount();
-    const timer = setInterval(loadCount, 30000); // Poll every 30s
+    const timer = setInterval(loadCount, 15000); // Poll every 15s
     const handleUpdate = () => loadCount();
     window.addEventListener('updateNotifCount', handleUpdate);
     return () => {

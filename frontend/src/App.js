@@ -5,9 +5,7 @@ import AdminApp from './admin/AdminApp';
 import UserApp from './user/UserApp';
 import './App.css';
 
-// Replace with your real Google Client ID from Google Cloud Console
 // console.cloud.google.com → APIs & Services → Credentials → OAuth 2.0 Client IDs
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
 
 function App() {
   return (

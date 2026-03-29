@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   fetchMyIncidents, createIncident, fetchIncidentComments,
   addIncidentComment, editIncidentComment, deleteIncidentComment
 } from '../api';
+
+const TERMINAL_STATUSES = new Set(['CLOSED', 'REJECTED']);
 
 const CATEGORIES = ['AV Equipment', 'HVAC', 'Infrastructure', 'IT/Network', 'Electrical', 'Plumbing', 'Safety', 'Cleaning', 'Other'];
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
@@ -20,7 +23,7 @@ function safeDate(val) {
 function fmtDate(val) {
   const d = safeDate(val);
   if (!d || isNaN(d)) return '—';
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 function fmtDateTime(val) {
@@ -395,7 +398,6 @@ function TicketDetailPanel({ ticket, onClose }) {
   const [editingId, setEditingId] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [addingComment, setAddingComment] = useState(false);
-  const [escalated, setEscalated] = useState(false);
   const currentUserId = localStorage.getItem('smartcampus_user_id');
 
   const loadComments = useCallback(async () => {
@@ -441,7 +443,7 @@ function TicketDetailPanel({ ticket, onClose }) {
           <PriorityBadge priority={ticket.priority} />
           <StatusBadge status={ticket.status} />
           {/* 🆕 Escalate Button */}
-          <EscalateButton ticket={ticket} onEscalated={() => { setEscalated(true); loadComments(); }} />
+          <EscalateButton ticket={ticket} onEscalated={() => { loadComments(); }} />
         </div>
 
         <StatusTimeline status={ticket.status} />
@@ -492,7 +494,7 @@ function TicketDetailPanel({ ticket, onClose }) {
             <p style={{ color: '#6b7280', fontSize: 13, margin: 0, fontWeight: 600 }}>No comments yet.</p>
           </div>
         )}
-        {comments.map(c => {
+        {[...comments].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
           const isEscalation = c.content && c.content.includes('ESCALATION REQUEST');
           return (
           <div key={c.id} className="inc-comment-card" style={{ background: isEscalation ? '#fef2f2' : '#f8faff', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: `1.5px solid ${isEscalation ? '#fca5a5' : '#e5e7eb'}` }}>
@@ -521,14 +523,23 @@ function TicketDetailPanel({ ticket, onClose }) {
             )}
           </div>
         )})}
-        <div style={{ marginTop: 14 }}>
-          <textarea value={newComment} onChange={e => setNewComment(e.target.value)} className="inc-input"
-            placeholder="Write your comment..." style={{ ...TS, minHeight: 72 }} />
-          <button onClick={submitComment} disabled={addingComment || !newComment.trim()} className="inc-btn-primary"
-            style={{ marginTop: 8, padding: '10px 22px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', borderRadius: 8, color: '#fff', cursor: addingComment ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 14 }}>
-            {addingComment ? '⏳ Posting...' : '💬 Post Comment'}
-          </button>
-        </div>
+        {TERMINAL_STATUSES.has(ticket.status) ? (
+          <div style={{ marginTop: 14, background: ticket.status === 'CLOSED' ? '#f0fdf4' : '#fef2f2', border: `1.5px solid ${ticket.status === 'CLOSED' ? '#059669' : '#dc2626'}`, borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 18 }}>{ticket.status === 'CLOSED' ? '🔒' : '🚫'}</span>
+            <p style={{ margin: 0, fontWeight: 800, color: ticket.status === 'CLOSED' ? '#065f46' : '#991b1b', fontSize: 13 }}>
+              {ticket.status === 'REJECTED' ? 'Ticket is rejected — commenting disabled' : 'Ticket is closed — commenting disabled'}
+            </p>
+          </div>
+        ) : (
+          <div style={{ marginTop: 14 }}>
+            <textarea value={newComment} onChange={e => setNewComment(e.target.value)} className="inc-input"
+              placeholder="Write your comment..." style={{ ...TS, minHeight: 72 }} />
+            <button onClick={submitComment} disabled={addingComment || !newComment.trim()} className="inc-btn-primary"
+              style={{ marginTop: 8, padding: '10px 22px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', borderRadius: 8, color: '#fff', cursor: addingComment ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 14 }}>
+              {addingComment ? '⏳ Posting...' : '💬 Post Comment'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -537,12 +548,26 @@ function TicketDetailPanel({ ticket, onClose }) {
 /* ─── Main Page ─── */
 export default function Incidents() {
   useInjectStyle();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  /* Strip ?ticketId= from URL so the deep-link doesn't re-open on next poll */
+  const clearTicketParam = useCallback(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.has('ticketId')) navigate('/incidents', { replace: true });
+  }, [location.search, navigate]);
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   const loadTickets = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -562,9 +587,22 @@ export default function Incidents() {
 
   useEffect(() => { loadTickets(); }, [loadTickets]);
 
-  /* Auto-poll every 30 seconds so admin updates show dynamically */
+  /* Deep-link: auto-open ticket from notification (?ticketId=123)
+     Runs ONLY when tickets state is populated — no extra API call. */
   useEffect(() => {
-    const interval = setInterval(() => loadTickets(true), 30000);
+    const params = new URLSearchParams(location.search);
+    const tid = params.get('ticketId');
+    if (!tid || tickets.length === 0) return;
+    const found = tickets.find(t => String(t.id) === String(tid));
+    if (found && (!selected || String(selected.id) !== String(tid))) {
+      setSelected(found);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tickets, location.search]);
+
+  /* Auto-poll every 15 seconds so admin updates show dynamically */
+  useEffect(() => {
+    const interval = setInterval(() => loadTickets(true), 15000);
     return () => clearInterval(interval);
   }, [loadTickets]);
 
@@ -592,10 +630,17 @@ export default function Incidents() {
             <h2 style={{ margin: 0, fontSize: '1.7rem', fontWeight: 900, color: '#111827' }}>🛠 My Incident Tickets</h2>
             <p style={{ marginTop: 6, fontSize: '0.95rem', fontWeight: 600, color: '#374151' }}>Report and track campus maintenance issues</p>
           </div>
-          <button onClick={() => setShowCreate(true)} className="inc-btn-primary"
-            style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', borderRadius: 10, padding: '11px 24px', color: '#fff', cursor: 'pointer', fontWeight: 800, fontSize: 14, boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}>
-            + New Ticket
-          </button>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {/* Live indicator */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#f0fdf4', border: '1.5px solid #059669', borderRadius: 8 }}>
+              <div className="inc-priority-pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#065f46' }}>{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+            </div>
+            <button onClick={() => setShowCreate(true)} className="inc-btn-primary"
+              style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', borderRadius: 10, padding: '11px 24px', color: '#fff', cursor: 'pointer', fontWeight: 800, fontSize: 14, boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}>
+              + New Ticket
+            </button>
+          </div>
         </div>
       </div>
 
@@ -651,11 +696,11 @@ export default function Incidents() {
           </p>
         </div>
       ) : (
-        filtered.map(t => <TicketCard key={t.id} ticket={t} onSelect={setSelected} />)
+        filtered.map(t => <TicketCard key={t.id} ticket={t} onSelect={t => { clearTicketParam(); setSelected(t); }} />)
       )}
 
       {showCreate && <CreateTicketModal onClose={() => setShowCreate(false)} onCreated={t => { setTickets(prev => [t, ...prev]); }} />}
-      {selected && <TicketDetailPanel ticket={selected} onClose={() => setSelected(null)} />}
+      {selected && <TicketDetailPanel ticket={selected} onClose={() => { setSelected(null); clearTicketParam(); }} />}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   fetchAllIncidents, updateIncidentStatus, assignIncidentTechnician,
   fetchAllUsers, fetchIncidentComments, addAdminIncidentComment,
@@ -21,7 +22,7 @@ function safeDate(val) {
 function fmtDate(val) {
   const d = safeDate(val);
   if (!d || isNaN(d)) return '—';
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 }
 function fmtDateTime(val) {
   const d = safeDate(val);
@@ -367,7 +368,7 @@ function TicketDetailPanel({ ticket, onClose }) {
             <p style={{ color: '#6b7280', fontSize: 13, margin: 0, fontWeight: 600 }}>No comments yet.</p>
           </div>
         )}
-        {comments.map(c => {
+        {[...comments].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
           const isEscalation = c.content && c.content.includes('ESCALATION REQUEST');
           return (
           <div key={c.id} className="adm-comment-card" style={{ background: isEscalation ? '#fef2f2' : '#f8faff', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: `1.5px solid ${isEscalation ? '#fca5a5' : '#e5e7eb'}` }}>
@@ -505,6 +506,14 @@ function TicketsTable({ displayed, onView, onStatus, onAssign, emptyMsg }) {
 /* ─── Main Admin Page ─── */
 export default function ManageIncidents() {
   useAdminStyle();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  /* Strip ?ticketId= from URL so the deep-link doesn't re-open on next poll */
+  const clearTicketParam = useCallback(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.has('ticketId')) navigate('/admin/incidents', { replace: true });
+  }, [location.search, navigate]);
   const [tickets, setTickets] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -515,9 +524,14 @@ export default function ManageIncidents() {
   const [assignModal, setAssignModal] = useState(null);
   const [detailModal, setDetailModal] = useState(null);
   const [sortBy, setSortBy] = useState('newest');
-  const [lastRefresh, setLastRefresh] = useState(new Date());
   const [historyOpen, setHistoryOpen] = useState(false);
   const pollRef = useRef(null);
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -528,16 +542,29 @@ export default function ManageIncidents() {
       ]);
       setTickets(t);
       setTechnicians(u.filter(u => u.role === 'TECHNICIAN' || u.role === 'ADMIN'));
-      setLastRefresh(new Date());
-    } catch { setTickets([]); }
+      return t; // return for deep-link use
+    } catch { setTickets([]); return []; }
     finally { if (!silent) setLoading(false); }
   }, [statusFilter, priorityFilter]);
 
   useEffect(() => { load(); }, [load]);
 
-  /* ── Auto-poll every 30 seconds (silent) ── */
+  /* Deep-link: auto-open ticket from notification (?ticketId=123)
+     Runs ONLY when tickets state is populated — no extra API call. */
   useEffect(() => {
-    pollRef.current = setInterval(() => load(true), 30000);
+    const params = new URLSearchParams(location.search);
+    const tid = params.get('ticketId');
+    if (!tid || tickets.length === 0) return;
+    const found = tickets.find(t => String(t.id) === String(tid));
+    if (found && (!detailModal || String(detailModal.id) !== String(tid))) {
+      setDetailModal(found);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tickets, location.search]);
+
+  /* ── Auto-poll every 15 seconds (silent) ── */
+  useEffect(() => {
+    pollRef.current = setInterval(() => load(true), 15000);
     return () => clearInterval(pollRef.current);
   }, [load]);
 
@@ -597,7 +624,7 @@ export default function ManageIncidents() {
             {/* Live indicator */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#f0fdf4', border: '1.5px solid #059669', borderRadius: 8 }}>
               <div className="adm-pulse-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669' }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#065f46' }}>Live • {lastRefresh.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#065f46' }}>Live • {now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
             </div>
             <button onClick={exportCSV} className="adm-inc-btn" style={{ padding: '9px 18px', background: '#ecfdf5', border: '1.5px solid #059669', borderRadius: 8, color: '#065f46', cursor: 'pointer', fontWeight: 800, fontSize: 13 }}>
               📥 Export CSV
@@ -712,7 +739,7 @@ export default function ManageIncidents() {
 
           <TicketsTable
             displayed={activeTickets}
-            onView={setDetailModal}
+            onView={t => { clearTicketParam(); setDetailModal(t); }}
             onStatus={setStatusModal}
             onAssign={setAssignModal}
             emptyMsg="No active tickets found"
@@ -746,7 +773,7 @@ export default function ManageIncidents() {
                 </div>
                 <TicketsTable
                   displayed={historyTickets}
-                  onView={setDetailModal}
+                  onView={t => { clearTicketParam(); setDetailModal(t); }}
                   onStatus={() => {}} /* disabled */
                   onAssign={() => {}} /* disabled */
                   emptyMsg="No closed or rejected tickets"
@@ -757,7 +784,7 @@ export default function ManageIncidents() {
         </>
       )}
 
-      {detailModal && <TicketDetailPanel ticket={detailModal} onClose={() => setDetailModal(null)} />}
+      {detailModal && <TicketDetailPanel ticket={detailModal} onClose={() => { setDetailModal(null); clearTicketParam(); }} />}
       {statusModal && !TERMINAL.has(statusModal.status) && <StatusModal ticket={statusModal} onClose={() => setStatusModal(null)} onUpdated={onUpdated} />}
       {assignModal && !TERMINAL.has(assignModal.status) && <AssignModal ticket={assignModal} technicians={technicians} onClose={() => setAssignModal(null)} onUpdated={onUpdated} />}
     </div>

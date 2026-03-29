@@ -49,7 +49,7 @@ function fmtDate(val) {
   if (!val) return '';
   const d = new Date(val);
   if (isNaN(d)) return '';
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 /* ─── Skeleton ─── */
@@ -73,6 +73,12 @@ export default function Notifications({ isAdmin = false }) {
   const [filter, setFilter] = useState('UNREAD');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const navigate = useNavigate();
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,11 +89,11 @@ export default function Notifications({ isAdmin = false }) {
 
   useEffect(() => { load(); }, [load]);
 
-  /* auto-refresh every 30 s */
+  /* auto-refresh every 15 s */
   useEffect(() => {
     const id = setInterval(() => {
       fetchNotifications().then(data => { setNotifications(data); window.dispatchEvent(new Event('updateNotifCount')); }).catch(() => {});
-    }, 30000);
+    }, 15000);
     return () => clearInterval(id);
   }, []);
 
@@ -100,7 +106,12 @@ export default function Notifications({ isAdmin = false }) {
       } catch {}
     }
     if (n.referenceType === 'BOOKING') navigate(isAdmin ? '/admin/bookings' : '/my-bookings');
-    else if (n.referenceType === 'TICKET') navigate(isAdmin ? '/admin/incidents' : '/incidents');
+    else if (n.referenceType === 'TICKET') {
+      // Navigate to the exact ticket using referenceId for deep-link
+      const base = isAdmin ? '/admin/incidents' : '/incidents';
+      const ticketParam = n.referenceId ? `?ticketId=${n.referenceId}` : '';
+      navigate(`${base}${ticketParam}`);
+    }
   };
 
   const handleDelete = (id, e) => { e.stopPropagation(); setDeleteConfirm(id); };
@@ -122,9 +133,9 @@ export default function Notifications({ isAdmin = false }) {
     } catch {}
   };
 
-  const filtered = filter === 'ALL'    ? notifications
+  const filtered = (filter === 'ALL'    ? notifications
                  : filter === 'UNREAD' ? notifications.filter(n => !n.read)
-                 : notifications.filter(n => n.read);
+                 : notifications.filter(n => n.read)).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -164,7 +175,11 @@ export default function Notifications({ isAdmin = false }) {
               Stay updated on your bookings and incident tickets
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#f0fdf4', border: '1.5px solid #059669', borderRadius: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#065f46' }}>{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+            </div>
             <button onClick={load} style={{ padding: '9px 16px', background: '#eff6ff', border: '1.5px solid #2563eb', borderRadius: 8, color: '#1d4ed8', cursor: 'pointer', fontWeight: 800, fontSize: 13 }}>
               ↻ Refresh
             </button>

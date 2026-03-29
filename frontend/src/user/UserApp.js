@@ -12,7 +12,7 @@ import Profile from './Profile';
 import MyBookings from './MyBookings';
 import Incidents from './Incidents';
 import Notifications from './Notifications';
-import { fetchUnreadCount, markAllNotificationsRead } from '../api';
+import { fetchUnreadCount } from '../api';
 import '../App.css';
 
 const USER_AUTH_KEY = 'smartcampus_user_auth';
@@ -35,7 +35,7 @@ function NotificationBell({ userId, isAuthenticated }) {
 
   useEffect(() => {
     loadCount();
-    const timer = setInterval(loadCount, 30000); // Poll every 30s
+    const timer = setInterval(loadCount, 15000); // Poll every 15s
     const handleUpdate = () => loadCount();
     window.addEventListener('updateNotifCount', handleUpdate);
     return () => {
