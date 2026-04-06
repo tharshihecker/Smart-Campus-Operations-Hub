@@ -1,42 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification } from '../api';
-
-/* ─── Inject scoped styles (white-card, same look as Incidents page) ─── */
-const NOTIF_STYLE = `
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-  .notif-root * { font-family: 'Inter', sans-serif !important; box-sizing: border-box; }
-  .notif-card { transition: box-shadow 0.2s, transform 0.18s, border-color 0.2s; }
-  .notif-card:hover { box-shadow: 0 6px 24px rgba(37,99,235,0.12); transform: translateX(4px); border-color: #2563eb !important; }
-  .notif-card-unread { border-left: 4px solid #2563eb !important; }
-  .notif-filter-btn { transition: all 0.18s; }
-  .notif-filter-btn:hover { filter: brightness(0.95); }
-  .notif-del-btn { transition: all 0.18s; }
-  .notif-del-btn:hover { color: #dc2626 !important; background: #fef2f2 !important; }
-  @keyframes notifPulse { 0%,100%{opacity:1;} 50%{opacity:0.45;} }
-  @keyframes notifSlideIn { from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);} }
-  .notif-slide { animation: notifSlideIn 0.3s ease-out; }
-  .notif-skeleton { animation: notifPulse 1.8s infinite; }
-`;
-function useNotifStyle() {
-  useEffect(() => {
-    if (document.getElementById('notif-styles')) return;
-    const tag = document.createElement('style');
-    tag.id = 'notif-styles';
-    tag.textContent = NOTIF_STYLE;
-    document.head.appendChild(tag);
-  }, []);
-}
+import './Notifications.css';
 
 const TYPE_META = {
-  BOOKING_APPROVED:   { icon: '✅', color: '#059669', bg: '#ecfdf5', label: 'Booking' },
-  BOOKING_REJECTED:   { icon: '❌', color: '#dc2626', bg: '#fef2f2', label: 'Booking' },
-  BOOKING_CANCELLED:  { icon: '🚫', color: '#d97706', bg: '#fffbeb', label: 'Booking' },
-  TICKET_STATUS_CHANGED: { icon: '🔧', color: '#2563eb', bg: '#eff6ff', label: 'Ticket' },
-  TICKET_COMMENT_ADDED:  { icon: '💬', color: '#7c3aed', bg: '#f5f3ff', label: 'Ticket' },
-  TICKET_ASSIGNED:    { icon: '👤', color: '#d97706', bg: '#fffbeb', label: 'Ticket' },
-  USER_COMMENT:       { icon: '💬', color: '#0891b2', bg: '#ecfeff', label: 'Message' },
-  SYSTEM:             { icon: '📢', color: '#4b5563', bg: '#f9fafb', label: 'System'  },
+  BOOKING_APPROVED: { icon: '✅', color: 'var(--brand-accent)', bg: 'rgba(16,185,129,0.1)', label: 'Booking' },
+  BOOKING_REJECTED: { icon: '❌', color: 'var(--brand-danger)', bg: 'rgba(239,68,68,0.1)', label: 'Booking' },
+  BOOKING_CANCELLED: { icon: '🚫', color: 'var(--brand-warning)', bg: 'rgba(245,158,11,0.1)', label: 'Booking' },
+  TICKET_STATUS_CHANGED: { icon: '🔧', color: 'var(--brand-blue)', bg: 'rgba(59,130,246,0.1)', label: 'Ticket' },
+  TICKET_COMMENT_ADDED: { icon: '💬', color: 'var(--brand-purple)', bg: 'rgba(139,92,246,0.1)', label: 'Ticket' },
+  TICKET_ASSIGNED: { icon: '👤', color: 'var(--brand-warning)', bg: 'rgba(245,158,11,0.1)', label: 'Ticket' },
+  USER_COMMENT: { icon: '💬', color: 'var(--brand-teal)', bg: 'rgba(14,165,233,0.1)', label: 'Message' },
+  SYSTEM: { icon: '📢', color: 'var(--text-muted)', bg: 'var(--bg-surface)', label: 'System' },
 };
 
 function fmtTime(val) {
@@ -67,7 +42,6 @@ function NotifSkeleton() {
 }
 
 export default function Notifications({ isAdmin = false }) {
-  useNotifStyle();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('UNREAD');
@@ -92,7 +66,7 @@ export default function Notifications({ isAdmin = false }) {
   /* auto-refresh every 15 s */
   useEffect(() => {
     const id = setInterval(() => {
-      fetchNotifications().then(data => { setNotifications(data); window.dispatchEvent(new Event('updateNotifCount')); }).catch(() => {});
+      fetchNotifications().then(data => { setNotifications(data); window.dispatchEvent(new Event('updateNotifCount')); }).catch(() => { });
     }, 15000);
     return () => clearInterval(id);
   }, []);
@@ -103,7 +77,7 @@ export default function Notifications({ isAdmin = false }) {
         await markNotificationRead(n.id);
         setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
         window.dispatchEvent(new Event('updateNotifCount'));
-      } catch {}
+      } catch { }
     }
     if (n.referenceType === 'BOOKING') navigate(isAdmin ? '/admin/bookings' : '/my-bookings');
     else if (n.referenceType === 'TICKET') {
@@ -122,7 +96,7 @@ export default function Notifications({ isAdmin = false }) {
       setNotifications(prev => prev.filter(x => x.id !== deleteConfirm));
       setDeleteConfirm(null);
       window.dispatchEvent(new Event('updateNotifCount'));
-    } catch {}
+    } catch { }
   };
 
   const handleMarkAllRead = async () => {
@@ -130,19 +104,19 @@ export default function Notifications({ isAdmin = false }) {
       await markAllNotificationsRead();
       setNotifications(prev => prev.map(x => ({ ...x, read: true })));
       window.dispatchEvent(new Event('updateNotifCount'));
-    } catch {}
+    } catch { }
   };
 
-  const filtered = (filter === 'ALL'    ? notifications
-                 : filter === 'UNREAD' ? notifications.filter(n => !n.read)
-                 : notifications.filter(n => n.read)).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const filtered = (filter === 'ALL' ? notifications
+    : filter === 'UNREAD' ? notifications.filter(n => !n.read)
+      : notifications.filter(n => n.read)).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   /* Group by date */
   const groups = { 'Today': [], 'Yesterday': [], 'Earlier': [] };
   const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0);
-  const yestMidnight  = new Date(todayMidnight); yestMidnight.setDate(yestMidnight.getDate() - 1);
+  const yestMidnight = new Date(todayMidnight); yestMidnight.setDate(yestMidnight.getDate() - 1);
   filtered.forEach(n => {
     const d = new Date(n.createdAt);
     if (d >= todayMidnight) groups['Today'].push(n);
@@ -151,9 +125,9 @@ export default function Notifications({ isAdmin = false }) {
   });
 
   const filterOpts = [
-    { key: 'ALL',    label: `All (${notifications.length})` },
+    { key: 'ALL', label: `All (${notifications.length})` },
     { key: 'UNREAD', label: `Unread (${unreadCount})` },
-    { key: 'READ',   label: `Read (${notifications.length - unreadCount})` },
+    { key: 'READ', label: `Read (${notifications.length - unreadCount})` },
   ];
 
   return (
@@ -239,7 +213,7 @@ export default function Notifications({ isAdmin = false }) {
                   {items.map(n => {
                     const isEscalation = (n.title && n.title.includes('ESCALATION')) || (n.message && n.message.includes('ESCALATION REQUEST'));
                     const meta = isEscalation ? { icon: '🚨', color: '#dc2626', bg: '#fef2f2', label: 'Escalated' } : (TYPE_META[n.type] || TYPE_META.SYSTEM);
-                    
+
                     return (
                       <div key={n.id} className={`notif-card notif-slide ${!n.read ? 'notif-card-unread' : ''}`}
                         onClick={() => handleRead(n)}

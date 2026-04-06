@@ -16,7 +16,8 @@ import '../App.css';
 const ADMIN_AUTH_KEY = 'smartcampus_admin_auth';
 
 function ProtectedAdminRoute({ isAuthenticated, children }) {
-  if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
+  const userRole = localStorage.getItem('smartcampus_user_role');
+  if (!isAuthenticated || userRole !== 'ADMIN') return <Navigate to="/admin/login" replace />;
   return children;
 }
 
@@ -96,9 +97,26 @@ function AdminTopNav({ isAuthenticated, onLogout }) {
 function AdminApp() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem(ADMIN_AUTH_KEY) === 'true');
+  
+  // Check if user trying to access admin panel is actually an admin
+  useEffect(() => {
+    const userRole = localStorage.getItem('smartcampus_user_role');
+    const token = localStorage.getItem('smartcampus_token');
+    
+    if (token && userRole && userRole !== 'ADMIN') {
+      // Non-admin trying to access admin panel, redirect to user portal
+      localStorage.removeItem(ADMIN_AUTH_KEY);
+      setIsAuthenticated(false);
+      navigate('/', { replace: true });
+    }
+  }, [navigate]);
 
   const authApi = useMemo(() => ({
     login: (data) => {
+      // Only allow ADMIN role access
+      if (data?.role !== 'ADMIN') {
+        throw new Error('Admin access required');
+      }
       localStorage.setItem(ADMIN_AUTH_KEY, 'true');
       if (data?.token) localStorage.setItem('smartcampus_token', data.token);
       if (data?.userId) localStorage.setItem('smartcampus_user_id', data.userId);
