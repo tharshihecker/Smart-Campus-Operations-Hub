@@ -17,6 +17,7 @@ function Profile() {
 
   /* Notification Prefs */
   const [prefsSaving, setPrefsSaving] = useState(false);
+  const [prefMsg, setPrefMsg] = useState({ type: '', text: '' });
 
   /* Password change */
   const [showPwdForm, setShowPwdForm] = useState(false);
@@ -99,8 +100,8 @@ function Profile() {
       setPwdMsg({ type: 'error', text: 'New passwords do not match.' });
       return;
     }
-    if (pwdForm.newPassword.length < 4) {
-      setPwdMsg({ type: 'error', text: 'New password must be at least 4 characters.' });
+    if (pwdForm.newPassword.length < 6) {
+      setPwdMsg({ type: 'error', text: 'New password must be at least 6 characters.' });
       return;
     }
     setPwdSaving(true);
@@ -127,37 +128,64 @@ function Profile() {
       await updateNotificationPrefs(userId, { [key]: !currentValue });
       setProfile(prev => ({ ...prev, [key]: !currentValue }));
     } catch (err) {
-      alert('Failed to update preference: ' + err.message);
+      setPrefMsg({ type: 'error', text: err.message || 'Failed to update preference.' });
+      setTimeout(() => setPrefMsg({ type: '', text: '' }), 4000);
     } finally {
       setPrefsSaving(false);
     }
   };
 
   /* ── Render ── */
-  if (loading) return <section className="profile-shell"><p className="state-text">Loading profile...</p></section>;
-  if (error) return <section className="profile-shell"><p className="state-text error">{error}</p></section>;
+  if (loading) return <section className="profile-shell"><div className="loading-spinner"></div><p className="state-text">Loading profile...</p></section>;
+  if (error) return <section className="profile-shell"><div className="error-icon">⚠️</div><p className="state-text error">{error}</p></section>;
   if (!profile) return <section className="profile-shell"><p className="state-text">No profile data.</p></section>;
 
   return (
     <section className="profile-shell">
-      <h2>My Profile</h2>
-      <p className="profile-subtitle">View and manage your campus account information.</p>
+      <div className="profile-header">
+        <div className="profile-header-content">
+          <div className="profile-avatar">
+            <div className="avatar-inner">
+              {profile.fullName ? profile.fullName.charAt(0).toUpperCase() : (profile.username?.charAt(0).toUpperCase() || '?')}
+            </div>
+          </div>
+          <div className="profile-header-info">
+            <h2>My Profile</h2>
+            <p className="profile-subtitle">View and manage your campus account information.</p>
+          </div>
+        </div>
+      </div>
 
-      {saveMsg.text && <div className={`profile-alert ${saveMsg.type}`}>{saveMsg.text}</div>}
+      {saveMsg.text && (
+        <div className={`profile-alert ${saveMsg.type}`}>
+          <span className="alert-icon">{saveMsg.type === 'success' ? '✓' : '⚠️'}</span>
+          <span>{saveMsg.text}</span>
+        </div>
+      )}
 
       {/* ── Profile Info Card ── */}
       <div className="profile-card">
-        <h3>
-          <span className="card-icon">👤</span>
-          Personal Information
-          {!editing && <button type="button" className="btn-edit-trigger" onClick={startEditing}>Edit Profile</button>}
-        </h3>
+        <div className="card-header">
+          <div className="card-title">
+            <span className="card-icon">👤</span>
+            <h3>Personal Information</h3>
+          </div>
+          {!editing && (
+            <button type="button" className="btn-edit-trigger" onClick={startEditing}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17 3l4 4-7 7H10v-4l7-7z" />
+                <path d="M4 20h16" />
+              </svg>
+              Edit Profile
+            </button>
+          )}
+        </div>
 
         {!editing ? (
           <div className="profile-info-grid">
             <div className="profile-info-item">
               <span className="info-label">Username</span>
-              <span className="info-value">{profile.username}</span>
+              <span className="info-value">@{profile.username}</span>
             </div>
             <div className="profile-info-item">
               <span className="info-label">Full Name</span>
@@ -165,7 +193,10 @@ function Profile() {
             </div>
             <div className="profile-info-item">
               <span className="info-label">Email</span>
-              <span className={`info-value ${!profile.email ? 'muted' : ''}`}>{profile.email || 'Not set'}</span>
+              <span className={`info-value ${!profile.email ? 'muted' : ''}`}>
+                {profile.email || 'Not set'}
+                {profile.email && <span className="email-badge">Verified</span>}
+              </span>
             </div>
             <div className="profile-info-item">
               <span className="info-label">Phone</span>
@@ -173,45 +204,64 @@ function Profile() {
             </div>
             <div className="profile-info-item">
               <span className="info-label">Department</span>
-              <span className={`info-value ${!profile.department ? 'muted' : ''}`}>{profile.department || 'Not set'}</span>
+              <span className={`info-value ${!profile.department ? 'muted' : ''}`}>
+                {profile.department || 'Not set'}
+                {profile.department && <span className="dept-badge">{profile.department}</span>}
+              </span>
             </div>
             <div className="profile-info-item">
               <span className="info-label">Role</span>
-              <span className="info-value"><span className={`role-badge ${profile.role}`}>{profile.role}</span></span>
+              <span className="info-value">
+                <span className={`role-badge ${String(profile.role).toLowerCase()}`}>
+                  {String(profile.role).toLowerCase() === 'admin' ? 'Administrator' :
+                    String(profile.role).toLowerCase() === 'technician' ? 'Technician' : 'Student'}
+                </span>
+              </span>
             </div>
             <div className="profile-info-item full-width">
               <span className="info-label">Bio</span>
-              <span className={`info-value ${!profile.bio ? 'muted' : ''}`}>{profile.bio || 'No bio provided'}</span>
+              <span className={`info-value bio-text ${!profile.bio ? 'muted' : ''}`}>
+                {profile.bio || 'No bio provided. Click edit to add one!'}
+              </span>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSaveProfile} className="profile-form">
             <div className="profile-form-row">
-              <label>
-                Full Name
+              <div className="form-group">
+                <label>Full Name</label>
                 <input name="fullName" value={editForm.fullName} onChange={handleEditChange} placeholder="Enter your full name" />
-              </label>
-              <label>
-                Email
+              </div>
+              <div className="form-group">
+                <label>Email</label>
                 <input name="email" type="email" value={editForm.email} onChange={handleEditChange} placeholder="your@email.com" />
-              </label>
+              </div>
             </div>
             <div className="profile-form-row">
-              <label>
-                Phone
+              <div className="form-group">
+                <label>Phone</label>
                 <input name="phone" value={editForm.phone} onChange={handleEditChange} placeholder="+94 xxx xxx xxxx" />
-              </label>
-              <label>
-                Department
+              </div>
+              <div className="form-group">
+                <label>Department</label>
                 <input name="department" value={editForm.department} onChange={handleEditChange} placeholder="e.g. Computer Science" />
-              </label>
+              </div>
             </div>
-            <label>
-              Bio
+            <div className="form-group">
+              <label>Bio</label>
               <textarea name="bio" value={editForm.bio} onChange={handleEditChange} placeholder="Tell us about yourself..." rows={3} />
-            </label>
+            </div>
             <div className="profile-form-actions">
-              <button type="submit" className="btn-profile primary" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
+              <button type="submit" className="btn-profile primary" disabled={saving}>
+                {saving ? (
+                  <>
+                    <span className="btn-spinner"></span>
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </button>
               <button type="button" className="btn-profile secondary" onClick={cancelEditing}>Cancel</button>
             </div>
           </form>
@@ -220,29 +270,43 @@ function Profile() {
 
       {/* ── Notification Preferences Card ── */}
       <div className="profile-card">
-        <h3><span className="card-icon">🔔</span>Notification Settings</h3>
-        <p style={{ marginBottom: '1rem', color: '#333333', fontSize: '0.9rem', fontWeight: 600 }}>
-          Choose what kind of email and dashboard notifications you want to receive.
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="card-header">
+          <div className="card-title">
+            <span className="card-icon">🔔</span>
+            <h3>Notification Settings</h3>
+          </div>
+        </div>
+        <p className="card-description">Choose what kind of email and dashboard notifications you want to receive.</p>
+
+        {prefMsg.text && (
+          <div className={`profile-alert ${prefMsg.type} compact`}>
+            <span>{prefMsg.text}</span>
+          </div>
+        )}
+
+        <div className="notification-list">
           {['notifBookingUpdates', 'notifTicketUpdates', 'notifComments'].map(key => {
             const label = key === 'notifBookingUpdates' ? 'Booking Approvals & Updates'
-                        : key === 'notifTicketUpdates' ? 'Incident Ticket Status Changes'
-                        : 'New Comments on Tickets';
+              : key === 'notifTicketUpdates' ? 'Incident Ticket Status Changes'
+                : 'New Comments on Tickets';
             const isOn = profile[key];
             return (
-              <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-                <span style={{ fontWeight: 700, color: '#222222', fontSize: '0.95rem' }}>{label}</span>
+              <div key={key} className="notification-item">
+                <div className="notification-info">
+                  <span className="notification-label">{label}</span>
+                  <span className="notification-desc">
+                    {key === 'notifBookingUpdates' && 'Get notified when your bookings are approved or modified'}
+                    {key === 'notifTicketUpdates' && 'Receive updates when ticket status changes'}
+                    {key === 'notifComments' && 'Stay informed about new comments on your tickets'}
+                  </span>
+                </div>
                 <button
                   type="button"
                   disabled={prefsSaving}
                   onClick={() => handlePrefToggle(key, isOn)}
-                  style={{
-                    position: 'relative', width: 44, height: 24, borderRadius: 12, border: 'none', cursor: prefsSaving ? 'wait' : 'pointer',
-                    background: isOn ? 'var(--brand-teal)' : 'var(--bg-card-hover)', transition: 'background 0.3s ease'
-                  }}
+                  className={`toggle-switch ${isOn ? 'active' : ''}`}
                 >
-                  <div style={{ position: 'absolute', top: 2, left: isOn ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.3s cubic-bezier(0.4,0,0.2,1)', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }} />
+                  <span className="toggle-slider"></span>
                 </button>
               </div>
             );
@@ -252,39 +316,62 @@ function Profile() {
 
       {/* ── Security Card ── */}
       <div className="profile-card">
-        <h3>
-          <span className="card-icon">🔒</span>
-          Security
-        </h3>
+        <div className="card-header">
+          <div className="card-title">
+            <span className="card-icon">🔒</span>
+            <h3>Security</h3>
+          </div>
+        </div>
 
-        {pwdMsg.text && <div className={`profile-alert ${pwdMsg.type}`}>{pwdMsg.text}</div>}
+        {pwdMsg.text && (
+          <div className={`profile-alert ${pwdMsg.type} compact`}>
+            <span className="alert-icon">{pwdMsg.type === 'success' ? '✓' : '⚠️'}</span>
+            <span>{pwdMsg.text}</span>
+          </div>
+        )}
 
         {!showPwdForm ? (
-          <div>
-            <p style={{ marginBottom: '1rem', color: '#666' }}>Keep your account secure by using a strong password.</p>
+          <div className="security-content">
+            <p className="security-description">Keep your account secure by using a strong password.</p>
             <button type="button" className="btn-profile primary" onClick={() => { setShowPwdForm(true); setPwdMsg({ type: '', text: '' }); }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
               Change Password
             </button>
           </div>
         ) : (
           <form onSubmit={handlePasswordSubmit} className="profile-form password-section">
-            <label>
-              Current Password
+            <div className="form-group">
+              <label>Current Password</label>
               <input name="currentPassword" type="password" value={pwdForm.currentPassword} onChange={handlePwdChange} required autoComplete="current-password" />
-            </label>
+            </div>
             <div className="profile-form-row">
-              <label>
-                New Password
+              <div className="form-group">
+                <label>New Password</label>
                 <input name="newPassword" type="password" value={pwdForm.newPassword} onChange={handlePwdChange} required autoComplete="new-password" />
-              </label>
-              <label>
-                Confirm New Password
+                <span className="password-hint">Minimum 6 characters</span>
+              </div>
+              <div className="form-group">
+                <label>Confirm New Password</label>
                 <input name="confirmPassword" type="password" value={pwdForm.confirmPassword} onChange={handlePwdChange} required autoComplete="new-password" />
-              </label>
+              </div>
             </div>
             <div className="profile-form-actions">
-              <button type="submit" className="btn-profile primary" disabled={pwdSaving}>{pwdSaving ? 'Changing...' : 'Update Password'}</button>
-              <button type="button" className="btn-profile secondary" onClick={() => { setShowPwdForm(false); setPwdMsg({ type: '', text: '' }); }}>Cancel</button>
+              <button type="submit" className="btn-profile primary" disabled={pwdSaving}>
+                {pwdSaving ? (
+                  <>
+                    <span className="btn-spinner"></span>
+                    Changing...
+                  </>
+                ) : (
+                  'Update Password'
+                )}
+              </button>
+              <button type="button" className="btn-profile secondary" onClick={() => { setShowPwdForm(false); setPwdMsg({ type: '', text: '' }); }}>
+                Cancel
+              </button>
             </div>
           </form>
         )}
@@ -292,15 +379,39 @@ function Profile() {
 
       {/* ── Account Details Card ── */}
       <div className="profile-card">
-        <h3>
-          <span className="card-icon">📋</span>
-          Account Details
-        </h3>
+        <div className="card-header">
+          <div className="card-title">
+            <span className="card-icon">📋</span>
+            <h3>Account Details</h3>
+          </div>
+        </div>
         <div className="account-meta">
-          <span>🆔 User ID: <strong>{profile.id}</strong></span>
-          {profile.createdAt && <span>📅 Joined: <strong>{new Date(profile.createdAt).toLocaleDateString()}</strong></span>}
-          {profile.updatedAt && <span>✏️ Last Updated: <strong>{new Date(profile.updatedAt).toLocaleDateString()}</strong></span>}
-          <span>✅ Status: <strong>{profile.enabled !== false ? 'Active' : 'Disabled'}</strong></span>
+          <div className="meta-item">
+            <span className="meta-icon">🆔</span>
+            <span className="meta-label">User ID:</span>
+            <strong className="meta-value">{profile.id}</strong>
+          </div>
+          {profile.createdAt && (
+            <div className="meta-item">
+              <span className="meta-icon">📅</span>
+              <span className="meta-label">Joined:</span>
+              <strong className="meta-value">{new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+            </div>
+          )}
+          {profile.updatedAt && (
+            <div className="meta-item">
+              <span className="meta-icon">✏️</span>
+              <span className="meta-label">Last Updated:</span>
+              <strong className="meta-value">{new Date(profile.updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+            </div>
+          )}
+          <div className="meta-item">
+            <span className="meta-icon">✅</span>
+            <span className="meta-label">Status:</span>
+            <strong className={`status-badge ${profile.enabled !== false ? 'active' : 'disabled'}`}>
+              {profile.enabled !== false ? 'Active' : 'Disabled'}
+            </strong>
+          </div>
         </div>
       </div>
     </section>

@@ -2,12 +2,32 @@ const API_BASE = "http://localhost:8080/api";
 
 /* ── Auth helpers ─────────────────────────────────────── */
 export function getToken() { return localStorage.getItem('smartcampus_token'); }
+export function setToken(token) { localStorage.setItem('smartcampus_token', token); }
+export function clearToken() { localStorage.removeItem('smartcampus_token'); }
 export function getAuthHeader() {
   const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 export function getCurrentUserId() {
   return localStorage.getItem('smartcampus_user_id');
+}
+export function setCurrentUserId(userId) {
+  localStorage.setItem('smartcampus_user_id', userId);
+}
+export function getCurrentUserRole() {
+  return localStorage.getItem('smartcampus_user_role');
+}
+export function setCurrentUserRole(role) {
+  localStorage.setItem('smartcampus_user_role', role);
+}
+export function isAdmin() {
+  return getCurrentUserRole() === 'ADMIN';
+}
+export function isTechnician() {
+  return getCurrentUserRole() === 'TECHNICIAN';
+}
+export function isRegularUser() {
+  return getCurrentUserRole() === 'USER' || getCurrentUserRole() === 'STAFF';
 }
 
 /* ── Core fetch helpers ───────────────────────────────── */
@@ -26,7 +46,8 @@ async function request(path, data) {
 }
 
 async function fetchJson(path) {
-  const res = await fetch(`${API_BASE}${path}`, { headers: getAuthHeader() });
+  const headers = { ...getAuthHeader() };
+  const res = await fetch(`${API_BASE}${path}`, { headers });
   if (!res.ok) {
     const text = await res.text();
     throw parseErrorResponse(text);
@@ -35,10 +56,15 @@ async function fetchJson(path) {
 }
 
 async function sendJson(method, path, data) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...getAuthHeader(),
+  };
   const res = await fetch(`${API_BASE}${path}`, {
     method,
-    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    headers,
     body: data !== undefined ? JSON.stringify(data) : undefined,
+    credentials: 'include', // Allow cookies if needed
   });
   if (!res.ok) {
     const text = await res.text();
@@ -79,8 +105,23 @@ function buildQuery(params) {
 }
 
 /* ── Auth ─────────────────────────────────────────────── */
-export async function signup(data) { return request("/user/signup", data); }
-export async function login(data) { return request("/user/login", data); }
+export async function signup(data) {
+  const response = await request("/user/signup", data);
+  if (response && response.token) {
+    setToken(response.token);
+    setCurrentUserId(response.userId);
+  }
+  return response;
+}
+
+export async function login(data) {
+  const response = await request("/user/login", data);
+  if (response && response.token) {
+    setToken(response.token);
+    setCurrentUserId(response.userId);
+  }
+  return response;
+}
 
 /**
  * Google OAuth 2.0 login – sends the Google access token to our backend.
@@ -88,7 +129,24 @@ export async function login(data) { return request("/user/login", data); }
  * @param {string} accessToken – from @react-oauth/google implicit flow
  */
 export async function googleLogin(accessToken) {
-  return request("/auth/google", { accessToken: accessToken });
+  const response = await request("/auth/google", { accessToken });
+  if (response && response.token) {
+    setToken(response.token);
+    setCurrentUserId(response.userId);
+  }
+  return response;
+}
+
+export function logout() {
+  clearToken();
+  localStorage.removeItem('smartcampus_user_id');
+  localStorage.removeItem('smartcampus_username');
+  localStorage.removeItem('smartcampus_role');
+  localStorage.removeItem('smartcampus_full_name');
+}
+
+export function isLoggedIn() {
+  return !!getToken();
 }
 
 /* ── User Profile ────────────────────────────────────── */
@@ -126,10 +184,30 @@ export async function deleteFacility(id) { return sendJson("DELETE", `/admin/fac
 export async function createBooking(data) { return sendJson("POST", "/bookings", data); }
 export async function fetchUserBookings(userId) { return fetchJson(`/bookings/user/${userId}`); }
 export async function fetchFacilityBookings(facilityId) { return fetchJson(`/bookings/facility/${facilityId}`); }
+
+
 export async function cancelBooking(bookingId, userId) { return sendJson("PUT", `/bookings/${bookingId}/cancel?userId=${userId}`); }
 export async function fetchBookingQR(bookingId) { return fetchJson(`/bookings/${bookingId}/qr`); }
 export async function checkinBooking(bookingId, userId) {
   return sendJson("POST", `/bookings/${bookingId}/checkin?userId=${userId}`);
+}
+
+/**
+ * Returns all active (PENDING/APPROVED/CHECKED_IN) bookings for a facility on a specific date.
+ * Used by the frontend BookingPanel to locally compute seat usage per time slot.
+ */
+export async function fetchFacilityBookingsByDate(facilityId, date) {
+  return fetchJson(`/bookings/facility/${facilityId}?date=${date}`);
+}
+
+/**
+ * Calls the dedicated availability endpoint: returns totalCapacity, usedSeats, remainingSeats,
+ * availableFrom, availableTo for a specific facility + date + time window.
+ */
+export async function fetchFacilityAvailability(facilityId, date, startTime, endTime) {
+  return fetchJson(
+    `/bookings/facility/${facilityId}/availability?date=${date}&startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`
+  );
 }
 
 /* ── Bookings (admin) ─────────────────────────────────── */
@@ -190,6 +268,11 @@ export async function createIncident(formData) {
   return res.json();
 }
 
+/* ── Technician: Assigned Incidents ───────────────────────── */
+export async function fetchTechnicianAssignedIncidents() {
+  return fetchJson("/incidents/assigned");
+}
+
 export async function fetchIncidentComments(id) { return fetchJson(`/incidents/${id}/comments`); }
 export async function addIncidentComment(id, content) { return sendJson("POST", `/incidents/${id}/comments`, { content }); }
 export async function editIncidentComment(commentId, content) { return sendJson("PUT", `/incidents/comments/${commentId}`, { content }); }
@@ -203,11 +286,11 @@ export async function updateIncidentStatus(id, status, resolutionNotes, rejectio
 export async function assignIncidentTechnician(id, technicianId) {
   return sendJson("PUT", `/admin/incidents/${id}/assign`, { technicianId });
 }
-export async function addAdminIncidentComment(id, content, adminId) { 
-  return sendJson("POST", `/admin/incidents/${id}/comments?adminId=${adminId}`, { content }); 
+export async function addAdminIncidentComment(id, content, adminId) {
+  return sendJson("POST", `/admin/incidents/${id}/comments?adminId=${adminId}`, { content });
 }
-export async function deleteAdminIncidentComment(commentId, adminId) { 
-  return sendJson("DELETE", `/admin/incidents/comments/${commentId}?adminId=${adminId}`); 
+export async function deleteAdminIncidentComment(commentId, adminId) {
+  return sendJson("DELETE", `/admin/incidents/comments/${commentId}?adminId=${adminId}`);
 }
 export async function fetchIncidentStatuses() { return fetchJson("/admin/incidents/statuses"); }
 export async function fetchIncidentPriorities() { return fetchJson("/admin/incidents/priorities"); }

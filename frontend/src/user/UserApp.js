@@ -11,8 +11,9 @@ import Facilities from './Facilities';
 import Profile from './Profile';
 import MyBookings from './MyBookings';
 import Incidents from './Incidents';
+import TechnicianDashboard from './TechnicianDashboard';
 import Notifications from './Notifications';
-import { fetchUnreadCount } from '../api';
+import { fetchUnreadCount, isTechnician } from '../api';
 import '../App.css';
 
 const USER_AUTH_KEY = 'smartcampus_user_auth';
@@ -30,7 +31,7 @@ function NotificationBell({ userId, isAuthenticated }) {
     try {
       const data = await fetchUnreadCount();
       setCount(data.count || 0);
-    } catch {}
+    } catch { }
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -52,37 +53,59 @@ function NotificationBell({ userId, isAuthenticated }) {
   );
 }
 
-function UserTopNav({ isAuthenticated, onLogout }) {
+function UserTopNav({ isAuthenticated, onLogout, toggleTheme, theme }) {
   const username = localStorage.getItem('smartcampus_username');
   const fullName = localStorage.getItem('smartcampus_user_fullname');
   const displayName = fullName || username || '';
   const userId = localStorage.getItem('smartcampus_user_id');
+  const userRole = localStorage.getItem('smartcampus_user_role');
+  const isTech = userRole === 'TECHNICIAN';
 
   return (
     <header className="top-nav">
       <div className="brand-block">
         <div className="brand-dot" />
         <div>
-          <p className="brand-kicker">Smart Campus Platform</p>
-          <h1>NUSLIIT PAF Portal</h1>
+          <p className="brand-kicker">Smart Campus</p>
+          <h1>{isTech ? '🔧 NUSLIIT Support' : 'NUSLIIT Premium'}</h1>
         </div>
       </div>
 
       <nav className="nav-links">
         {isAuthenticated ? (
           <>
-            <NavLink to="/home" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Home</NavLink>
-            <NavLink to="/facilities" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Facilities</NavLink>
-            <NavLink to="/my-bookings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>My Bookings</NavLink>
-            <NavLink to="/incidents" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Incidents</NavLink>
-            <NavLink to="/events" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Events</NavLink>
-            <NavLink to="/resources" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Resources</NavLink>
-            <NavLink to="/services" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Services</NavLink>
-            <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              {displayName ? `👤 ${displayName}` : 'Profile'}
-            </NavLink>
-            <NotificationBell isAuthenticated={isAuthenticated} userId={userId} />
-            <button type="button" className="nav-button" onClick={onLogout}>Logout</button>
+            {isTech ? (
+              <>
+                <NavLink to="/technician-dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>My Dashboard</NavLink>
+                <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  {displayName ? `👤 ${displayName} (Tech)` : 'Profile'}
+                </NavLink>
+                <NotificationBell isAuthenticated={isAuthenticated} userId={userId} />
+                <button type="button" className="nav-button" onClick={onLogout}>Logout</button>
+              </>
+            ) : (
+              <>
+                <NavLink to="/home" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
+                <NavLink to="/facilities" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Facilities</NavLink>
+                <NavLink to="/my-bookings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>My Bookings</NavLink>
+                <NavLink to="/incidents" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Incidents</NavLink>
+                
+                <div className="nav-dropdown">
+                  <span className="nav-link nav-dropdown-toggle">Explore ▾</span>
+                  <div className="nav-dropdown-menu">
+                    <NavLink to="/events" className={({ isActive }) => `dropdown-link ${isActive ? 'active' : ''}`}>📅 Events</NavLink>
+                    <NavLink to="/resources" className={({ isActive }) => `dropdown-link ${isActive ? 'active' : ''}`}>🎒 Resources</NavLink>
+                    <NavLink to="/services" className={({ isActive }) => `dropdown-link ${isActive ? 'active' : ''}`}>🛠️ Services</NavLink>
+                  </div>
+                </div>
+
+                <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                  {displayName ? `👤 ${displayName}` : 'Profile'}
+                </NavLink>
+                <NotificationBell isAuthenticated={isAuthenticated} userId={userId} />
+                <button type="button" className="nav-button" onClick={onLogout}>Logout</button>
+              </>
+            )}
           </>
         ) : (
           <>
@@ -91,6 +114,9 @@ function UserTopNav({ isAuthenticated, onLogout }) {
             <NavLink to="/signup" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Signup</NavLink>
           </>
         )}
+        <button type="button" className="theme-toggle-btn" onClick={toggleTheme} title="Toggle Theme">
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
       </nav>
     </header>
   );
@@ -99,6 +125,29 @@ function UserTopNav({ isAuthenticated, onLogout }) {
 function UserApp() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem(USER_AUTH_KEY) === 'true');
+  const [theme, setTheme] = useState(() => localStorage.getItem('smartcampus_theme') || 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('smartcampus_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
+  // Check if user is trying to access user app while being admin
+  useEffect(() => {
+    const userRole = localStorage.getItem('smartcampus_user_role');
+    const token = localStorage.getItem('smartcampus_token');
+
+    if (token && userRole === 'ADMIN') {
+      // Redirect admin to admin panel
+      navigate('/admin/home', { replace: true });
+      setIsAuthenticated(false);
+      return;
+    }
+  }, [navigate]);
 
   const authApi = useMemo(() => ({
     login: (data) => {
@@ -111,11 +160,19 @@ function UserApp() {
       if (data?.fullName) localStorage.setItem('smartcampus_user_fullname', data.fullName);
       if (data?.department) localStorage.setItem('smartcampus_user_department', data.department);
       setIsAuthenticated(true);
+
+      if (data?.role === 'ADMIN') {
+        navigate('/admin/home', { replace: true });
+      } else if (data?.role === 'TECHNICIAN') {
+        navigate('/technician-dashboard', { replace: true });
+      } else {
+        navigate('/home', { replace: true });
+      }
     },
     logout: () => {
       ['smartcampus_user_auth', 'smartcampus_token', 'smartcampus_user_id',
-       'smartcampus_username', 'smartcampus_user_email', 'smartcampus_user_role',
-       'smartcampus_user_fullname', 'smartcampus_user_department'].forEach(k => localStorage.removeItem(k));
+        'smartcampus_username', 'smartcampus_user_email', 'smartcampus_user_role',
+        'smartcampus_user_fullname', 'smartcampus_user_department'].forEach(k => localStorage.removeItem(k));
       setIsAuthenticated(false);
       navigate('/login');
     },
@@ -127,13 +184,14 @@ function UserApp() {
 
   return (
     <div className="app-page">
-      <UserTopNav isAuthenticated={isAuthenticated} onLogout={authApi.logout} />
+      <UserTopNav isAuthenticated={isAuthenticated} onLogout={authApi.logout} toggleTheme={toggleTheme} theme={theme} />
       <main className="page-body">
         <Routes>
-          <Route path="/" element={isAuthenticated ? <Navigate to="/home" replace /> : <Landing />} />
+          <Route path="/" element={isAuthenticated ? (isTechnician() ? <Navigate to="/technician-dashboard" replace /> : <Navigate to="/home" replace />) : <Landing />} />
           <Route path="/signup" element={<Signup onSignupSuccess={authApi.login} />} />
           <Route path="/login" element={<Login onLoginSuccess={authApi.login} />} />
           <Route path="/home" element={protectedRoute(<Home />)} />
+          <Route path="/technician-dashboard" element={protectedRoute(<TechnicianDashboard />)} />
           <Route path="/events" element={protectedRoute(<Events />)} />
           <Route path="/resources" element={protectedRoute(<Resources />)} />
           <Route path="/services" element={protectedRoute(<Services />)} />
