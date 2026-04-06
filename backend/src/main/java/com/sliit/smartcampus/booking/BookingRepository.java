@@ -15,13 +15,24 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
 
     long countByStatus(BookingStatus status);
 
-    @Query("{ 'facility.id': ?0, 'bookingDate': ?1, 'status': { $in: ['PENDING','APPROVED'] }, 'startTime': { $lt: ?3 }, 'endTime': { $gt: ?2 } }")
-    List<Booking> findConflictingBookings(
+    /**
+     * Find all ACTIVE (PENDING or APPROVED) bookings for a facility on a given date
+     * whose time window overlaps with [startTime, endTime).
+     * Used to sum attendee counts and enforce seat-based capacity (not hard block).
+     */
+    @Query("{ 'facility.$id': { $oid: ?0 }, 'bookingDate': ?1, 'status': { $in: ['PENDING','APPROVED','CHECKED_IN'] }, 'startTime': { $lt: ?3 }, 'endTime': { $gt: ?2 } }")
+    List<Booking> findOverlappingBookings(
             String facilityId,
             LocalDate date,
             LocalTime startTime,
             LocalTime endTime
     );
+
+    /**
+     * All active bookings for a facility on a specific date (for availability endpoint).
+     */
+    @Query("{ 'facility.$id': { $oid: ?0 }, 'bookingDate': ?1, 'status': { $in: ['PENDING','APPROVED','CHECKED_IN'] } }")
+    List<Booking> findActiveBookingsByFacilityAndDate(String facilityId, LocalDate date);
 
     @Query(value = "{ 'bookingDate': ?0, 'status': { $in: ['PENDING','APPROVED'] } }", count = true)
     long countBookingsForDate(LocalDate date);

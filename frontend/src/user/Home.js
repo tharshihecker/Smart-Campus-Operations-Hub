@@ -26,7 +26,27 @@ function Home() {
         <p>View today&apos;s priorities, discover upcoming activities, and quickly access essential campus tools.</p>
       </div>
 
-      {!summary && !error && <p className="state-text">Loading dashboard...</p>}
+      {!summary && !error && (
+        <div className="dashboard-grid">
+          <div className="dashboard-card skeleton-card">
+            <div className="skeleton-line title" />
+            <div className="skeleton-line long" />
+            <div className="skeleton-line medium" />
+            <div className="skeleton-line short" />
+          </div>
+          <div className="dashboard-card skeleton-card">
+            <div className="skeleton-line title" />
+            <div className="skeleton-line medium" />
+            <div className="skeleton-line" />
+            <div className="skeleton-line long" />
+          </div>
+          <div className="dashboard-card skeleton-card">
+            <div className="skeleton-line title" />
+            <div className="skeleton-line long" />
+            <div className="skeleton-line medium" />
+          </div>
+        </div>
+      )}
       {error && <p className="state-text error">{error}</p>}
 
       {summary && (

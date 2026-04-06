@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +47,31 @@ public class BookingController {
     }
 
     @GetMapping("/facility/{facilityId}")
-    public List<BookingResponse> getFacilityBookings(@PathVariable String facilityId) {
+    public List<BookingResponse> getFacilityBookings(
+            @PathVariable String facilityId,
+            @RequestParam(required = false) String date) {
+        if (date != null && !date.isBlank()) {
+            return bookingService.getFacilityBookingsByDate(facilityId, LocalDate.parse(date));
+        }
         return bookingService.getFacilityBookings(facilityId);
+    }
+
+    /**
+     * Real-time availability: returns seat counts for a facility on a specific date+time window.
+     * GET /api/bookings/facility/{facilityId}/availability?date=2025-04-10&startTime=08:00&endTime=12:00
+     */
+    @GetMapping("/facility/{facilityId}/availability")
+    public Map<String, Object> getAvailability(
+            @PathVariable String facilityId,
+            @RequestParam String date,
+            @RequestParam String startTime,
+            @RequestParam String endTime) {
+        return bookingService.getAvailability(
+                facilityId,
+                LocalDate.parse(date),
+                LocalTime.parse(startTime),
+                LocalTime.parse(endTime)
+        );
     }
 
     @PutMapping("/{bookingId}/cancel")

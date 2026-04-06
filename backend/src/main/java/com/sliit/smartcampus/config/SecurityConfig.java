@@ -33,23 +33,37 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((req, res, exc) -> {
+                    res.setStatus(401);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"error\":\"Unauthorized\"}");
+                })
+                .accessDeniedHandler((req, res, exc) -> {
+                    res.setStatus(403);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"error\":\"Forbidden\"}");
+                })
+            )
             .authorizeHttpRequests(auth -> auth
-                // Public auth endpoints
+                // Public auth endpoints (no token required)
                 .requestMatchers("/api/user/signup", "/api/user/login", "/api/auth/google").permitAll()
-                // Public read-only endpoints
+                // Public read-only endpoints (GET requests)
+                .requestMatchers(HttpMethod.GET, "/api/facilities").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/facilities/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/events").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/services").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/services/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/resources").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/resources/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/home/**").permitAll()
-                // Health check
-                .requestMatchers("/api/health").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/bookings/facility/**").permitAll()
+                // Health and status endpoints
+                .requestMatchers("/api/health", "/api/status").permitAll()
+                .requestMatchers("/actuator/health").permitAll()
                 // File serving
                 .requestMatchers("/uploads/**").permitAll()
-                // Admin endpoints require ADMIN role
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                // Technician endpoints accessible by ADMIN or TECHNICIAN
-                .requestMatchers("/api/technician/**").hasAnyRole("ADMIN", "TECHNICIAN")
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
