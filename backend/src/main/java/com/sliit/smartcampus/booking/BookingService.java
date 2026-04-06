@@ -13,7 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -80,15 +83,26 @@ public class BookingService {
                     facility.getAvailableFrom() + " - " + facility.getAvailableTo());
         }
 
-        if (request.getAttendeeCount() != null && request.getAttendeeCount() > facility.getCapacity()) {
+        int requestedSeats = (request.getAttendeeCount() != null && request.getAttendeeCount() > 0)
+                ? request.getAttendeeCount() : 1;
+
+        if (requestedSeats > facility.getCapacity()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Attendee count exceeds facility capacity of " + facility.getCapacity());
+                    "Attendee count (" + requestedSeats + ") exceeds facility total capacity of " + facility.getCapacity());
         }
 
-        List<Booking> conflicts = bookingRepository.findConflictingBookings(
+        // Seat-based capacity check: sum attendees of all overlapping bookings on same date+time
+        List<Booking> overlapping = bookingRepository.findOverlappingBookings(
                 facilityId, request.getBookingDate(), request.getStartTime(), request.getEndTime());
-        if (!conflicts.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Time slot conflicts with an existing approved/pending booking");
+        int usedSeats = overlapping.stream()
+                .mapToInt(b -> b.getAttendeeCount() != null ? b.getAttendeeCount() : 1)
+                .sum();
+        int remainingSeats = facility.getCapacity() - usedSeats;
+        if (requestedSeats > remainingSeats) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Not enough seats available. Requested: " + requestedSeats +
+                    ", Available: " + Math.max(0, remainingSeats) +
+                    " (Capacity: " + facility.getCapacity() + ", Already booked: " + usedSeats + ")");
         }
 
         Booking booking = new Booking();
@@ -103,6 +117,45 @@ public class BookingService {
         booking.setStatus(BookingStatus.PENDING);
 
         return BookingResponse.from(bookingRepository.save(booking));
+    }
+
+    /**
+     * Returns real-time availability info for a facility on a given date and time window.
+     * Used by the frontend booking panel to show live seat counts.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getAvailability(String facilityId, LocalDate date, LocalTime startTime, LocalTime endTime) {
+        Facility facility = facilityRepository.findById(facilityId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Facility not found"));
+
+        List<Booking> overlapping = bookingRepository.findOverlappingBookings(
+                facilityId, date, startTime, endTime);
+        int usedSeats = overlapping.stream()
+                .mapToInt(b -> b.getAttendeeCount() != null ? b.getAttendeeCount() : 1)
+                .sum();
+        int remaining = Math.max(0, facility.getCapacity() - usedSeats);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("facilityId", facilityId);
+        result.put("date", date.toString());
+        result.put("startTime", startTime.toString());
+        result.put("endTime", endTime.toString());
+        result.put("totalCapacity", facility.getCapacity());
+        result.put("usedSeats", usedSeats);
+        result.put("remainingSeats", remaining);
+        result.put("availableFrom", facility.getAvailableFrom().toString());
+        result.put("availableTo", facility.getAvailableTo().toString());
+        result.put("overlappingBookings", overlapping.size());
+        return result;
+    }
+
+    /**
+     * Returns all active bookings for a facility on a date (for frontend capacity check).
+     */
+    @Transactional(readOnly = true)
+    public List<BookingResponse> getFacilityBookingsByDate(String facilityId, LocalDate date) {
+        return bookingRepository.findActiveBookingsByFacilityAndDate(facilityId, date)
+                .stream().map(BookingResponse::from).toList();
     }
 
     @Transactional(readOnly = true)

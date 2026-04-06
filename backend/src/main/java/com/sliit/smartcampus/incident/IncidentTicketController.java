@@ -55,6 +55,13 @@ public class IncidentTicketController {
         return ResponseEntity.ok(incidentTicketService.getMyTickets(userId));
     }
 
+    /** GET /api/incidents/assigned – Technician's assigned tickets */
+    @GetMapping("/assigned")
+    public ResponseEntity<List<IncidentTicketResponse>> getAssignedTickets(Principal principal) {
+        String userId = getCurrentUserId(principal);
+        return ResponseEntity.ok(incidentTicketService.getAssignedTickets(userId));
+    }
+
     /** GET /api/incidents/{id} */
     @GetMapping("/{id}")
     public ResponseEntity<IncidentTicketResponse> getTicket(@PathVariable String id) {

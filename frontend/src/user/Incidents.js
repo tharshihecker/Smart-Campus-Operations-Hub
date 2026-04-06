@@ -84,20 +84,20 @@ const IS_BASE = {
 
 /* ─── Badges ─── */
 function StatusBadge({ status }) {
-  const map = { OPEN: '#2563eb', IN_PROGRESS: '#d97706', RESOLVED: '#059669', CLOSED: '#4b5563', REJECTED: '#dc2626' };
+  const map = { OPEN: 'var(--brand-teal)', IN_PROGRESS: 'var(--brand-warning)', RESOLVED: 'var(--brand-accent)', CLOSED: 'var(--text-muted)', REJECTED: 'var(--brand-danger)' };
   const labels = { OPEN: 'Open', IN_PROGRESS: 'In Progress', RESOLVED: 'Resolved', CLOSED: 'Closed', REJECTED: 'Rejected' };
   return (
-    <span style={{ background: map[status] || '#4b5563', color: '#fff', padding: '3px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700, display: 'inline-block', whiteSpace: 'nowrap' }}>
+    <span style={{ background: map[status] || 'var(--text-muted)', color: '#fff', padding: '3px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700, display: 'inline-block', whiteSpace: 'nowrap' }}>
       {labels[status] || status}
     </span>
   );
 }
 
 function PriorityBadge({ priority }) {
-  const map = { LOW: '#6b7280', MEDIUM: '#2563eb', HIGH: '#d97706', CRITICAL: '#dc2626' };
+  const map = { LOW: 'var(--text-muted)', MEDIUM: 'var(--brand-teal)', HIGH: 'var(--brand-warning)', CRITICAL: 'var(--brand-danger)' };
   const icons = { LOW: '▼', MEDIUM: '■', HIGH: '▲', CRITICAL: '🔥' };
   return (
-    <span className={priority === 'CRITICAL' ? 'inc-priority-pulse' : ''} style={{ background: map[priority] || '#6b7280', color: '#fff', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 800, display: 'inline-block' }}>
+    <span className={priority === 'CRITICAL' ? 'inc-priority-pulse' : ''} style={{ background: map[priority] || 'var(--text-muted)', color: '#fff', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 800, display: 'inline-block' }}>
       {icons[priority]} {priority}
     </span>
   );
@@ -137,14 +137,14 @@ function AttachmentsSection({ urls }) {
   if (!urls?.length) return null;
   return (
     <div style={{ marginTop: 14 }}>
-      <p style={{ color: '#111827', fontSize: 12, fontWeight: 800, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <p style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 800, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>
         📎 Attachments ({urls.length}) — click to view
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         {urls.map((url, i) => (
           <img key={i} src={url} alt={`att-${i}`} className="inc-photo-thumb"
             onClick={() => setOpen(url)}
-            style={{ width: 88, height: 88, objectFit: 'cover', border: '2px solid #e5e7eb' }}
+            style={{ width: 88, height: 88, objectFit: 'cover', border: '2px solid var(--border-medium)' }}
             onError={e => e.target.style.display = 'none'} />
         ))}
       </div>
@@ -159,12 +159,12 @@ function StatusTimeline({ status }) {
   const isRejected = status === 'REJECTED';
   const idx = steps.indexOf(status);
   return (
-    <div style={{ margin: '14px 0', padding: '12px 14px', background: '#f0f4ff', borderRadius: 10, border: '1.5px solid #dbeafe' }}>
-      <p style={{ color: '#1e40af', fontSize: 11, fontWeight: 800, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+    <div style={{ margin: '14px 0', padding: '12px 14px', background: 'var(--bg-glass-hover)', borderRadius: 10, border: '1px solid var(--border-medium)' }}>
+      <p style={{ color: 'var(--text-primary)', fontSize: 11, fontWeight: 800, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>
         {isRejected ? '❌ Ticket Rejected' : '📋 Progress'}
       </p>
       {isRejected ? (
-        <p style={{ color: '#dc2626', fontWeight: 700, fontSize: 13, margin: 0 }}>This ticket has been rejected by admin.</p>
+        <p style={{ color: 'var(--brand-danger)', fontWeight: 700, fontSize: 13, margin: 0 }}>This ticket has been rejected by admin.</p>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {steps.map((s, i) => {
@@ -172,12 +172,12 @@ function StatusTimeline({ status }) {
             return (
               <React.Fragment key={s}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: done ? '#2563eb' : '#e5e7eb', color: done ? '#fff' : '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, border: active ? '3px solid #1d4ed8' : 'none', boxShadow: active ? '0 0 0 3px rgba(37,99,235,0.25)' : 'none' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: done ? 'var(--brand-teal)' : 'var(--bg-surface)', color: done ? '#fff' : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, border: active ? '3px solid var(--brand-teal)' : 'none', boxShadow: active ? '0 0 0 3px rgba(37,99,235,0.25)' : 'none' }}>
                     {done ? '✓' : i + 1}
                   </div>
-                  <span style={{ fontSize: 9, color: done ? '#1e40af' : '#6b7280', fontWeight: done ? 700 : 500, marginTop: 4, whiteSpace: 'nowrap' }}>{s.replace('_', ' ')}</span>
+                  <span style={{ fontSize: 9, color: done ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: done ? 700 : 500, marginTop: 4, whiteSpace: 'nowrap' }}>{s.replace('_', ' ')}</span>
                 </div>
-                {i < steps.length - 1 && <div style={{ flex: 1, height: 3, background: i < idx ? '#2563eb' : '#e5e7eb', margin: '-12px 4px 0' }} />}
+                {i < steps.length - 1 && <div style={{ flex: 1, height: 3, background: i < idx ? 'var(--brand-teal)' : 'var(--bg-surface)', margin: '-12px 4px 0' }} />}
               </React.Fragment>
             );
           })}
@@ -209,21 +209,21 @@ function ActivityFeed({ tickets }) {
   if (!events.length) return null;
 
   return (
-    <div style={{ background: '#ffffff', borderRadius: 14, border: '1.5px solid #e5e7eb', padding: '18px 20px', marginBottom: 20, boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
-      <p style={{ color: '#111827', fontWeight: 900, fontSize: 14, margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+    <div className="profile-card" style={{ marginBottom: 20 }}>
+      <p style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: 14, margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
         📡 Recent Activity
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
         {events.map((e, i) => (
-          <div key={e.id} className="inc-feed-item" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, paddingBottom: i < events.length - 1 ? 12 : 0, marginBottom: i < events.length - 1 ? 12 : 0, borderBottom: i < events.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+          <div key={e.id} className="inc-feed-item" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, paddingBottom: i < events.length - 1 ? 12 : 0, marginBottom: i < events.length - 1 ? 12 : 0, borderBottom: i < events.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
             <div style={{ width: 34, height: 34, borderRadius: '50%', background: `${colorMap[e.status]}18`, border: `2px solid ${colorMap[e.status]}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>
               {iconMap[e.status]}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontWeight: 800, color: '#111827', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</p>
+              <p style={{ margin: 0, fontWeight: 800, color: 'var(--text-primary)', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
                 <span style={{ background: colorMap[e.status], color: '#fff', fontSize: 10, fontWeight: 700, padding: '1px 8px', borderRadius: 999 }}>{e.status.replace('_', ' ')}</span>
-                <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 600 }}>{fmtDate(e.date)}</span>
+                <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{fmtDate(e.date)}</span>
               </div>
             </div>
           </div>
@@ -263,7 +263,7 @@ function EscalateButton({ ticket, onEscalated }) {
   return (
     <button onClick={escalate} disabled={loading} className="inc-escalate-btn" style={{
       display: 'flex', alignItems: 'center', gap: 7,
-      padding: '8px 16px', background: loading ? '#fca5a5' : 'linear-gradient(135deg, #dc2626, #b91c1c)',
+      padding: '8px 16px', background: loading ? '#fca5a5' : 'var(--brand-danger)',
       border: 'none', borderRadius: 8, color: '#fff', cursor: loading ? 'not-allowed' : 'pointer',
       fontWeight: 800, fontSize: 12
     }}>
@@ -275,16 +275,16 @@ function EscalateButton({ ticket, onEscalated }) {
 
 /* ─── Ticket Card ─── */
 function TicketCard({ ticket, onSelect }) {
-  const borderCol = ticket.priority === 'CRITICAL' ? '#dc2626' : ticket.priority === 'HIGH' ? '#d97706' : '#e5e7eb';
+  const borderCol = ticket.priority === 'CRITICAL' ? 'var(--brand-danger)' : ticket.priority === 'HIGH' ? 'var(--brand-warning)' : 'var(--border-subtle)';
   return (
-    <div onClick={() => onSelect(ticket)} className="inc-card" style={{ background: '#ffffff', border: `1.5px solid ${borderCol}`, borderRadius: 14, padding: '18px 22px', cursor: 'pointer', marginBottom: 12, boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+    <div onClick={() => onSelect(ticket)} className="profile-card" style={{ padding: '18px 22px', cursor: 'pointer', border: `1.5px solid ${borderCol}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-            <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>#{ticket.id}</span>
-            <p style={{ fontWeight: 800, margin: 0, color: '#111827', fontSize: 15, lineHeight: 1.3 }}>{ticket.title}</p>
+            <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>#{ticket.id}</span>
+            <p style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: 15, lineHeight: 1.3 }}>{ticket.title}</p>
           </div>
-          <p style={{ fontSize: 13, color: '#374151', marginBottom: 8, fontWeight: 600 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8, fontWeight: 600 }}>
             📁 {ticket.category} &nbsp;•&nbsp; 📍 {ticket.location}
           </p>
         </div>
@@ -294,13 +294,13 @@ function TicketCard({ ticket, onSelect }) {
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-        <p style={{ fontSize: 12, color: '#4b5563', margin: 0, fontWeight: 600 }}>
+        <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, fontWeight: 600 }}>
           {ticket.assigneeName ? `👷 ${ticket.assigneeName}` : '👤 Unassigned'}
         </p>
-        <p style={{ fontSize: 11, color: '#6b7280', margin: 0, fontWeight: 500 }}>🕐 {fmtDate(ticket.createdAt)}</p>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>🕐 {fmtDate(ticket.createdAt)}</p>
       </div>
       {ticket.attachmentUrls?.length > 0 && (
-        <span style={{ marginTop: 8, display: 'inline-block', fontSize: 11, color: '#2563eb', fontWeight: 700, background: '#eff6ff', padding: '2px 8px', borderRadius: 6 }}>
+        <span style={{ marginTop: 8, display: 'inline-block', fontSize: 11, color: 'var(--brand-teal)', fontWeight: 700, background: 'var(--bg-surface)', padding: '2px 8px', borderRadius: 6 }}>
           📎 {ticket.attachmentUrls.length} photo{ticket.attachmentUrls.length > 1 ? 's' : ''}
         </span>
       )}
@@ -336,19 +336,20 @@ function CreateTicketModal({ onClose, onCreated }) {
     finally { setLoading(false); }
   };
 
-  const LB = ({ children }) => <label style={{ display: 'block', color: '#111827', fontSize: 11, fontWeight: 800, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>{children}</label>;
+  const LB = ({ children }) => <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 800, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>{children}</label>;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-      <div style={{ background: '#ffffff', borderRadius: 18, padding: '32px 28px', width: '100%', maxWidth: 560, maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+    <div className="fac-modal-overlay" onClick={onClose} style={{ padding: 16 }}>
+      <div className="fac-modal-card" style={{ maxWidth: 560, maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+        <div className="fac-modal-header" style={{ marginBottom: 24 }}>
+          <div className="fac-modal-icon">🛠</div>
           <div>
-            <h2 style={{ color: '#111827', margin: 0, fontWeight: 900, fontSize: 22 }}>🛠 Report New Incident</h2>
-            <p style={{ color: '#374151', margin: '4px 0 0', fontSize: 13, fontWeight: 600 }}>Fill in details to submit a maintenance request</p>
+            <h2 className="fac-modal-title">Report New Incident</h2>
+            <p className="fac-modal-subtitle">Fill in details to submit a maintenance request</p>
           </div>
-          <button onClick={onClose} style={{ background: '#f3f4f6', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 20, cursor: 'pointer', color: '#374151', fontWeight: 700 }}>✕</button>
+          <button className="fac-modal-close" onClick={onClose}>✕</button>
         </div>
-        {error && <div style={{ background: '#fef2f2', border: '1.5px solid #dc2626', borderRadius: 8, padding: '10px 14px', marginBottom: 16, color: '#991b1b', fontSize: 13, fontWeight: 700 }}>{error}</div>}
+        {error && <div className="profile-alert compact error">{error}</div>}
         <form onSubmit={submit}>
           <div style={{ display: 'grid', gap: 14 }}>
             <div><LB>Title *</LB><input className="inc-input" style={IS_BASE} placeholder="Brief incident title" value={form.title} onChange={handle('title')} /></div>
@@ -357,14 +358,14 @@ function CreateTicketModal({ onClose, onCreated }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <LB>Category</LB>
-                <select className="inc-input" style={{ ...IS_BASE, backgroundColor: '#ffffff', color: '#111827' }} value={form.category} onChange={handle('category')}>
-                  {CATEGORIES.map(c => <option key={c} style={{ background: '#ffffff', color: '#111827' }}>{c}</option>)}
+                <select className="inc-input" style={{ ...IS_BASE, backgroundColor: 'transparent' }} value={form.category} onChange={handle('category')}>
+                  {CATEGORIES.map(c => <option key={c} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{c}</option>)}
                 </select>
               </div>
               <div>
                 <LB>Priority</LB>
-                <select className="inc-input" style={{ ...IS_BASE, backgroundColor: '#ffffff', color: '#111827' }} value={form.priority} onChange={handle('priority')}>
-                  {PRIORITIES.map(p => <option key={p} style={{ background: '#ffffff', color: '#111827' }}>{p}</option>)}
+                <select className="inc-input" style={{ ...IS_BASE, backgroundColor: 'transparent' }} value={form.priority} onChange={handle('priority')}>
+                  {PRIORITIES.map(p => <option key={p} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{p}</option>)}
                 </select>
               </div>
             </div>
@@ -374,16 +375,16 @@ function CreateTicketModal({ onClose, onCreated }) {
               <input type="file" accept="image/*" multiple onChange={handleFiles} style={{ ...IS_BASE, padding: '8px 14px', cursor: 'pointer' }} />
               {previews.length > 0 && (
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  {previews.map((p, i) => <img key={i} src={p} alt="preview" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '2px solid #d1d5db' }} />)}
+                  {previews.map((p, i) => <img key={i} src={p} alt="preview" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '2px solid var(--border-medium)' }} />)}
                 </div>
               )}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-            <button type="button" onClick={onClose} style={{ flex: 1, padding: '11px 0', background: '#f9fafb', border: '1.5px solid #d1d5db', borderRadius: 10, color: '#374151', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>Cancel</button>
-            <button type="submit" disabled={loading} className="inc-btn-primary" style={{ flex: 2, padding: '11px 0', background: loading ? '#93c5fd' : 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', borderRadius: 10, color: '#fff', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 15 }}>
+          <div className="profile-form-actions" style={{ marginTop: 24 }}>
+            <button type="submit" disabled={loading} className="btn-profile primary" style={{ flex: 2, justifyContent: 'center' }}>
               {loading ? '⏳ Submitting...' : '🚀 Submit Incident'}
             </button>
+            <button type="button" onClick={onClose} className="btn-profile secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
           </div>
         </form>
       </div>
@@ -427,18 +428,18 @@ function TicketDetailPanel({ ticket, onClose }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', zIndex: 999 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="inc-panel" style={{ background: '#ffffff', width: '100%', maxWidth: 500, height: '100vh', overflowY: 'auto', padding: '28px 24px', borderLeft: '2px solid #e5e7eb', boxShadow: '-16px 0 40px rgba(0,0,0,0.15)' }}>
+      <div className="inc-panel" style={{ background: 'var(--bg-card)', width: '100%', maxWidth: 500, height: '100vh', overflowY: 'auto', padding: '28px 24px', borderLeft: '1px solid var(--border-medium)' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div>
-            <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>Ticket</span>
-            <h3 style={{ color: '#111827', margin: 0, fontWeight: 900, fontSize: 20 }}>#{ticket.id}</h3>
+            <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>Ticket</span>
+            <h3 style={{ color: 'var(--text-primary)', margin: 0, fontWeight: 900, fontSize: 20 }}>#{ticket.id}</h3>
           </div>
-          <button onClick={onClose} style={{ background: '#f3f4f6', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 20, cursor: 'pointer', color: '#374151', fontWeight: 700 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'var(--bg-card-hover)', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 20, cursor: 'pointer', color: 'var(--text-secondary)', fontWeight: 700 }}>✕</button>
         </div>
 
-        <p style={{ fontWeight: 900, fontSize: 18, color: '#111827', marginBottom: 10, lineHeight: 1.4 }}>{ticket.title}</p>
+        <p style={{ fontWeight: 900, fontSize: 18, color: 'var(--text-primary)', marginBottom: 10, lineHeight: 1.4 }}>{ticket.title}</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
           <PriorityBadge priority={ticket.priority} />
           <StatusBadge status={ticket.status} />
@@ -448,8 +449,8 @@ function TicketDetailPanel({ ticket, onClose }) {
 
         <StatusTimeline status={ticket.status} />
 
-        <div style={{ background: '#f8faff', borderRadius: 10, padding: '14px 16px', marginBottom: 14, border: '1.5px solid #dbeafe' }}>
-          <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.7 }}>{ticket.description}</p>
+        <div style={{ background: 'var(--bg-surface)', borderRadius: 10, padding: '14px 16px', marginBottom: 14, border: '1px solid var(--border-medium)' }}>
+          <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.7 }}>{ticket.description}</p>
         </div>
 
         {/* Meta grid */}
@@ -461,62 +462,62 @@ function TicketDetailPanel({ ticket, onClose }) {
             { icon: '📞', label: 'Contact', val: ticket.contactDetails || 'N/A' },
             { icon: '📅', label: 'Submitted', val: fmtDate(ticket.createdAt) },
           ].map(m => (
-            <div key={m.label} style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 12px', border: '1px solid #e5e7eb' }}>
-              <p style={{ color: '#6b7280', fontSize: 10, fontWeight: 800, margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: 0.4 }}>{m.icon} {m.label}</p>
-              <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 700 }}>{m.val}</p>
+            <div key={m.label} style={{ background: 'var(--bg-card)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--border-subtle)' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 800, margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: 0.4 }}>{m.icon} {m.label}</p>
+              <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, fontWeight: 700 }}>{m.val}</p>
             </div>
           ))}
         </div>
 
         {ticket.resolutionNotes && (
-          <div style={{ background: '#ecfdf5', border: '1.5px solid #059669', borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
-            <p style={{ color: '#065f46', fontSize: 11, fontWeight: 900, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>✅ Resolution Notes</p>
-            <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600 }}>{ticket.resolutionNotes}</p>
+          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--brand-accent)', borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
+            <p style={{ color: 'var(--brand-accent)', fontSize: 11, fontWeight: 900, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>✅ Resolution Notes</p>
+            <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, fontWeight: 600 }}>{ticket.resolutionNotes}</p>
           </div>
         )}
         {ticket.rejectionReason && (
-          <div style={{ background: '#fef2f2', border: '1.5px solid #dc2626', borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
-            <p style={{ color: '#991b1b', fontSize: 11, fontWeight: 900, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>❌ Rejection Reason</p>
-            <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600 }}>{ticket.rejectionReason}</p>
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--brand-danger)', borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
+            <p style={{ color: 'var(--brand-danger)', fontSize: 11, fontWeight: 900, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>❌ Rejection Reason</p>
+            <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, fontWeight: 600 }}>{ticket.rejectionReason}</p>
           </div>
         )}
 
         <AttachmentsSection urls={ticket.attachmentUrls} />
 
-        <hr style={{ borderColor: '#e5e7eb', margin: '20px 0' }} />
+        <hr style={{ borderColor: 'var(--border-subtle)', margin: '20px 0' }} />
 
         {/* Comments */}
-        <p style={{ fontWeight: 900, color: '#111827', fontSize: 13, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+        <p style={{ fontWeight: 900, color: 'var(--text-primary)', fontSize: 13, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.4 }}>
           💬 Comments ({comments.length})
         </p>
         {comments.length === 0 && (
-          <div style={{ background: '#ffffff', border: '1.5px dashed #d1d5db', borderRadius: 10, padding: 16, textAlign: 'center', marginBottom: 12 }}>
-            <p style={{ color: '#6b7280', fontSize: 13, margin: 0, fontWeight: 600 }}>No comments yet.</p>
+          <div style={{ background: 'transparent', border: '1px dashed var(--border-medium)', borderRadius: 10, padding: 16, textAlign: 'center', marginBottom: 12 }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0, fontWeight: 600 }}>No comments yet.</p>
           </div>
         )}
         {[...comments].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
           const isEscalation = c.content && c.content.includes('ESCALATION REQUEST');
           return (
-          <div key={c.id} className="inc-comment-card" style={{ background: isEscalation ? '#fef2f2' : '#f8faff', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: `1.5px solid ${isEscalation ? '#fca5a5' : '#e5e7eb'}` }}>
+          <div key={c.id} className="inc-comment-card" style={{ background: isEscalation ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-surface)', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: `1px solid ${isEscalation ? 'var(--brand-danger)' : 'var(--border-subtle)'}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ color: isEscalation ? '#dc2626' : '#2563eb', fontSize: 13, fontWeight: 800 }}>👤 {c.authorName}</span>
-              <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 600 }}>{fmtDateTime(c.createdAt)}</span>
+              <span style={{ color: isEscalation ? 'var(--brand-danger)' : 'var(--brand-teal)', fontSize: 13, fontWeight: 800 }}>👤 {c.authorName}</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{fmtDateTime(c.createdAt)}</span>
             </div>
             {editingId === c.id ? (
               <div>
                 <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="inc-input" style={{ ...TS, minHeight: 60 }} />
                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                  <button onClick={() => saveEdit(c.id)} style={{ padding: '5px 14px', background: '#2563eb', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Save</button>
-                  <button onClick={() => setEditingId(null)} style={{ padding: '5px 14px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 6, color: '#374151', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Cancel</button>
+                  <button onClick={() => saveEdit(c.id)} style={{ padding: '5px 14px', background: 'var(--brand-teal)', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Save</button>
+                  <button onClick={() => setEditingId(null)} style={{ padding: '5px 14px', background: 'var(--bg-card)', border: '1px solid var(--border-medium)', borderRadius: 6, color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Cancel</button>
                 </div>
               </div>
             ) : (
               <div>
-                <p style={{ color: isEscalation ? '#991b1b' : '#111827', fontSize: 13, margin: 0, fontWeight: isEscalation ? 800 : 600 }}>{c.content}</p>
+                <p style={{ color: isEscalation ? 'var(--brand-danger)' : 'var(--text-primary)', fontSize: 13, margin: 0, fontWeight: isEscalation ? 800 : 600 }}>{c.content}</p>
                 {c.authorId === currentUserId && (
                   <div style={{ display: 'flex', gap: 10, marginTop: 7 }}>
-                    <button onClick={() => { setEditingId(c.id); setEditContent(c.content); }} style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>✏ Edit</button>
-                    <button onClick={() => removeComment(c.id)} style={{ fontSize: 11, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>🗑 Delete</button>
+                    <button onClick={() => { setEditingId(c.id); setEditContent(c.content); }} style={{ fontSize: 11, color: 'var(--brand-teal)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>✏ Edit</button>
+                    <button onClick={() => removeComment(c.id)} style={{ fontSize: 11, color: 'var(--brand-danger)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>🗑 Delete</button>
                   </div>
                 )}
               </div>
@@ -524,9 +525,9 @@ function TicketDetailPanel({ ticket, onClose }) {
           </div>
         )})}
         {TERMINAL_STATUSES.has(ticket.status) ? (
-          <div style={{ marginTop: 14, background: ticket.status === 'CLOSED' ? '#f0fdf4' : '#fef2f2', border: `1.5px solid ${ticket.status === 'CLOSED' ? '#059669' : '#dc2626'}`, borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ marginTop: 14, background: ticket.status === 'CLOSED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${ticket.status === 'CLOSED' ? 'var(--brand-accent)' : 'var(--brand-danger)'}`, borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 18 }}>{ticket.status === 'CLOSED' ? '🔒' : '🚫'}</span>
-            <p style={{ margin: 0, fontWeight: 800, color: ticket.status === 'CLOSED' ? '#065f46' : '#991b1b', fontSize: 13 }}>
+            <p style={{ margin: 0, fontWeight: 800, color: ticket.status === 'CLOSED' ? 'var(--brand-accent)' : 'var(--brand-danger)', fontSize: 13 }}>
               {ticket.status === 'REJECTED' ? 'Ticket is rejected — commenting disabled' : 'Ticket is closed — commenting disabled'}
             </p>
           </div>
@@ -534,10 +535,11 @@ function TicketDetailPanel({ ticket, onClose }) {
           <div style={{ marginTop: 14 }}>
             <textarea value={newComment} onChange={e => setNewComment(e.target.value)} className="inc-input"
               placeholder="Write your comment..." style={{ ...TS, minHeight: 72 }} />
-            <button onClick={submitComment} disabled={addingComment || !newComment.trim()} className="inc-btn-primary"
-              style={{ marginTop: 8, padding: '10px 22px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', borderRadius: 8, color: '#fff', cursor: addingComment ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 14 }}>
-              {addingComment ? '⏳ Posting...' : '💬 Post Comment'}
-            </button>
+            <div className="profile-form-actions" style={{ marginTop: 12 }}>
+              <button onClick={submitComment} disabled={addingComment || !newComment.trim()} className="btn-profile primary" style={{ width: '100%', justifyContent: 'center' }}>
+                {addingComment ? '⏳ Posting...' : '💬 Post Comment'}
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -621,36 +623,39 @@ export default function Incidents() {
   ];
 
   return (
-    <div className="inc-root" style={{ maxWidth: 920, margin: '0 auto', padding: '32px 16px', background: '#f9fafb', minHeight: '100vh' }}>
+    <section className="profile-shell">
 
       {/* Header */}
-      <div style={{ background: '#ffffff', borderRadius: 16, padding: '24px 28px', marginBottom: 24, border: '1.5px solid #e5e7eb', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
-          <div>
-            <h2 style={{ margin: 0, fontSize: '1.7rem', fontWeight: 900, color: '#111827' }}>🛠 My Incident Tickets</h2>
-            <p style={{ marginTop: 6, fontSize: '0.95rem', fontWeight: 600, color: '#374151' }}>Report and track campus maintenance issues</p>
+      <div className="profile-header">
+        <div className="profile-header-content">
+          <div className="profile-avatar" style={{ flexShrink: 0 }}>
+            <div className="avatar-inner" style={{ background: 'var(--bg-glass)' }}>🛠</div>
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            {/* Live indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#f0fdf4', border: '1.5px solid #059669', borderRadius: 8 }}>
-              <div className="inc-priority-pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669' }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#065f46' }}>{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-            </div>
-            <button onClick={() => setShowCreate(true)} className="inc-btn-primary"
-              style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', borderRadius: 10, padding: '11px 24px', color: '#fff', cursor: 'pointer', fontWeight: 800, fontSize: 14, boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}>
-              + New Ticket
-            </button>
+          <div className="profile-header-info">
+            <h2>My Incident Tickets</h2>
+            <p className="profile-subtitle">Report and track campus maintenance issues</p>
           </div>
+        </div>
+
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center', position: 'relative', zIndex: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {/* Live indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--bg-card)', border: '1px solid var(--brand-accent)', borderRadius: 'var(--radius-md)' }}>
+            <div className="inc-priority-pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-accent)' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand-accent)' }}>{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+          </div>
+          <button type="button" onClick={() => setShowCreate(true)} className="btn-profile primary">
+            + New Ticket
+          </button>
         </div>
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginBottom: 24 }}>
+      <div className="profile-info-grid" style={{ marginBottom: 24 }}>
         {stats.map(s => (
-          <div key={s.label} className="inc-stat-card" style={{ background: s.bg, border: `1.5px solid ${s.color}33`, borderRadius: 12, padding: '18px 16px', textAlign: 'center' }}>
-            <p style={{ fontSize: 26, margin: 0 }}>{s.icon}</p>
-            <p style={{ fontSize: 26, fontWeight: 900, color: s.color, margin: '4px 0 2px' }}>{s.val}</p>
-            <p style={{ color: '#374151', fontSize: 12, margin: 0, fontWeight: 700 }}>{s.label}</p>
+          <div key={s.label} className="profile-card" style={{ padding: '20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <p style={{ fontSize: '2rem', margin: '0 0 10px' }}>{s.icon}</p>
+            <p style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--brand-teal)', margin: '0 0 4px', lineHeight: 1 }}>{s.val}</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</p>
           </div>
         ))}
       </div>
@@ -659,7 +664,7 @@ export default function Incidents() {
       {!loading && tickets.length > 0 && <ActivityFeed tickets={tickets} />}
 
       {/* Search + Filter */}
-      <div style={{ background: '#ffffff', borderRadius: 12, padding: '16px 20px', marginBottom: 20, border: '1.5px solid #e5e7eb', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+      <div className="profile-card" style={{ marginBottom: 24, padding: '24px' }}>
         <input className="inc-input" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="🔍  Search by title, category or location..."
           style={{ ...IS_BASE, marginBottom: 14 }} />
@@ -682,25 +687,27 @@ export default function Incidents() {
 
       {/* List */}
       {loading ? (
-        <div style={{ textAlign: 'center', color: '#374151', padding: 60, background: '#ffffff', borderRadius: 12, border: '1.5px solid #e5e7eb', fontWeight: 700, fontSize: 15 }}>
-          ⏳ Loading tickets...
+        <div className="profile-card" style={{ textAlign: 'center', padding: 60 }}>
+          <p className="title">⏳ Loading tickets...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, background: '#ffffff', border: '1.5px dashed #d1d5db', borderRadius: 14 }}>
+        <div className="profile-card" style={{ textAlign: 'center', padding: 60, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <p style={{ fontSize: 48, margin: 0 }}>🔧</p>
-          <p style={{ marginTop: 12, color: '#111827', fontWeight: 800, fontSize: 16 }}>
+          <h3 style={{ marginTop: 12, color: 'var(--text-primary)', fontWeight: 800, fontSize: '1.1rem' }}>
             {filter !== 'ALL' ? `No ${filterLabels[filter]} tickets` : search ? 'No tickets match your search' : 'No incident tickets yet!'}
-          </p>
-          <p style={{ color: '#374151', fontWeight: 600, fontSize: 13 }}>
+          </h3>
+          <p style={{ color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.95rem', margin: '4px 0 0' }}>
             {filter === 'ALL' && !search ? 'Click "+ New Ticket" to report a campus issue.' : 'Try adjusting your filters.'}
           </p>
         </div>
       ) : (
-        filtered.map(t => <TicketCard key={t.id} ticket={t} onSelect={t => { clearTicketParam(); setSelected(t); }} />)
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {filtered.map(t => <TicketCard key={t.id} ticket={t} onSelect={t => { clearTicketParam(); setSelected(t); }} />)}
+        </div>
       )}
 
       {showCreate && <CreateTicketModal onClose={() => setShowCreate(false)} onCreated={t => { setTickets(prev => [t, ...prev]); }} />}
       {selected && <TicketDetailPanel ticket={selected} onClose={() => { setSelected(null); clearTicketParam(); }} />}
-    </div>
+    </section>
   );
 }
