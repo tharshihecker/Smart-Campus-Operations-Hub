@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import './ManageIncidents.css';
 import {
   fetchAllIncidents, updateIncidentStatus, assignIncidentTechnician,
   fetchAllUsers, fetchIncidentComments, addAdminIncidentComment,
@@ -56,7 +57,7 @@ const ADMIN_STYLE = `
 
   /* Photos */
   .adm-photo-thumb { cursor: pointer; transition: transform 0.18s, box-shadow 0.18s; border-radius: 10px; }
-  .adm-photo-thumb:hover { transform: scale(1.06); box-shadow: 0 8px 24px rgba(0,0,0,0.28); }
+  .adm-photo-thumb:hover { transform: scale(1.08); box-shadow: 0 8px 24px rgba(0,0,0,0.28); }
 
   /* Animations */
   .adm-lightbox { animation: admFadeIn 0.18s; }
@@ -72,6 +73,17 @@ const ADMIN_STYLE = `
 
   /* Filter bar */
   .adm-filter-bar { backdrop-filter: blur(4px); }
+
+  /* Image gallery */
+  .adm-image-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin-top: 16px; }
+  .adm-image-item { position: relative; width: 100%; padding-top: 100%; background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%); border-radius: 12px; overflow: hidden; border: 2px solid #e0e7ff; }
+  .adm-image-item img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  /* Detail sections */
+  .adm-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .adm-detail-item { background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); border-radius: 12px; padding: 14px; border: 1px solid #e5e7eb; }
+  .adm-meta-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #6b7280; margin-bottom: 4px; }
+  .adm-meta-value { font-size: 13px; font-weight: 700; color: #111827; }
 
   /* Section badge */
   .adm-section-badge { letter-spacing: 0.8px; }
@@ -137,16 +149,15 @@ function AdminAttachments({ urls }) {
   const [open, setOpen] = useState(null);
   if (!urls?.length) return <p style={{ color: '#9ca3af', fontSize: 13, fontWeight: 600, margin: 0 }}>No photos attached</p>;
   return (
-    <div style={{ marginTop: 14 }}>
-      <p style={{ color: '#111827', fontSize: 12, fontWeight: 900, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-        📎 User Photos ({urls.length}) — click to view
+    <div style={{ marginTop: 16 }}>
+      <p style={{ color: '#111827', fontSize: 12, fontWeight: 900, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        📎 User Photos ({urls.length})
       </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+      <div className="adm-image-gallery">
         {urls.map((url, i) => (
-          <img key={i} src={url} alt={`att-${i}`} className="adm-photo-thumb"
-            onClick={() => setOpen(url)}
-            style={{ width: 100, height: 100, objectFit: 'cover', border: '2px solid #d1d5db', display: 'block' }}
-            onError={e => e.target.style.display = 'none'} />
+          <div key={i} className="adm-image-item" onClick={() => setOpen(url)}>
+            <img src={url} alt={`photo-${i}`} onError={e => e.target.parentElement.style.display = 'none'} />
+          </div>
         ))}
       </div>
       {open && <PhotoModal url={open} onClose={() => setOpen(null)} />}
@@ -315,124 +326,129 @@ function TicketDetailPanel({ ticket, onClose }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', zIndex: 999 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="adm-panel" style={{ background: '#ffffff', width: '100%', maxWidth: 540, height: '100vh', overflowY: 'auto', padding: '28px 24px', borderLeft: '2px solid #e5e7eb', boxShadow: '-16px 0 40px rgba(0,0,0,0.15)' }}>
+      <div className="adm-panel" style={{ background: '#ffffff', width: '100%', maxWidth: 560, height: '100vh', overflowY: 'auto', padding: '28px 24px', borderLeft: '3px solid #2563eb', boxShadow: '-12px 0 40px rgba(0,0,0,0.25)' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingBottom: 16, borderBottom: '2px solid #e5e7eb' }}>
           <div>
             <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              {isTerminal ? '📜 View Only' : 'Admin View'}
+              {isTerminal ? '📜 View Only' : '👁 Admin View'}
             </span>
-            <h3 style={{ color: '#111827', margin: 0, fontWeight: 900, fontSize: 20 }}>Ticket #{ticket.id}</h3>
+            <h3 style={{ color: '#111827', margin: '6px 0 0', fontWeight: 900, fontSize: 22 }}>Ticket #{ticket.id}</h3>
           </div>
-          <button onClick={onClose} style={{ background: '#f3f4f6', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 20, cursor: 'pointer', color: '#374151', fontWeight: 700 }}>✕</button>
+          <button onClick={onClose} style={{ background: '#f3f4f6', border: 'none', borderRadius: 10, padding: '8px 12px', fontSize: 22, cursor: 'pointer', color: '#374151', fontWeight: 700, transition: 'all 0.2s' }}>✕</button>
         </div>
 
         {/* Read-only banner for terminal tickets */}
         {isTerminal && (
-          <div style={{ background: ticket.status === 'CLOSED' ? '#f0fdf4' : '#fef2f2', border: `1.5px solid ${ticket.status === 'CLOSED' ? '#059669' : '#dc2626'}`, borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 18 }}>{ticket.status === 'CLOSED' ? '🔒' : '🚫'}</span>
-            <p style={{ margin: 0, fontWeight: 800, color: ticket.status === 'CLOSED' ? '#065f46' : '#991b1b', fontSize: 13 }}>
-              This ticket is <strong>{ticket.status}</strong>. No further actions are available — view only.
+          <div style={{ background: ticket.status === 'CLOSED' ? 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%)' : 'linear-gradient(135deg, #fef2f2 0%, #fdf8f8 100%)', border: `2px solid ${ticket.status === 'CLOSED' ? '#10b981' : '#dc2626'}`, borderRadius: 12, padding: '12px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 20 }}>{ticket.status === 'CLOSED' ? '🔒' : '🚫'}</span>
+            <p style={{ margin: 0, fontWeight: 800, color: ticket.status === 'CLOSED' ? '#065f46' : '#991b1b', fontSize: 12 }}>
+              This ticket is <strong>{ticket.status}</strong>. No further actions available — view only.
             </p>
           </div>
         )}
 
-        <p style={{ fontWeight: 900, fontSize: 18, color: '#111827', marginBottom: 10, lineHeight: 1.4 }}>{ticket.title}</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, alignItems: 'center' }}>
+        {/* Title */}
+        <p style={{ fontWeight: 900, fontSize: 18, color: '#111827', marginBottom: 12, lineHeight: 1.4 }}>{ticket.title}</p>
+        
+        {/* Badges */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18, alignItems: 'center' }}>
           <PriorityBadge priority={ticket.priority} />
           <StatusBadge status={ticket.status} />
           <SLABadge createdAt={ticket.createdAt} status={ticket.status} />
         </div>
 
         {/* Description */}
-        <div style={{ background: '#f0f4ff', borderRadius: 10, padding: '14px 16px', marginBottom: 14, border: '1.5px solid #dbeafe' }}>
-          <p style={{ color: '#1e3a8a', fontSize: 11, fontWeight: 900, margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: 0.4 }}>Description</p>
-          <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.7 }}>{ticket.description}</p>
+        <div style={{ background: 'linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%)', borderRadius: 14, padding: '16px 18px', marginBottom: 18, border: '2px solid #dbeafe' }}>
+          <p style={{ color: '#1e3a8a', fontSize: 11, fontWeight: 900, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: 0.4 }}>📝 Description</p>
+          <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.8 }}>{ticket.description}</p>
         </div>
 
         {/* Meta grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+        <p style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#111827', margin: '0 0 14px' }}>ℹ️ Ticket Information</p>
+        <div className="adm-detail-grid" style={{ marginBottom: 18 }}>
           {[
             { icon: '📍', label: 'Location', val: ticket.location },
             { icon: '🏷', label: 'Category', val: ticket.category },
             { icon: '👤', label: 'Reporter', val: ticket.reporterName || 'Unknown' },
             { icon: '👷', label: 'Assignee', val: ticket.assigneeName || 'Unassigned' },
             { icon: '📞', label: 'Contact', val: ticket.contactDetails || 'N/A' },
-            { icon: '📅', label: 'Submitted', val: fmtDate(ticket.createdAt) },
+            { icon: '📅', label: 'Created', val: fmtDate(ticket.createdAt) },
           ].map(m => (
-            <div key={m.label} style={{ background: '#f9fafb', borderRadius: 8, padding: '10px 12px', border: '1px solid #e5e7eb' }}>
-              <p style={{ color: '#6b7280', fontSize: 10, fontWeight: 800, margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: 0.4 }}>{m.icon} {m.label}</p>
-              <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 700 }}>{m.val}</p>
+            <div key={m.label} className="adm-detail-item" style={{ display: 'flex', flexDirection: 'column' }}>
+              <p className="adm-meta-label">{m.icon} {m.label}</p>
+              <p className="adm-meta-value">{m.val}</p>
             </div>
           ))}
         </div>
 
         {ticket.resolutionNotes && (
-          <div style={{ background: '#ecfdf5', border: '1.5px solid #059669', borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
-            <p style={{ color: '#065f46', fontSize: 11, fontWeight: 900, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>✅ Resolution Notes</p>
-            <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600 }}>{ticket.resolutionNotes}</p>
+          <div style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0.04) 100%)', border: '2px solid #10b981', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
+            <p style={{ color: '#059669', fontSize: 11, fontWeight: 900, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4 }}>✅ Resolution Notes</p>
+            <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.6 }}>{ticket.resolutionNotes}</p>
           </div>
         )}
         {ticket.rejectionReason && (
-          <div style={{ background: '#fef2f2', border: '1.5px solid #dc2626', borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
-            <p style={{ color: '#991b1b', fontSize: 11, fontWeight: 900, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>❌ Rejection Reason</p>
-            <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600 }}>{ticket.rejectionReason}</p>
+          <div style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.04) 100%)', border: '2px solid #dc2626', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
+            <p style={{ color: '#dc2626', fontSize: 11, fontWeight: 900, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4 }}>❌ Rejection Reason</p>
+            <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.6 }}>{ticket.rejectionReason}</p>
           </div>
         )}
 
         <AdminAttachments urls={ticket.attachmentUrls} />
 
-        <hr style={{ borderColor: '#e5e7eb', margin: '20px 0' }} />
+        <hr style={{ borderColor: '#e5e7eb', margin: '20px 0', borderStyle: 'dashed' }} />
 
         {/* Comments */}
-        <p style={{ fontWeight: 900, color: '#111827', fontSize: 13, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+        <p style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#111827', marginBottom: 14 }}>
           💬 Comments ({comments.length})
         </p>
         {comments.length === 0 && (
-          <div style={{ background: '#ffffff', border: '1.5px dashed #d1d5db', borderRadius: 10, padding: 16, textAlign: 'center', marginBottom: 12 }}>
-            <p style={{ color: '#6b7280', fontSize: 13, margin: 0, fontWeight: 600 }}>No comments yet.</p>
+          <div style={{ background: '#ffffff', border: '2px dashed #d1d5db', borderRadius: 12, padding: 18, textAlign: 'center', marginBottom: 16 }}>
+            <p style={{ color: '#6b7280', fontSize: 13, margin: 0, fontWeight: 600 }}>No comments yet. Be the first to comment!</p>
           </div>
         )}
-        {[...comments].sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt)).map(c => {
-          const isEscalation = c.content && c.content.includes('ESCALATION REQUEST');
-          return (
-          <div key={c.id} className="adm-comment-card" style={{ background: isEscalation ? '#fef2f2' : '#f8faff', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: `1.5px solid ${isEscalation ? '#fca5a5' : '#e5e7eb'}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ color: isEscalation ? '#dc2626' : '#2563eb', fontSize: 13, fontWeight: 800 }}>👤 {c.authorName}</span>
-              <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 600 }}>{fmtDateTime(c.createdAt)}</span>
-            </div>
-            {editingId === c.id && !isTerminal ? (
-              <div>
-                <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="adm-inc-input" style={{ ...TS, minHeight: 60 }} />
-                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                  <button onClick={() => saveEdit(c.id)} className="adm-inc-btn" style={{ padding: '5px 14px', background: '#2563eb', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Save</button>
-                  <button onClick={() => setEditingId(null)} className="adm-inc-btn" style={{ padding: '5px 14px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 6, color: '#374151', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Cancel</button>
-                </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16, maxHeight: '300px', overflowY: 'auto' }}>
+          {[...comments].sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt)).map(c => {
+            const isEscalation = c.content && c.content.includes('ESCALATION REQUEST');
+            return (
+            <div key={c.id} className="adm-comment-card" style={{ background: isEscalation ? 'linear-gradient(135deg, #fef2f2 0%, #fdf8f8 100%)' : 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)', borderRadius: 12, padding: '12px 14px', border: `2px solid ${isEscalation ? '#fca5a5' : '#e5e7eb'}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'center' }}>
+                <span style={{ color: isEscalation ? '#dc2626' : '#2563eb', fontSize: 12, fontWeight: 800 }}>👤 {c.authorName}</span>
+                <span style={{ color: '#6b7280', fontSize: 10, fontWeight: 600 }}>{fmtDateTime(c.createdAt)}</span>
               </div>
-            ) : (
-              <div>
-                <p style={{ color: isEscalation ? '#991b1b' : '#111827', fontSize: 13, margin: 0, fontWeight: isEscalation ? 800 : 600 }}>{c.content}</p>
-                {!isTerminal && (
-                  <div style={{ display: 'flex', gap: 10, marginTop: 7 }}>
-                    {c.authorId === currentUserId && (
-                      <button onClick={() => { setEditingId(c.id); setEditContent(c.content); }} style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>✏ Edit</button>
-                    )}
-                    <button onClick={() => removeComment(c.id)} style={{ fontSize: 11, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>🗑 Delete</button>
+              {editingId === c.id && !isTerminal ? (
+                <div>
+                  <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="adm-inc-input" style={{ ...TS, minHeight: 60, fontSize: 12 }} />
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <button onClick={() => saveEdit(c.id)} style={{ flex: 1, padding: '6px 12px', background: '#2563eb', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700, transition: 'all 0.2s' }}>Save</button>
+                    <button onClick={() => setEditingId(null)} style={{ flex: 1, padding: '6px 12px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 8, color: '#374151', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>Cancel</button>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        )})}
+                </div>
+              ) : (
+                <div>
+                  <p style={{ color: isEscalation ? '#991b1b' : '#111827', fontSize: 12, margin: 0, fontWeight: isEscalation ? 800 : 600, lineHeight: 1.5 }}>{c.content}</p>
+                  {!isTerminal && (
+                    <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                      {c.authorId === currentUserId && (
+                        <button onClick={() => { setEditingId(c.id); setEditContent(c.content); }} style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700, transition: 'all 0.2s', textDecoration: 'underline' }}>✏ Edit</button>
+                      )}
+                      <button onClick={() => removeComment(c.id)} style={{ fontSize: 11, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700, transition: 'all 0.2s', textDecoration: 'underline' }}>🗑 Delete</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )})}
+        </div>
 
-        {/* Add comment — only for active tickets */}
+        {/* Add comment */}
         {!isTerminal && (
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 12 }}>
             <textarea value={newComment} onChange={e => setNewComment(e.target.value)} className="adm-inc-input"
-              placeholder="Write an admin comment..." style={{ ...TS, minHeight: 72 }} />
-            <button onClick={submitComment} disabled={addingComment || !newComment.trim()} className="adm-inc-btn"
-              style={{ marginTop: 8, padding: '10px 22px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', borderRadius: 8, color: '#fff', cursor: addingComment ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 14 }}>
+              placeholder="Write an admin comment..." style={{ ...TS, minHeight: 80, fontSize: 12 }} />
+            <button onClick={submitComment} disabled={addingComment || !newComment.trim()} style={{ marginTop: 10, width: '100%', padding: '12px 16px', background: addingComment ? '#bfdbfe' : 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', borderRadius: 10, color: '#fff', cursor: addingComment ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 13, transition: 'all 0.2s' }}>
               {addingComment ? '⏳ Posting...' : '💬 Post Comment'}
             </button>
           </div>

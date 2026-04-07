@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import './Incidents.css';
 import {
   fetchMyIncidents, createIncident, fetchIncidentComments,
   addIncidentComment, editIncidentComment, deleteIncidentComment,
@@ -51,19 +52,30 @@ const STYLE = `
   .inc-input { transition: border-color 0.18s, box-shadow 0.18s; }
   .inc-input:focus { outline: none; border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important; }
   .inc-lightbox { animation: incFadeIn 0.18s; }
-  .inc-panel { animation: incSlideIn 0.25s; }
+  .inc-panel { animation: incSlideIn 0.25s cubic-bezier(0.16,1,0.3,1); }
   @keyframes incFadeIn { from { opacity:0; } to { opacity:1; } }
   @keyframes incSlideIn { from { transform: translateX(60px); opacity:0; } to { transform: translateX(0); opacity:1; } }
-  .inc-comment-card { transition: background 0.15s; }
-  .inc-comment-card:hover { background: #f0f4ff !important; }
+  .inc-comment-card { transition: background 0.15s, transform 0.15s; }
+  .inc-comment-card:hover { background: #f0f4ff !important; transform: translateX(2px); }
   .inc-priority-pulse { animation: incPulse 1.8s infinite; }
   @keyframes incPulse { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.35);} 50%{box-shadow:0 0 0 6px rgba(220,38,38,0);} }
   .inc-photo-thumb { cursor: pointer; transition: transform 0.18s, box-shadow 0.18s; border-radius: 10px; }
-  .inc-photo-thumb:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(0,0,0,0.22); }
+  .inc-photo-thumb:hover { transform: scale(1.08); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
   .inc-escalate-btn { transition: all 0.18s; }
-  .inc-escalate-btn:hover { transform: scale(1.04); box-shadow: 0 4px 16px rgba(220,38,38,0.3); }
+  .inc-escalate-btn:hover { transform: scale(1.05); box-shadow: 0 4px 16px rgba(220,38,38,0.3); }
   .inc-feed-item { animation: incFeedIn 0.4s; }
   @keyframes incFeedIn { from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);} }
+  .inc-image-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin-top: 16px; }
+  .inc-image-item { position: relative; width: 100%; padding-top: 100%; background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%); border-radius: 12px; overflow: hidden; border: 2px solid #e0e7ff; }
+  .inc-image-item img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+  .inc-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .inc-detail-item { background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); border-radius: 12px; padding: 14px; border: 1px solid #e5e7eb; }
+  .inc-badge-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .inc-section-title { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #111827; margin: 0 0 14px; }
+  .inc-history-toggle { display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 16px; width: 100%; transition: all 0.2s; }
+  .inc-history-toggle:hover { opacity: 0.8; }
+  .inc-meta-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #6b7280; margin-bottom: 4px; }
+  .inc-meta-value { font-size: 13px; font-weight: 700; color: #111827; }
 `;
 
 function useInjectStyle() {
@@ -137,19 +149,17 @@ function AttachmentsSection({ urls }) {
   const [open, setOpen] = useState(null);
   if (!urls?.length) return null;
   return (
-    <div style={{ marginTop: 14 }}>
-      <p style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 800, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-        📎 Attachments ({urls.length}) — click to view
+    <div style={{ marginTop: 16 }}>
+      <p className="inc-section-title">
+        <span className="inc-section-badge">📎 Evidence Photos ({urls.length})</span>
       </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+      <div className="inc-image-gallery">
         {urls.map((url, i) => (
-          <img key={i} src={url} alt={`att-${i}`} className="inc-photo-thumb"
-            onClick={() => setOpen(url)}
-            style={{ width: 88, height: 88, objectFit: 'cover', border: '2px solid var(--border-medium)' }}
-            onError={e => e.target.style.display = 'none'} />
+          <div key={i} className="inc-image-item" onClick={() => setOpen(url)}>
+            <img src={url} alt={`photo-${i}`} onError={e => e.target.parentElement.style.display = 'none'} />
+          </div>
         ))}
       </div>
-      {open && <PhotoModal url={open} onClose={() => setOpen(null)} />}
     </div>
   );
 }
@@ -400,6 +410,7 @@ function TicketDetailPanel({ ticket, onClose }) {
   const [editingId, setEditingId] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [addingComment, setAddingComment] = useState(false);
+  const [photoModal, setPhotoModal] = useState(null);
   const currentUserId = localStorage.getItem('smartcampus_user_id');
 
   const loadComments = useCallback(async () => {
@@ -429,121 +440,135 @@ function TicketDetailPanel({ ticket, onClose }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', zIndex: 999 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="inc-panel" style={{ background: 'var(--bg-card)', width: '100%', maxWidth: 500, height: '100vh', overflowY: 'auto', padding: '28px 24px', borderLeft: '1px solid var(--border-medium)' }}>
+      <div className="inc-panel" style={{ background: 'var(--bg-card)', width: '100%', maxWidth: 520, height: '100vh', overflowY: 'auto', padding: '28px 24px', borderLeft: '2px solid #2563eb', boxShadow: '-8px 0 32px rgba(0,0,0,0.2)' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingBottom: 16, borderBottom: '2px solid var(--border-subtle)' }}>
           <div>
-            <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>Ticket</span>
-            <h3 style={{ color: 'var(--text-primary)', margin: 0, fontWeight: 900, fontSize: 20 }}>#{ticket.id}</h3>
+            <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>Ticket Details</span>
+            <h3 style={{ color: 'var(--text-primary)', margin: '6px 0 0', fontWeight: 900, fontSize: 22 }}>#{ticket.id}</h3>
           </div>
-          <button onClick={onClose} style={{ background: 'var(--bg-card-hover)', border: 'none', borderRadius: 8, padding: '6px 12px', fontSize: 20, cursor: 'pointer', color: 'var(--text-secondary)', fontWeight: 700 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'var(--bg-surface)', border: 'none', borderRadius: 10, padding: '8px 12px', fontSize: 22, cursor: 'pointer', color: 'var(--text-secondary)', fontWeight: 700, transition: 'all 0.2s', hover: 'background-color var(--bg-card-hover)' }}>✕</button>
         </div>
 
-        <p style={{ fontWeight: 900, fontSize: 18, color: 'var(--text-primary)', marginBottom: 10, lineHeight: 1.4 }}>{ticket.title}</p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+        {/* Title */}
+        <p style={{ fontWeight: 900, fontSize: 18, color: 'var(--text-primary)', marginBottom: 12, lineHeight: 1.4 }}>{ticket.title}</p>
+        
+        {/* Badges */}
+        <div className="inc-badge-row" style={{ marginBottom: 18 }}>
           <PriorityBadge priority={ticket.priority} />
           <StatusBadge status={ticket.status} />
-          {/* 🆕 Escalate Button */}
           <EscalateButton ticket={ticket} onEscalated={() => { loadComments(); }} />
         </div>
 
+        {/* Status Timeline */}
         <StatusTimeline status={ticket.status} />
 
-        <div style={{ background: 'var(--bg-surface)', borderRadius: 10, padding: '14px 16px', marginBottom: 14, border: '1px solid var(--border-medium)' }}>
-          <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.7 }}>{ticket.description}</p>
+        {/* Description */}
+        <div className="inc-light-surface" style={{ background: 'linear-gradient(135deg, rgba(255,237,213,0.8) 0%, rgba(254,215,170,0.8) 100%)', borderRadius: 14, padding: '16px 18px', marginBottom: 18, border: '2px solid #fb923c' }}>
+          <p style={{ color: '#92400e', fontSize: 11, fontWeight: 900, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: 0.4 }}>📝 Description</p>
+          <p style={{ color: '#7c2d12', fontSize: 13, margin: 0, fontWeight: 700, lineHeight: 1.8 }}>{ticket.description}</p>
         </div>
 
         {/* Meta grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+        <p className="inc-section-title">
+          <span className="inc-section-badge">ℹ️ Ticket Information</span>
+        </p>
+        <div className="inc-detail-grid" style={{ marginBottom: 18 }}>
           {[
             { icon: '📍', label: 'Location', val: ticket.location },
             { icon: '🏷', label: 'Category', val: ticket.category },
             { icon: '👷', label: 'Assignee', val: ticket.assigneeName || 'Unassigned' },
             { icon: '📞', label: 'Contact', val: ticket.contactDetails || 'N/A' },
-            { icon: '📅', label: 'Submitted', val: fmtDate(ticket.createdAt) },
+            { icon: '📅', label: 'Created', val: fmtDate(ticket.createdAt) },
+            { icon: '🔄', label: 'Updated', val: ticket.updatedAt ? fmtDate(ticket.updatedAt) : fmtDate(ticket.createdAt) },
           ].map(m => (
-            <div key={m.label} style={{ background: 'var(--bg-card)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--border-subtle)' }}>
-              <p style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 800, margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: 0.4 }}>{m.icon} {m.label}</p>
-              <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, fontWeight: 700 }}>{m.val}</p>
+            <div key={m.label} className="inc-detail-item inc-light-surface" style={{ display: 'flex', flexDirection: 'column' }}>
+              <p className="inc-meta-label">{m.icon} {m.label}</p>
+              <p className="inc-meta-value">{m.val}</p>
             </div>
           ))}
         </div>
 
+        {/* Resolutions */}
         {ticket.resolutionNotes && (
-          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--brand-accent)', borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
-            <p style={{ color: 'var(--brand-accent)', fontSize: 11, fontWeight: 900, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>✅ Resolution Notes</p>
-            <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, fontWeight: 600 }}>{ticket.resolutionNotes}</p>
+          <div className="inc-light-surface" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0.04) 100%)', border: '2px solid #10b981', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
+            <p style={{ color: '#059669', fontSize: 11, fontWeight: 900, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4 }}>✅ Resolution Notes</p>
+            <p style={{ color: 'inherit', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.6 }}>{ticket.resolutionNotes}</p>
           </div>
         )}
         {ticket.rejectionReason && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--brand-danger)', borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
-            <p style={{ color: 'var(--brand-danger)', fontSize: 11, fontWeight: 900, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>❌ Rejection Reason</p>
-            <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, fontWeight: 600 }}>{ticket.rejectionReason}</p>
+          <div className="inc-light-surface" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.04) 100%)', border: '2px solid #dc2626', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
+            <p style={{ color: '#dc2626', fontSize: 11, fontWeight: 900, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4 }}>❌ Rejection Reason</p>
+            <p style={{ color: 'inherit', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.6 }}>{ticket.rejectionReason}</p>
           </div>
         )}
 
+        {/* Attachments */}
         <AttachmentsSection urls={ticket.attachmentUrls} />
 
-        <hr style={{ borderColor: 'var(--border-subtle)', margin: '20px 0' }} />
+        <hr style={{ borderColor: 'var(--border-subtle)', margin: '20px 0', borderStyle: 'dashed' }} />
 
         {/* Comments */}
-        <p style={{ fontWeight: 900, color: 'var(--text-primary)', fontSize: 13, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.4 }}>
-          💬 Comments ({comments.length})
+        <p className="inc-section-title">
+          <span className="inc-section-badge">💬 Comments ({comments.length})</span>
         </p>
         {comments.length === 0 && (
-          <div style={{ background: 'transparent', border: '1px dashed var(--border-medium)', borderRadius: 10, padding: 16, textAlign: 'center', marginBottom: 12 }}>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0, fontWeight: 600 }}>No comments yet.</p>
+          <div style={{ background: 'var(--bg-surface)', border: '2px dashed var(--border-medium)', borderRadius: 12, padding: 18, textAlign: 'center', marginBottom: 16 }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0, fontWeight: 600 }}>No comments yet. Be the first to comment!</p>
           </div>
         )}
-        {[...comments].sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt)).map(c => {
-          const isEscalation = c.content && c.content.includes('ESCALATION REQUEST');
-          return (
-          <div key={c.id} className="inc-comment-card" style={{ background: isEscalation ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-surface)', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: `1px solid ${isEscalation ? 'var(--brand-danger)' : 'var(--border-subtle)'}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ color: isEscalation ? 'var(--brand-danger)' : 'var(--brand-teal)', fontSize: 13, fontWeight: 800 }}>👤 {c.authorName}</span>
-              <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{fmtDateTime(c.createdAt)}</span>
-            </div>
-            {editingId === c.id ? (
-              <div>
-                <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="inc-input" style={{ ...TS, minHeight: 60 }} />
-                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                  <button onClick={() => saveEdit(c.id)} style={{ padding: '5px 14px', background: 'var(--brand-teal)', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Save</button>
-                  <button onClick={() => setEditingId(null)} style={{ padding: '5px 14px', background: 'var(--bg-card)', border: '1px solid var(--border-medium)', borderRadius: 6, color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Cancel</button>
-                </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16, maxHeight: '300px', overflowY: 'auto' }}>
+          {[...comments].sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt)).map(c => {
+            const isEscalation = c.content && c.content.includes('ESCALATION REQUEST');
+            return (
+            <div key={c.id} className={`inc-comment-card inc-light-surface${isEscalation ? ' inc-comment-card--escalation' : ''}`} style={{ borderRadius: 12, padding: '12px 14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'center' }}>
+                <span style={{ color: isEscalation ? '#991b1b' : '#2563eb', fontSize: 12, fontWeight: 800 }}>👤 {c.authorName}</span>
+                <span style={{ color: '#6b7280', fontSize: 10, fontWeight: 600 }}>{fmtDateTime(c.createdAt)}</span>
               </div>
-            ) : (
-              <div>
-                <p style={{ color: isEscalation ? 'var(--brand-danger)' : 'var(--text-primary)', fontSize: 13, margin: 0, fontWeight: isEscalation ? 800 : 600 }}>{c.content}</p>
-                {c.authorId === currentUserId && (
-                  <div style={{ display: 'flex', gap: 10, marginTop: 7 }}>
-                    <button onClick={() => { setEditingId(c.id); setEditContent(c.content); }} style={{ fontSize: 11, color: 'var(--brand-teal)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>✏ Edit</button>
-                    <button onClick={() => removeComment(c.id)} style={{ fontSize: 11, color: 'var(--brand-danger)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700 }}>🗑 Delete</button>
+              {editingId === c.id ? (
+                <div>
+                  <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="inc-input" style={{ ...TS, minHeight: 60, fontSize: 12 }} />
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <button onClick={() => saveEdit(c.id)} style={{ flex: 1, padding: '6px 12px', background: 'var(--brand-teal)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontSize: 11, fontWeight: 700, transition: 'all 0.2s' }}>Save</button>
+                    <button onClick={() => setEditingId(null)} style={{ flex: 1, padding: '6px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border-medium)', borderRadius: 8, color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>Cancel</button>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        )})}
+                </div>
+              ) : (
+                <div>
+                  <p className={`inc-comment-text${isEscalation ? ' inc-comment-text--escalation' : ''}`} style={{ fontSize: 12, margin: 0, lineHeight: 1.5 }}>{c.content}</p>
+                  {c.authorId === currentUserId && !TERMINAL_STATUSES.has(ticket.status) && (
+                    <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                      <button onClick={() => { setEditingId(c.id); setEditContent(c.content); }} style={{ fontSize: 11, color: 'var(--brand-teal)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700, transition: 'all 0.2s', textDecoration: 'underline' }}>✏ Edit</button>
+                      <button onClick={() => removeComment(c.id)} style={{ fontSize: 11, color: 'var(--brand-danger)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 700, transition: 'all 0.2s', textDecoration: 'underline' }}>🗑 Delete</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )})}
+        </div>
+
+        {/* Add comment */}
         {TERMINAL_STATUSES.has(ticket.status) ? (
-          <div style={{ marginTop: 14, background: ticket.status === 'CLOSED' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${ticket.status === 'CLOSED' ? 'var(--brand-accent)' : 'var(--brand-danger)'}`, borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 18 }}>{ticket.status === 'CLOSED' ? '🔒' : '🚫'}</span>
-            <p style={{ margin: 0, fontWeight: 800, color: ticket.status === 'CLOSED' ? 'var(--brand-accent)' : 'var(--brand-danger)', fontSize: 13 }}>
-              {ticket.status === 'REJECTED' ? 'Ticket is rejected — commenting disabled' : 'Ticket is closed — commenting disabled'}
+          <div style={{ marginTop: 12, background: 'var(--bg-surface)', border: '2px dashed var(--border-medium)', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 18 }}>🔒</span>
+            <p style={{ margin: 0, fontWeight: 800, color: 'var(--text-secondary)', fontSize: 12 }}>
+              Ticket is {ticket.status.toLowerCase()} — commenting disabled
             </p>
           </div>
         ) : (
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 12 }}>
             <textarea value={newComment} onChange={e => setNewComment(e.target.value)} className="inc-input"
-              placeholder="Write your comment..." style={{ ...TS, minHeight: 72 }} />
-            <div className="profile-form-actions" style={{ marginTop: 12 }}>
-              <button onClick={submitComment} disabled={addingComment || !newComment.trim()} className="btn-profile primary" style={{ width: '100%', justifyContent: 'center' }}>
-                {addingComment ? '⏳ Posting...' : '💬 Post Comment'}
-              </button>
-            </div>
+              placeholder="Write your comment..." style={{ ...TS, minHeight: 80, fontSize: 12 }} />
+            <button onClick={submitComment} disabled={addingComment || !newComment.trim()} style={{ marginTop: 10, width: '100%', padding: '12px 16px', background: addingComment ? '#bfdbfe' : 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', borderRadius: 10, color: '#fff', cursor: addingComment ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 13, transition: 'all 0.2s' }}>
+              {addingComment ? '⏳ Posting...' : '💬 Post Comment'}
+            </button>
           </div>
         )}
       </div>
+      {photoModal && <PhotoModal url={photoModal} onClose={() => setPhotoModal(null)} />}
     </div>
   );
 }
@@ -596,6 +621,7 @@ export default function Incidents() {
   const [now, setNow] = useState(new Date());
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -645,6 +671,9 @@ export default function Incidents() {
   const filtered = tickets
     .filter(t => filter === 'ALL' || t.status === filter)
     .filter(t => !search || t.title.toLowerCase().includes(search.toLowerCase()) || (t.category || '').toLowerCase().includes(search.toLowerCase()) || (t.location || '').toLowerCase().includes(search.toLowerCase()));
+
+  const activeTickets = filtered.filter(t => !TERMINAL_STATUSES.has(t.status));
+  const historyTickets = filtered.filter(t => TERMINAL_STATUSES.has(t.status));
 
   const stats = [
     { label: 'Total', val: tickets.length, color: '#2563eb', bg: '#eff6ff', icon: '📋' },
@@ -721,7 +750,7 @@ export default function Incidents() {
         <div className="profile-card" style={{ textAlign: 'center', padding: 60 }}>
           <p className="title">⏳ Loading tickets...</p>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : activeTickets.length === 0 && historyTickets.length === 0 ? (
         <div className="profile-card" style={{ textAlign: 'center', padding: 60, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <p style={{ fontSize: 48, margin: 0 }}>🔧</p>
           <h3 style={{ marginTop: 12, color: 'var(--text-primary)', fontWeight: 800, fontSize: '1.1rem' }}>
@@ -732,74 +761,154 @@ export default function Incidents() {
           </p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {filtered.map(t => {
-            const canDelete = t.status === 'OPEN';
-            const isProcessing = t.status !== 'OPEN';
-            return (
-              <div key={t.id}>
-                {/* Card wrapper — clicking anywhere except the delete button opens detail */}
-                <div onClick={() => { clearTicketParam(); setSelected(t); }}
-                  className="profile-card inc-card"
-                  style={{
-                    padding: '18px 22px 0 22px', cursor: 'pointer',
-                    border: `1.5px solid ${t.priority === 'CRITICAL' ? 'var(--brand-danger)' : t.priority === 'HIGH' ? 'var(--brand-warning)' : 'var(--border-subtle)'}`,
-                    borderRadius: 14, overflow: 'hidden'
-                  }}>
-                  {/* Top row: ID + title + badges */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                        <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>#{t.id}</span>
-                        <p style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: 15, lineHeight: 1.3 }}>{t.title}</p>
+        <>
+          {/* Active Tickets Section */}
+          {activeTickets.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, position: 'sticky', top: 0, zIndex: 10 }}>
+                <span style={{ fontSize: 13, fontWeight: 900, background: '#111827', color: '#ffffff', padding: '6px 12px', borderRadius: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  📂 Active Tickets
+                </span>
+                <span style={{ background: '#2563eb', color: '#fff', fontSize: 11, fontWeight: 800, padding: '3px 12px', borderRadius: 999 }}>
+                  {activeTickets.length}
+                </span>
+                <div style={{ flex: 1, height: 2, background: 'linear-gradient(90deg, transparent, #2563eb, transparent)' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {activeTickets.map(t => {
+                  const canDelete = t.status === 'OPEN';
+                  const isProcessing = t.status !== 'OPEN';
+                  return (
+                    <div key={t.id}>
+                      {/* Card wrapper — clicking anywhere except the delete button opens detail */}
+                      <div onClick={() => { clearTicketParam(); setSelected(t); }}
+                        className="profile-card inc-card"
+                        style={{
+                          padding: '18px 22px 0 22px', cursor: 'pointer',
+                          border: `2px solid ${t.priority === 'CRITICAL' ? '#dc2626' : t.priority === 'HIGH' ? '#d97706' : '#2563eb'}`,
+                          borderRadius: 14, overflow: 'hidden', backgroundColor: t.priority === 'CRITICAL' ? 'rgba(220, 38, 38, 0.02)' : 'var(--bg-card)'
+                        }}>
+                        {/* Top row: ID + title + badges */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                              <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>#{t.id}</span>
+                              <p style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: 15, lineHeight: 1.3 }}>{t.title}</p>
+                            </div>
+                            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8, fontWeight: 600 }}>
+                              📁 {t.category} &nbsp;•&nbsp; 📍 {t.location}
+                            </p>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                            <PriorityBadge priority={t.priority} />
+                            <StatusBadge status={t.status} />
+                          </div>
+                        </div>
+                        {/* Middle row: assignee + date */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, paddingBottom: 12 }}>
+                          <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, fontWeight: 600 }}>
+                            {t.assigneeName ? `👷 ${t.assigneeName}` : '👤 Unassigned'}
+                          </p>
+                          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>🕐 {fmtDate(t.createdAt)}</p>
+                        </div>
+                        {t.attachmentUrls?.length > 0 && (
+                          <span style={{ marginBottom: 12, display: 'inline-block', fontSize: 11, color: 'var(--brand-teal)', fontWeight: 700, background: 'var(--bg-surface)', padding: '2px 8px', borderRadius: 6 }}>
+                            📎 {t.attachmentUrls.length} photo{t.attachmentUrls.length > 1 ? 's' : ''}
+                          </span>
+                        )}
+                        {/* Footer action bar */}
+                        <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '0 -22px', padding: '10px 22px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, background: 'var(--bg-surface)' }}
+                          onClick={e => e.stopPropagation()}>
+                          {canDelete ? (
+                            <button
+                              onClick={() => setDeleteTarget(t)}
+                              style={{ padding: '6px 14px', background: 'rgba(239,68,68,0.09)', border: '1.5px solid rgba(239,68,68,0.4)', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 800, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.18s' }}
+                              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.09)'; }}
+                            >
+                              🗑 Delete
+                            </button>
+                          ) : isProcessing ? (
+                            <span style={{ fontSize: 11, fontWeight: 700, color: '#92400e', background: 'rgba(217,119,6,0.1)', border: '1.5px solid rgba(217,119,6,0.35)', borderRadius: 8, padding: '6px 12px' }}
+                              title="Cannot delete this ticket">
+                              🔒 {t.status === 'IN_PROGRESS' || t.status === 'RESOLVED' ? 'In Process' : t.status.charAt(0) + t.status.slice(1).toLowerCase()} — Cannot Delete
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>Click card to view details →</span>
+                          )}
+                        </div>
                       </div>
-                      <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8, fontWeight: 600 }}>
-                        📁 {t.category} &nbsp;•&nbsp; 📍 {t.location}
-                      </p>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                      <PriorityBadge priority={t.priority} />
-                      <StatusBadge status={t.status} />
-                    </div>
-                  </div>
-                  {/* Middle row: assignee + date */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, paddingBottom: 12 }}>
-                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, fontWeight: 600 }}>
-                      {t.assigneeName ? `👷 ${t.assigneeName}` : '👤 Unassigned'}
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* History Section */}
+          {historyTickets.length > 0 && (
+            <div style={{ marginTop: 28 }}>
+              <button
+                onClick={() => setHistoryOpen(h => !h)}
+                className="inc-history-toggle">
+                <span style={{ fontSize: 13, fontWeight: 900, background: '#111827', color: '#ffffff', padding: '6px 12px', borderRadius: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  {historyOpen ? '▼' : '▶'} 📜 Closed &amp; Rejected History
+                </span>
+                <span style={{ background: historyTickets.length > 0 ? '#136eeeff' : '#d1d5db', color: '#fff', fontSize: 11, fontWeight: 800, padding: '2px 10px', borderRadius: 999 }}>
+                  {historyTickets.length}
+                </span>
+                <div style={{ flex: 1, height: 2, background: 'linear-gradient(90deg, transparent, #6b7280, transparent)' }} />
+                <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 700 }}>
+                  {historyOpen ? 'Click to collapse' : 'Click to expand'}
+                </span>
+              </button>
+
+              {historyOpen && (
+                <div style={{ marginTop: 16 }}>
+                  {/* Info banner */}
+                  <div style={{ background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)', border: '2px dashed #e5e7eb', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 20 }}>🔒</span>
+                    <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#070707ff' }}>
+                      These tickets are finalized. You can view details but no further actions are available.
                     </p>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>🕐 {fmtDate(t.createdAt)}</p>
                   </div>
-                  {t.attachmentUrls?.length > 0 && (
-                    <span style={{ marginBottom: 12, display: 'inline-block', fontSize: 11, color: 'var(--brand-teal)', fontWeight: 700, background: 'var(--bg-surface)', padding: '2px 8px', borderRadius: 6 }}>
-                      📎 {t.attachmentUrls.length} photo{t.attachmentUrls.length > 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {/* Footer action bar */}
-                  <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '0 -22px', padding: '10px 22px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, background: 'var(--bg-surface)' }}
-                    onClick={e => e.stopPropagation()}>
-                    {canDelete ? (
-                      <button
-                        onClick={() => setDeleteTarget(t)}
-                        style={{ padding: '6px 14px', background: 'rgba(239,68,68,0.09)', border: '1.5px solid rgba(239,68,68,0.4)', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 800, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.18s' }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.09)'; }}
-                      >
-                        🗑 Delete
-                      </button>
-                    ) : isProcessing ? (
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#92400e', background: 'rgba(217,119,6,0.1)', border: '1.5px solid rgba(217,119,6,0.35)', borderRadius: 8, padding: '6px 12px' }}
-                        title="Cannot delete this ticket">
-                        🔒 {t.status === 'IN_PROGRESS' || t.status === 'RESOLVED' ? 'In Process' : t.status.charAt(0) + t.status.slice(1).toLowerCase()} — Cannot Delete
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>Click card to view details →</span>
-                    )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {historyTickets.map(t => (
+                      <div key={t.id}>
+                        <div onClick={() => { clearTicketParam(); setSelected(t); }}
+                          className="profile-card inc-card"
+                          style={{
+                            padding: '18px 22px', cursor: 'pointer', opacity: 0.85,
+                            border: '2px solid #9ca3af',
+                            borderRadius: 14, overflow: 'hidden', backgroundColor: 'rgba(249, 250, 251, 0.5)'
+                          }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                                <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>#{t.id}</span>
+                                <p style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: 15, lineHeight: 1.3 }}>{t.title}</p>
+                              </div>
+                              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8, fontWeight: 600 }}>
+                                📁 {t.category} &nbsp;•&nbsp; 📍 {t.location}
+                              </p>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                              <PriorityBadge priority={t.priority} />
+                              <StatusBadge status={t.status} />
+                            </div>
+                          </div>
+                          <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '10px 0 0', fontWeight: 600 }}>
+                            🕐 {fmtDate(t.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {showCreate && <CreateTicketModal onClose={() => setShowCreate(false)} onCreated={t => { setTickets(prev => [t, ...prev]); }} />}
