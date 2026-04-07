@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   fetchMyIncidents, createIncident, fetchIncidentComments,
-  addIncidentComment, editIncidentComment, deleteIncidentComment
+  addIncidentComment, editIncidentComment, deleteIncidentComment,
+  deleteIncident
 } from '../api';
 
 const TERMINAL_STATUSES = new Set(['CLOSED', 'REJECTED']);
@@ -495,7 +496,7 @@ function TicketDetailPanel({ ticket, onClose }) {
             <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0, fontWeight: 600 }}>No comments yet.</p>
           </div>
         )}
-        {[...comments].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
+        {[...comments].sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt)).map(c => {
           const isEscalation = c.content && c.content.includes('ESCALATION REQUEST');
           return (
           <div key={c.id} className="inc-comment-card" style={{ background: isEscalation ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-surface)', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: `1px solid ${isEscalation ? 'var(--brand-danger)' : 'var(--border-subtle)'}` }}>
@@ -547,6 +548,34 @@ function TicketDetailPanel({ ticket, onClose }) {
   );
 }
 
+/* ─── Delete Confirmation Modal ─── */
+function DeleteConfirmModal({ ticket, onConfirm, onCancel, loading }) {
+  return (
+    <div className="inc-lightbox" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+      <div style={{ background: 'var(--bg-card)', borderRadius: 18, padding: '32px 28px', maxWidth: 420, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.35)', border: '1.5px solid var(--border-medium)' }}>
+        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🗑️</div>
+          <h3 style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: 18, margin: '0 0 8px' }}>Delete Incident?</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, margin: 0, lineHeight: 1.6 }}>
+            Are you sure you want to delete ticket <strong style={{ color: 'var(--text-primary)' }}>#{ticket.id}</strong> &mdash; <em>"{ticket.title}"</em>?
+          </p>
+          <p style={{ color: 'var(--brand-danger)', fontSize: 12, fontWeight: 700, margin: '6px 0 0' }}>⚠️ This action cannot be undone.</p>
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button onClick={onCancel} disabled={loading}
+            style={{ flex: 1, padding: '11px 0', background: 'var(--bg-surface)', border: '1.5px solid var(--border-medium)', borderRadius: 10, color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+            Cancel
+          </button>
+          <button onClick={onConfirm} disabled={loading}
+            style={{ flex: 2, padding: '11px 0', background: loading ? '#fca5a5' : '#dc2626', border: 'none', borderRadius: 10, color: '#fff', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 800, fontSize: 14 }}>
+            {loading ? '⏳ Deleting...' : '🗑 Yes, Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Page ─── */
 export default function Incidents() {
   useInjectStyle();
@@ -565,6 +594,8 @@ export default function Incidents() {
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [now, setNow] = useState(new Date());
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -584,7 +615,7 @@ export default function Incidents() {
       });
     }
     catch { if (!silent) setTickets([]); }
-    finally { if (!silent) setLoading(false); }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => { loadTickets(); }, [loadTickets]);
@@ -702,12 +733,98 @@ export default function Incidents() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {filtered.map(t => <TicketCard key={t.id} ticket={t} onSelect={t => { clearTicketParam(); setSelected(t); }} />)}
+          {filtered.map(t => {
+            const canDelete = t.status === 'OPEN';
+            const isProcessing = t.status !== 'OPEN';
+            return (
+              <div key={t.id}>
+                {/* Card wrapper — clicking anywhere except the delete button opens detail */}
+                <div onClick={() => { clearTicketParam(); setSelected(t); }}
+                  className="profile-card inc-card"
+                  style={{
+                    padding: '18px 22px 0 22px', cursor: 'pointer',
+                    border: `1.5px solid ${t.priority === 'CRITICAL' ? 'var(--brand-danger)' : t.priority === 'HIGH' ? 'var(--brand-warning)' : 'var(--border-subtle)'}`,
+                    borderRadius: 14, overflow: 'hidden'
+                  }}>
+                  {/* Top row: ID + title + badges */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>#{t.id}</span>
+                        <p style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: 15, lineHeight: 1.3 }}>{t.title}</p>
+                      </div>
+                      <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8, fontWeight: 600 }}>
+                        📁 {t.category} &nbsp;•&nbsp; 📍 {t.location}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                      <PriorityBadge priority={t.priority} />
+                      <StatusBadge status={t.status} />
+                    </div>
+                  </div>
+                  {/* Middle row: assignee + date */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, paddingBottom: 12 }}>
+                    <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, fontWeight: 600 }}>
+                      {t.assigneeName ? `👷 ${t.assigneeName}` : '👤 Unassigned'}
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>🕐 {fmtDate(t.createdAt)}</p>
+                  </div>
+                  {t.attachmentUrls?.length > 0 && (
+                    <span style={{ marginBottom: 12, display: 'inline-block', fontSize: 11, color: 'var(--brand-teal)', fontWeight: 700, background: 'var(--bg-surface)', padding: '2px 8px', borderRadius: 6 }}>
+                      📎 {t.attachmentUrls.length} photo{t.attachmentUrls.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {/* Footer action bar */}
+                  <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '0 -22px', padding: '10px 22px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, background: 'var(--bg-surface)' }}
+                    onClick={e => e.stopPropagation()}>
+                    {canDelete ? (
+                      <button
+                        onClick={() => setDeleteTarget(t)}
+                        style={{ padding: '6px 14px', background: 'rgba(239,68,68,0.09)', border: '1.5px solid rgba(239,68,68,0.4)', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 800, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.18s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.09)'; }}
+                      >
+                        🗑 Delete
+                      </button>
+                    ) : isProcessing ? (
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#92400e', background: 'rgba(217,119,6,0.1)', border: '1.5px solid rgba(217,119,6,0.35)', borderRadius: 8, padding: '6px 12px' }}
+                        title="Cannot delete this ticket">
+                        🔒 {t.status === 'IN_PROGRESS' || t.status === 'RESOLVED' ? 'In Process' : t.status.charAt(0) + t.status.slice(1).toLowerCase()} — Cannot Delete
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>Click card to view details →</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {showCreate && <CreateTicketModal onClose={() => setShowCreate(false)} onCreated={t => { setTickets(prev => [t, ...prev]); }} />}
       {selected && <TicketDetailPanel ticket={selected} onClose={() => { setSelected(null); clearTicketParam(); }} />}
+
+      {deleteTarget && (
+        <DeleteConfirmModal
+          ticket={deleteTarget}
+          loading={deleting}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={async () => {
+            setDeleting(true);
+            try {
+              await deleteIncident(deleteTarget.id);
+              setTickets(prev => prev.filter(t => t.id !== deleteTarget.id));
+              if (selected && selected.id === deleteTarget.id) { setSelected(null); clearTicketParam(); }
+              setDeleteTarget(null);
+            } catch (err) {
+              alert('Failed to delete: ' + (err.message || 'Server error'));
+            } finally {
+              setDeleting(false);
+            }
+          }}
+        />
+      )}
     </section>
   );
 }

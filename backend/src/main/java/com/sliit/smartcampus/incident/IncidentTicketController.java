@@ -103,4 +103,12 @@ public class IncidentTicketController {
         incidentTicketService.deleteComment(commentId, userId, false);
         return ResponseEntity.noContent().build();
     }
+
+    /** DELETE /api/incidents/{id} — user can only delete their own OPEN, CLOSED, or REJECTED tickets */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTicket(@PathVariable String id, Principal principal) {
+        String userId = getCurrentUserId(principal);
+        incidentTicketService.deleteTicket(id, userId);
+        return ResponseEntity.noContent().build();
+    }
 }
