@@ -1,0 +1,254 @@
+/* ── Dashboard Shell ──────────────────────────────────────── */
+.dashboard-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  animation: fade-in 0.6s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Hero Section ─────────────────────────────────────────── */
+.dashboard-hero {
+  background: var(--gradient-hero);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xl);
+  padding: 48px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm), inset 0 2px 4px rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  border-radius: var(--radius-xl);
+}
+
+.dashboard-kicker {
+  color: var(--brand-teal);
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-hero h2 {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+  letter-spacing: -0.03em;
+}
+
+.dashboard-hero p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  max-width: 600px;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Grid Layouts ─────────────────────────────────────────── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+/* ── Dashboard Cards ──────────────────────────────────────── */
+.dashboard-card {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  transition: all var(--transition-bounce);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  padding: 1.5px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.dashboard-card.highlight {
+  border-color: var(--brand-teal);
+  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.15);
+}
+
+.dashboard-card.highlight::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 150px;
+  height: 150px;
+  background: var(--brand-teal);
+  filter: blur(80px);
+  opacity: 0.15;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.dashboard-card h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dashboard-card li {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.dashboard-card li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dashboard-card strong {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: var(--bg-surface);
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+}
+
+/* ── Interactive Action Cards ─────────────────────────────── */
+.action-card {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  background: var(--bg-surface);
+}
+
+.action-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+  border-color: var(--brand-teal);
+}
+
+.action-card p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-top: 4px;
+  flex-grow: 1;
+}
+
+.action-card h3 {
+  margin-bottom: 8px;
+  color: var(--brand-teal);
+}
+
+/* ── Skeleton Loaders ─────────────────────────────────────── */
+.skeleton-card {
+  gap: 16px;
+}
+
+.skeleton-line {
+  height: 20px;
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-line.title {
+  height: 24px;
+  width: 60%;
+  margin-bottom: 10px;
+}
+
+.skeleton-line.short {
+  width: 40%;
+}
+
+.skeleton-line.medium {
+  width: 70%;
+}
+
+.skeleton-line.long {
+  width: 90%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .dashboard-hero {
+    padding: 32px 24px;
+  }
+
+  .dashboard-hero h2 {
+    font-size: 1.8rem;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
