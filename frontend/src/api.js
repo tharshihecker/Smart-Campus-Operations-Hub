@@ -277,6 +277,7 @@ export async function fetchIncidentComments(id) { return fetchJson(`/incidents/$
 export async function addIncidentComment(id, content) { return sendJson("POST", `/incidents/${id}/comments`, { content }); }
 export async function editIncidentComment(commentId, content) { return sendJson("PUT", `/incidents/comments/${commentId}`, { content }); }
 export async function deleteIncidentComment(commentId) { return sendJson("DELETE", `/incidents/comments/${commentId}`); }
+export async function deleteIncident(id) { return sendJson("DELETE", `/incidents/${id}`); }
 
 /* ── Incidents (admin) ────────────────────────────────── */
 export async function fetchAllIncidents(filters = {}) { return fetchJson(`/admin/incidents${buildQuery(filters)}`); }

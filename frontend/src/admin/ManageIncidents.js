@@ -36,25 +36,51 @@ const ADMIN_STYLE = `
   .adm-inc * { font-family: 'Inter', sans-serif !important; box-sizing: border-box; }
   .adm-inc select { background-color: #ffffff !important; color: #111827 !important; }
   .adm-inc select option { background-color: #ffffff !important; color: #111827 !important; }
-  .adm-inc table tr:hover td { background: #eff6ff !important; }
+
+  /* Table row hover */
+  .adm-ticket-row { transition: background 0.15s, box-shadow 0.15s; }
+  .adm-ticket-row:hover td { background: #eff6ff !important; }
+  .adm-ticket-row:hover { box-shadow: inset 3px 0 0 #2563eb; }
+
+  /* Buttons */
   .adm-inc-btn { transition: all 0.18s !important; }
-  .adm-inc-btn:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+  .adm-inc-btn:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+
+  /* Stat cards */
   .adm-inc-card { transition: box-shadow 0.2s, transform 0.18s; }
-  .adm-inc-card:hover { box-shadow: 0 4px 18px rgba(37,99,235,0.14); transform: translateY(-2px); }
+  .adm-inc-card:hover { box-shadow: 0 8px 28px rgba(37,99,235,0.16); transform: translateY(-3px); }
+
+  /* Inputs */
   .adm-inc-input { transition: border-color 0.18s, box-shadow 0.18s; }
   .adm-inc-input:focus { outline: none; border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important; }
+
+  /* Photos */
   .adm-photo-thumb { cursor: pointer; transition: transform 0.18s, box-shadow 0.18s; border-radius: 10px; }
-  .adm-photo-thumb:hover { transform: scale(1.06); box-shadow: 0 6px 20px rgba(0,0,0,0.22); }
+  .adm-photo-thumb:hover { transform: scale(1.06); box-shadow: 0 8px 24px rgba(0,0,0,0.28); }
+
+  /* Animations */
   .adm-lightbox { animation: admFadeIn 0.18s; }
-  .adm-panel { animation: admSlideIn 0.25s; }
+  .adm-panel { animation: admSlideIn 0.28s cubic-bezier(0.16,1,0.3,1); }
   .adm-priority-critical { animation: admPulse 1.8s infinite; }
-  .adm-comment-card { transition: background 0.15s; }
-  .adm-comment-card:hover { background: #f0f4ff !important; }
+  .adm-comment-card { transition: background 0.15s, transform 0.15s; }
+  .adm-comment-card:hover { background: #eff6ff !important; transform: translateX(2px); }
   .adm-pulse-dot { animation: admDotPulse 2s infinite; }
+  .adm-stat-num { font-variant-numeric: tabular-nums; }
+
+  /* Header gradient */
+  .adm-page-header { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%) !important; }
+
+  /* Filter bar */
+  .adm-filter-bar { backdrop-filter: blur(4px); }
+
+  /* Section badge */
+  .adm-section-badge { letter-spacing: 0.8px; }
+
   @keyframes admFadeIn { from{opacity:0;}to{opacity:1;} }
-  @keyframes admSlideIn { from{transform:translateX(60px);opacity:0;}to{transform:translateX(0);opacity:1;} }
-  @keyframes admPulse { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.35);}50%{box-shadow:0 0 0 6px rgba(220,38,38,0);} }
+  @keyframes admSlideIn { from{transform:translateX(80px);opacity:0;}to{transform:translateX(0);opacity:1;} }
+  @keyframes admPulse { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.35);}50%{box-shadow:0 0 0 8px rgba(220,38,38,0);} }
   @keyframes admDotPulse { 0%,100%{opacity:1;}50%{opacity:0.3;} }
+  @keyframes admSlideUp { from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);} }
 `;
 
 function useAdminStyle() {
@@ -368,7 +394,7 @@ function TicketDetailPanel({ ticket, onClose }) {
             <p style={{ color: '#6b7280', fontSize: 13, margin: 0, fontWeight: 600 }}>No comments yet.</p>
           </div>
         )}
-        {[...comments].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
+        {[...comments].sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt)).map(c => {
           const isEscalation = c.content && c.content.includes('ESCALATION REQUEST');
           return (
           <div key={c.id} className="adm-comment-card" style={{ background: isEscalation ? '#fef2f2' : '#f8faff', borderRadius: 10, padding: '12px 14px', marginBottom: 8, border: `1.5px solid ${isEscalation ? '#fca5a5' : '#e5e7eb'}` }}>
@@ -425,43 +451,43 @@ function TicketDetailPanel({ ticket, onClose }) {
 function TicketRow({ t, idx, onView, onStatus, onAssign }) {
   const isTerminal = TERMINAL.has(t.status);
   return (
-    <tr style={{ borderBottom: '1px solid #f3f4f6', background: idx % 2 === 0 ? '#ffffff' : '#fafbff' }}>
-      <td style={{ padding: '13px 14px', color: '#6b7280', fontSize: 12, fontWeight: 700 }}>#{t.id}</td>
+    <tr className="adm-ticket-row" style={{ borderBottom: '1px solid #f3f4f6', background: idx % 2 === 0 ? '#ffffff' : '#fafbff' }}>
+      <td style={{ padding: '13px 14px', color: '#9ca3af', fontSize: 11, fontWeight: 700 }}>#{t.id}</td>
       <td style={{ padding: '13px 14px', maxWidth: 220 }}>
         <p style={{ margin: 0, fontWeight: 800, color: '#111827', fontSize: 13 }}>{t.title}</p>
-        <p style={{ margin: '2px 0 0', color: '#4b5563', fontSize: 11, fontWeight: 600 }}>📍 {t.location}</p>
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 3 }}>
+        <p style={{ margin: '2px 0 0', color: '#6b7280', fontSize: 11, fontWeight: 600 }}>📍 {t.location}</p>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
           {t.attachmentUrls?.length > 0 && (
-            <span style={{ fontSize: 10, color: '#2563eb', fontWeight: 800, background: '#eff6ff', padding: '1px 6px', borderRadius: 4 }}>
+            <span style={{ fontSize: 10, color: '#2563eb', fontWeight: 800, background: '#eff6ff', padding: '1px 7px', borderRadius: 999 }}>
               📎 {t.attachmentUrls.length} photo{t.attachmentUrls.length > 1 ? 's' : ''}
             </span>
           )}
           <SLABadge createdAt={t.createdAt} status={t.status} />
         </div>
       </td>
-      <td style={{ padding: '13px 14px', color: '#1f2937', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t.category}</td>
+      <td style={{ padding: '13px 14px', color: '#374151', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t.category}</td>
       <td style={{ padding: '13px 14px' }}><PriorityBadge priority={t.priority} /></td>
       <td style={{ padding: '13px 14px' }}><StatusBadge status={t.status} /></td>
-      <td style={{ padding: '13px 14px', color: '#1f2937', fontSize: 12, fontWeight: 700 }}>{t.reporterName || '—'}</td>
+      <td style={{ padding: '13px 14px', color: '#374151', fontSize: 12, fontWeight: 700 }}>{t.reporterName || '—'}</td>
       <td style={{ padding: '13px 14px', fontSize: 12, fontWeight: 700 }}>
         {t.assigneeName
-          ? <span style={{ color: '#059669', fontWeight: 800 }}>👷 {t.assigneeName}</span>
-          : <span style={{ color: '#9ca3af', fontWeight: 600 }}>Unassigned</span>}
+          ? <span style={{ color: '#059669', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4 }}>👷 {t.assigneeName}</span>
+          : <span style={{ color: '#d1d5db', fontWeight: 600, fontStyle: 'italic' }}>Unassigned</span>}
       </td>
-      <td style={{ padding: '13px 14px', color: '#4b5563', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{fmtDate(t.createdAt)}</td>
+      <td style={{ padding: '13px 14px', color: '#6b7280', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{fmtDate(t.createdAt)}</td>
       <td style={{ padding: '13px 14px' }}>
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-          <button onClick={() => onView(t)} className="adm-inc-btn" style={{ padding: '5px 10px', background: '#eff6ff', border: '1.5px solid #2563eb', borderRadius: 6, color: '#1d4ed8', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>
+          <button onClick={() => onView(t)} className="adm-inc-btn" style={{ padding: '5px 11px', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 7, color: '#1d4ed8', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>
             👁 View
           </button>
           {!isTerminal && (
             <>
-              <button onClick={() => onStatus(t)} className="adm-inc-btn" style={{ padding: '5px 10px', background: '#fffbeb', border: '1.5px solid #d97706', borderRadius: 6, color: '#92400e', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>🔄 Status</button>
-              <button onClick={() => onAssign(t)} className="adm-inc-btn" style={{ padding: '5px 10px', background: '#ecfdf5', border: '1.5px solid #059669', borderRadius: 6, color: '#065f46', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>👷 Assign</button>
+              <button onClick={() => onStatus(t)} className="adm-inc-btn" style={{ padding: '5px 11px', background: '#fffbeb', border: '1.5px solid #fcd34d', borderRadius: 7, color: '#92400e', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>🔄 Status</button>
+              <button onClick={() => onAssign(t)} className="adm-inc-btn" style={{ padding: '5px 11px', background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: 7, color: '#065f46', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>👷 Assign</button>
             </>
           )}
           {isTerminal && (
-            <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 700, padding: '5px 8px', background: '#f3f4f6', borderRadius: 6 }}>
+            <span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 700, padding: '5px 9px', background: '#f9fafb', borderRadius: 7, border: '1px solid #e5e7eb' }}>
               🔒 {t.status === 'CLOSED' ? 'Closed' : 'Rejected'}
             </span>
           )}
@@ -514,6 +540,7 @@ export default function ManageIncidents() {
     const params = new URLSearchParams(location.search);
     if (params.has('ticketId')) navigate('/admin/incidents', { replace: true });
   }, [location.search, navigate]);
+
   const [tickets, setTickets] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -526,6 +553,7 @@ export default function ManageIncidents() {
   const [sortBy, setSortBy] = useState('newest');
   const [historyOpen, setHistoryOpen] = useState(false);
   const pollRef = useRef(null);
+  const techLoadedRef = useRef(false); // technicians only need to load once
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -533,36 +561,49 @@ export default function ManageIncidents() {
     return () => clearInterval(t);
   }, []);
 
+  /**
+   * Performance strategy:
+   * - ALL filtering (status, priority, search, sort) is done CLIENT-SIDE from a full ticket list.
+   * - load() has NO filter dependencies → stable callback → never accidentally re-triggers.
+   * - fetchAllUsers() runs only ONCE (technicians are cached in a ref).
+   * - Silent background polls skip the loading spinner entirely.
+   */
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [t, u] = await Promise.all([
-        fetchAllIncidents({ status: statusFilter || undefined, priority: priorityFilter || undefined }),
-        fetchAllUsers()
-      ]);
-      setTickets(t);
-      setTechnicians(u.filter(u => u.role === 'TECHNICIAN' || u.role === 'ADMIN'));
-      return t; // return for deep-link use
-    } catch { setTickets([]); return []; }
-    finally { if (!silent) setLoading(false); }
-  }, [statusFilter, priorityFilter]);
+      // Always fetch all tickets with no server filters — client-side filtering is instant
+      const ticketPromise = fetchAllIncidents();
+      // Technicians: only fetch once, cache forever for this page session
+      const techPromise = techLoadedRef.current
+        ? Promise.resolve(null)
+        : fetchAllUsers();
 
+      const [t, u] = await Promise.all([ticketPromise, techPromise]);
+      setTickets(t);
+
+      if (u !== null) {
+        setTechnicians(u.filter(user => user.role === 'TECHNICIAN' || user.role === 'ADMIN'));
+        techLoadedRef.current = true;
+      }
+
+      // Handle deep-link inline — faster than waiting for a separate useEffect
+      const params = new URLSearchParams(window.location.search);
+      const tid = params.get('ticketId');
+      if (tid && t.length > 0) {
+        const found = t.find(tk => String(tk.id) === String(tid));
+        if (found) setDetailModal(found);
+      }
+
+      return t;
+    } catch { setTickets([]); return []; }
+    finally { setLoading(false); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ← stable: no filter deps, so this never re-creates
+
+  // Initial load
   useEffect(() => { load(); }, [load]);
 
-  /* Deep-link: auto-open ticket from notification (?ticketId=123)
-     Runs ONLY when tickets state is populated — no extra API call. */
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tid = params.get('ticketId');
-    if (!tid || tickets.length === 0) return;
-    const found = tickets.find(t => String(t.id) === String(tid));
-    if (found && (!detailModal || String(detailModal.id) !== String(tid))) {
-      setDetailModal(found);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tickets, location.search]);
-
-  /* ── Auto-poll every 15 seconds (silent) ── */
+  /* ── Auto-poll every 15 seconds (silent — no spinner) ── */
   useEffect(() => {
     pollRef.current = setInterval(() => load(true), 15000);
     return () => clearInterval(pollRef.current);
@@ -613,23 +654,29 @@ export default function ManageIncidents() {
   return (
     <div className="adm-inc" style={{ padding: '0 0 40px' }}>
 
-      {/* ── Header ── */}
-      <div style={{ background: '#ffffff', borderRadius: 16, padding: '22px 26px', marginBottom: 20, border: '1.5px solid #e5e7eb', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+      {/* ── Premium Gradient Header ── */}
+      <div className="adm-page-header" style={{ borderRadius: 18, padding: '26px 30px', marginBottom: 22, boxShadow: '0 8px 32px rgba(37,99,235,0.28)', position: 'relative', overflow: 'hidden' }}>
+        {/* Decorative circles */}
+        <div style={{ position: 'absolute', top: -30, right: -20, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -40, right: 100, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, position: 'relative' }}>
           <div>
-            <h2 style={{ color: '#111827', margin: 0, fontWeight: 900, fontSize: '1.6rem' }}>🛡 Manage Incidents</h2>
-            <p style={{ color: '#374151', margin: '5px 0 0', fontSize: 14, fontWeight: 600 }}>Review, assign, and resolve maintenance tickets</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+              <span style={{ fontSize: 28 }}>🛡</span>
+              <h2 style={{ color: '#ffffff', margin: 0, fontWeight: 900, fontSize: '1.7rem', letterSpacing: -0.5 }}>Manage Incidents</h2>
+            </div>
+            <p style={{ color: 'rgba(255,255,255,0.78)', margin: 0, fontSize: 14, fontWeight: 600, paddingLeft: 40 }}>Review, assign, and resolve maintenance tickets in real-time</p>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {/* Live indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#f0fdf4', border: '1.5px solid #059669', borderRadius: 8 }}>
-              <div className="adm-pulse-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669' }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#065f46' }}>Live • {now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 14px', background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10, backdropFilter: 'blur(8px)' }}>
+              <div className="adm-pulse-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80' }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#ffffff' }}>Live · {now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
             </div>
-            <button onClick={exportCSV} className="adm-inc-btn" style={{ padding: '9px 18px', background: '#ecfdf5', border: '1.5px solid #059669', borderRadius: 8, color: '#065f46', cursor: 'pointer', fontWeight: 800, fontSize: 13 }}>
+            <button onClick={exportCSV} className="adm-inc-btn" style={{ padding: '9px 18px', background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.35)', borderRadius: 10, color: '#ffffff', cursor: 'pointer', fontWeight: 800, fontSize: 13, backdropFilter: 'blur(8px)' }}>
               📥 Export CSV
             </button>
-            <button onClick={() => load()} className="adm-inc-btn" style={{ padding: '9px 18px', background: '#eff6ff', border: '1.5px solid #2563eb', borderRadius: 8, color: '#1d4ed8', cursor: 'pointer', fontWeight: 800, fontSize: 13 }}>
+            <button onClick={() => load()} className="adm-inc-btn" style={{ padding: '9px 18px', background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: 10, color: '#1d4ed8', cursor: 'pointer', fontWeight: 800, fontSize: 13 }}>
               ↻ Refresh
             </button>
           </div>
@@ -638,8 +685,8 @@ export default function ManageIncidents() {
 
       {/* ── Overdue Alert ── */}
       {overdueCount > 0 && (
-        <div style={{ background: '#fef2f2', border: '1.5px solid #dc2626', borderRadius: 12, padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 22 }}>⚠️</span>
+        <div style={{ background: 'linear-gradient(135deg, #fef2f2, #fff5f5)', border: '1.5px solid #fca5a5', borderRadius: 14, padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 4px 16px rgba(220,38,38,0.1)' }}>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#fef2f2', border: '2px solid #dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>⚠️</div>
           <div>
             <p style={{ color: '#991b1b', fontWeight: 900, fontSize: 14, margin: 0 }}>{overdueCount} ticket{overdueCount > 1 ? 's are' : ' is'} overdue (&gt;24 hours open)</p>
             <p style={{ color: '#b91c1c', fontWeight: 600, fontSize: 12, margin: '3px 0 0' }}>Please review and assign or resolve these tickets promptly.</p>
@@ -648,41 +695,42 @@ export default function ManageIncidents() {
       )}
 
       {/* ── Stats ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, marginBottom: 22 }}>
         {stats.map(s => (
-          <div key={s.label} className="adm-inc-card" style={{ background: s.bg, border: `1.5px solid ${s.color}33`, borderRadius: 12, padding: '18px 16px', textAlign: 'center' }}>
-            <p style={{ fontSize: 26, margin: 0 }}>{s.icon}</p>
-            <p style={{ fontSize: 28, fontWeight: 900, color: s.color, margin: '4px 0 2px' }}>{s.val}</p>
-            <p style={{ color: '#374151', fontSize: 12, margin: 0, fontWeight: 700 }}>{s.label}</p>
+          <div key={s.label} className="adm-inc-card" style={{ background: s.bg, border: `1.5px solid ${s.color}28`, borderRadius: 16, padding: '20px 18px', textAlign: 'center', boxShadow: `0 2px 12px ${s.color}14` }}>
+            <p style={{ fontSize: 28, margin: 0 }}>{s.icon}</p>
+            <p className="adm-stat-num" style={{ fontSize: 32, fontWeight: 900, color: s.color, margin: '6px 0 4px', lineHeight: 1 }}>{s.val}</p>
+            <p style={{ color: '#374151', fontSize: 12, margin: 0, fontWeight: 700, letterSpacing: 0.3 }}>{s.label}</p>
           </div>
         ))}
       </div>
 
       {/* ── Filters ── */}
-      <div style={{ background: '#ffffff', borderRadius: 12, padding: '16px 20px', marginBottom: 20, border: '1.5px solid #e5e7eb', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 12 }}>
+      <div className="adm-filter-bar" style={{ background: '#ffffff', borderRadius: 14, padding: '18px 22px', marginBottom: 22, border: '1.5px solid #e5e7eb', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+        <p style={{ color: '#6b7280', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, margin: '0 0 12px' }}>🔍 Filter & Search</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 14 }}>
           <div>
-            <label style={{ display: 'block', color: '#111827', fontSize: 11, fontWeight: 800, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Search</label>
+            <label style={{ display: 'block', color: '#374151', fontSize: 11, fontWeight: 800, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Search</label>
             <input className="adm-inc-input" value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Title, reporter, category..."
               style={{ ...IS_BASE, padding: '9px 14px' }} />
           </div>
           <div>
-            <label style={{ display: 'block', color: '#111827', fontSize: 11, fontWeight: 800, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Status</label>
+            <label style={{ display: 'block', color: '#374151', fontSize: 11, fontWeight: 800, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Status</label>
             <select style={{ ...SS, width: '100%' }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="adm-inc-input">
               <option value="" style={{ background: '#ffffff', color: '#111827' }}>All Statuses</option>
               {TICKET_STATUSES.map(s => <option key={s} value={s} style={{ background: '#ffffff', color: '#111827' }}>{s.replace('_', ' ')}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ display: 'block', color: '#111827', fontSize: 11, fontWeight: 800, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Priority</label>
+            <label style={{ display: 'block', color: '#374151', fontSize: 11, fontWeight: 800, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Priority</label>
             <select style={{ ...SS, width: '100%' }} value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)} className="adm-inc-input">
               <option value="" style={{ background: '#ffffff', color: '#111827' }}>All Priorities</option>
               {PRIORITIES.map(p => <option key={p} value={p} style={{ background: '#ffffff', color: '#111827' }}>{p}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ display: 'block', color: '#111827', fontSize: 11, fontWeight: 800, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Sort By</label>
+            <label style={{ display: 'block', color: '#374151', fontSize: 11, fontWeight: 800, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.4 }}>Sort By</label>
             <select style={{ ...SS, width: '100%' }} value={sortBy} onChange={e => setSortBy(e.target.value)} className="adm-inc-input">
               <option value="newest" style={{ background: '#ffffff', color: '#111827' }}>Newest First</option>
               <option value="oldest" style={{ background: '#ffffff', color: '#111827' }}>Oldest First</option>
@@ -690,9 +738,16 @@ export default function ManageIncidents() {
             </select>
           </div>
         </div>
-        <p style={{ color: '#374151', fontSize: 12, fontWeight: 700, margin: 0 }}>
-          Active: <strong style={{ color: '#111827' }}>{activeTickets.length}</strong> &nbsp;|&nbsp; History: <strong style={{ color: '#4b5563' }}>{historyTickets.length}</strong>
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <p style={{ color: '#374151', fontSize: 12, fontWeight: 700, margin: 0 }}>
+            Showing <strong style={{ color: '#111827' }}>{activeTickets.length}</strong> active &nbsp;·&nbsp; <strong style={{ color: '#4b5563' }}>{historyTickets.length}</strong> in history
+          </p>
+          {search && (
+            <button onClick={() => setSearch('')} className="adm-inc-btn" style={{ fontSize: 11, color: '#6b7280', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700 }}>
+              ✕ Clear search
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Active Tickets Table ── */}

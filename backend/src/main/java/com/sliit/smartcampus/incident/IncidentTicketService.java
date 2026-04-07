@@ -155,10 +155,13 @@ public class IncidentTicketService {
         IncidentTicket saved = ticketRepository.save(ticket);
 
         // Notify reporter
+        String roleName = technician.getRole().name().toLowerCase();
+        String assigneeName = technician.getFullName() != null ? technician.getFullName() : "Someone";
+        
         notificationService.createNotification(
                 ticket.getReporter(),
-                "Technician Assigned",
-                "A technician has been assigned to your ticket: " + ticket.getTitle(),
+                "Ticket Assigned",
+                assigneeName + " (" + roleName + ") has been assigned to your ticket: " + ticket.getTitle(),
                 NotificationType.TICKET_ASSIGNED,
                 ticketId, "TICKET"
         );
@@ -242,6 +245,25 @@ public class IncidentTicketService {
         commentRepository.save(comment);
     }
 
+    public void deleteTicket(String ticketId, String userId) {
+        IncidentTicket ticket = findTicketOrThrow(ticketId);
+        // Only the reporter can delete their own ticket
+        if (!ticket.getReporter().getId().equals(userId)) {
+            throw new IllegalArgumentException("You can only delete your own incidents");
+        }
+        // User can only delete their ticket if it is still OPEN
+        if (ticket.getStatus() != TicketStatus.OPEN) {
+            throw new IllegalStateException("Only OPEN tickets can be deleted");
+        }
+        // Delete attachments records first
+        attachmentRepository.deleteAll(ticket.getAttachments());
+        // Soft-delete: mark comments as deleted
+        commentRepository.findByTicketIdAndDeletedFalseOrderByCreatedAtAsc(ticketId)
+                .forEach(c -> { c.setDeleted(true); commentRepository.save(c); });
+        // Hard-delete the ticket
+        ticketRepository.delete(ticket);
+    }
+
     @Transactional(readOnly = true)
     public List<TicketCommentResponse> getComments(String ticketId) {
         return commentRepository.findByTicketIdAndDeletedFalseOrderByCreatedAtAsc(ticketId)
@@ -268,13 +290,11 @@ public class IncidentTicketService {
     }
 
     private IncidentTicketResponse toResponse(IncidentTicket t) {
+        // N+1 fix: We do NOT fetch comments here anymore. The frontend fetches comments
+        // asynchronously when opening the TicketDetailPanel.
         List<String> attachmentUrls = t.getAttachments().stream()
                 .map(TicketAttachment::getFilePath)
                 .toList();
-
-        List<TicketCommentResponse> comments = commentRepository
-                .findByTicketIdAndDeletedFalseOrderByCreatedAtAsc(t.getId())
-                .stream().map(this::toCommentResponse).toList();
 
         return new IncidentTicketResponse(
                 t.getId(),
@@ -287,12 +307,12 @@ public class IncidentTicketService {
                 t.getStatus().name(),
                 t.getResolutionNotes(),
                 t.getRejectionReason(),
-                t.getReporter().getId(),
-                t.getReporter().getFullName() != null ? t.getReporter().getFullName() : t.getReporter().getUsername(),
+                t.getReporter() != null ? t.getReporter().getId() : null,
+                t.getReporter() != null ? (t.getReporter().getFullName() != null ? t.getReporter().getFullName() : t.getReporter().getUsername()) : "Unknown Reporter",
                 t.getAssignee() != null ? t.getAssignee().getId() : null,
                 t.getAssignee() != null ? (t.getAssignee().getFullName() != null ? t.getAssignee().getFullName() : t.getAssignee().getUsername()) : null,
                 attachmentUrls,
-                comments,
+                java.util.List.of(), // Empty list for comments to prevent N+1
                 t.getCreatedAt(),
                 t.getUpdatedAt()
         );
