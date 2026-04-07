@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { fetchTechnicianAssignedIncidents, updateIncidentStatus, addIncidentComment, getCurrentUserId, getCurrentUserRole } from '../api';
-import '../App.css';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { fetchTechnicianAssignedIncidents, updateIncidentStatus, addIncidentComment, fetchIncidentComments, getCurrentUserId, getCurrentUserRole } from '../api';
+import './TechnicianDashboard.css';
 
 const TERMINAL_STATUSES = new Set(['CLOSED', 'REJECTED']);
 
@@ -19,7 +19,13 @@ function fmtDate(val) {
   return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
-// Status badge with enhanced design
+function fmtDateTime(val) {
+  const d = safeDate(val);
+  if (!d || isNaN(d)) return '—';
+  return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+// Status badge
 function StatusBadge({ status }) {
   const config = { 
     OPEN: { bg: '#2563eb', label: 'Open', icon: '🟢' },
@@ -31,25 +37,14 @@ function StatusBadge({ status }) {
   const { bg, label, icon } = config[status] || config.CLOSED;
   
   return (
-    <span style={{ 
-      background: bg, 
-      color: '#fff', 
-      padding: '4px 14px', 
-      borderRadius: 999, 
-      fontSize: 12, 
-      fontWeight: 700, 
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 6,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-    }}>
+    <span className="tech-ticket-badge" style={{ background: bg }}>
       <span>{icon}</span>
       <span>{label}</span>
     </span>
   );
 }
 
-// Priority badge with enhanced design
+// Priority badge
 function PriorityBadge({ priority }) {
   const config = { 
     LOW: { bg: '#6b7280', icon: '▼', label: 'Low' },
@@ -60,27 +55,44 @@ function PriorityBadge({ priority }) {
   const { bg, icon, label } = config[priority] || config.LOW;
   
   return (
-    <span style={{ 
-      background: bg, 
-      color: '#fff', 
-      padding: '4px 12px', 
-      borderRadius: 6, 
-      fontSize: 11, 
-      fontWeight: 800, 
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 6,
-      animation: priority === 'CRITICAL' ? 'pulse 2s infinite' : 'none',
-      boxShadow: priority === 'CRITICAL' ? '0 0 8px rgba(220,38,38,0.5)' : 'none'
-    }}>
+    <span className="tech-ticket-badge" style={{ background: bg }}>
       <span>{icon}</span>
       <span>{label}</span>
     </span>
   );
 }
 
+// Photo Modal
+function PhotoModal({ url, onClose }) {
+  useEffect(() => {
+    const h = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [onClose]);
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
+    }}>
+      <button onClick={onClose} style={{
+        position: 'absolute', top: 18, right: 22,
+        background: 'rgba(255,255,255,0.18)', border: 'none',
+        color: '#fff', fontSize: 22, borderRadius: 50, width: 42, height: 42,
+        cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>✕</button>
+      <img src={url} alt="full" onClick={e => e.stopPropagation()} style={{
+        maxWidth: '88vw', maxHeight: '88vh', borderRadius: 14,
+        objectFit: 'contain', boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+        border: '2px solid rgba(255,255,255,0.15)'
+      }} />
+    </div>
+  );
+}
+
 function TechnicianDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const userId = getCurrentUserId();
   const userRole = getCurrentUserRole();
   
@@ -88,6 +100,7 @@ function TechnicianDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [selectedTicketComments, setSelectedTicketComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [newStatus, setNewStatus] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -95,6 +108,9 @@ function TechnicianDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [addingComment, setAddingComment] = useState(false);
+  const [photoModal, setPhotoModal] = useState(null);
+  const [assignmentNotification, setAssignmentNotification] = useState('');
   
   // Verify user is technician
   useEffect(() => {
@@ -111,6 +127,12 @@ function TechnicianDashboard() {
       try {
         const data = await fetchTechnicianAssignedIncidents();
         setAssignments(data || []);
+        
+        // Show notification if assignments are available
+        if (data && data.length > 0) {
+          setAssignmentNotification(`📋 You have ${data.length} assigned ticket(s)`);
+          setTimeout(() => setAssignmentNotification(''), 4000);
+        }
       } catch (err) {
         setError(err.message || 'Failed to load assignments');
         setAssignments([]);
@@ -124,43 +146,84 @@ function TechnicianDashboard() {
     }
   }, [userId]);
 
-  // Filter and sort assignments
-  const filtered = assignments
-    .filter(ticket => {
-      if (statusFilter && ticket.status !== statusFilter) return false;
-      if (priorityFilter && ticket.priority !== priorityFilter) return false;
-      if (searchTerm && !ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
-          !ticket.description.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      let aVal = a[sortBy];
-      let bVal = b[sortBy];
-      
-      if (sortBy === 'createdAt') {
-        aVal = new Date(aVal).getTime();
-        bVal = new Date(bVal).getTime();
+  // Load comments when ticket is selected
+  const loadComments = useCallback(async (ticketId) => {
+    try {
+      const comments = await fetchIncidentComments(ticketId);
+      setSelectedTicketComments(comments || []);
+    } catch (err) {
+      console.error('Failed to load comments:', err);
+      setSelectedTicketComments([]);
+    }
+  }, []);
+
+  // Handle ticket selection
+  const handleTicketSelect = useCallback((ticket) => {
+    setSelectedTicket(ticket);
+    setNewStatus('');
+    setNewComment('');
+    loadComments(ticket.id);
+  }, [loadComments]);
+
+  // Handle deep-link from notification (ticketId query parameter)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ticketIdParam = params.get('ticketId');
+    
+    if (ticketIdParam && assignments.length > 0) {
+      const ticket = assignments.find(t => t.id === ticketIdParam);
+      if (ticket) {
+        handleTicketSelect(ticket);
+        // Clear the query parameter after handling
+        navigate('/technician-dashboard', { replace: true });
       }
-      
-      if (sortOrder === 'asc') {
-        return aVal > bVal ? 1 : -1;
-      } else {
-        return aVal < bVal ? 1 : -1;
-      }
-    });
+    }
+  }, [location.search, assignments, handleTicketSelect, navigate]);
+
+  // Separate active and closed tickets
+  const activeTickets = assignments.filter(t => !TERMINAL_STATUSES.has(t.status));
+  const closedTickets = assignments.filter(t => TERMINAL_STATUSES.has(t.status));
+
+  // Filter and sort function
+  const filterAndSort = (tickets) => {
+    return tickets
+      .filter(ticket => {
+        if (statusFilter && ticket.status !== statusFilter) return false;
+        if (priorityFilter && ticket.priority !== priorityFilter) return false;
+        if (searchTerm && !ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
+            !ticket.description.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        let aVal = a[sortBy];
+        let bVal = b[sortBy];
+        
+        if (sortBy === 'createdAt') {
+          aVal = new Date(aVal).getTime();
+          bVal = new Date(bVal).getTime();
+        }
+        
+        if (sortOrder === 'asc') {
+          return aVal > bVal ? 1 : -1;
+        } else {
+          return aVal < bVal ? 1 : -1;
+        }
+      });
+  };
+
+  const filteredActive = filterAndSort(activeTickets);
+  const filteredClosed = filterAndSort(closedTickets);
 
   // Update status
   const handleStatusChange = async (ticketId, newStat) => {
     try {
       const result = await updateIncidentStatus(ticketId, newStat);
       setAssignments(prev => prev.map(t => t.id === ticketId ? result : t));
-      setSelectedTicket(result);
-      setNewStatus('');
+      handleTicketSelect(result);
       
-      // Show success feedback
       const successMsg = document.createElement('div');
       successMsg.textContent = '✓ Status updated successfully';
-      successMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#059669;color:#fff;padding:12px 20px;border-radius:8px;z-index:1001;animation:slideIn 0.3s,slideOut 0.3s 2.7s';
+      successMsg.className = 'tech-notification-toast';
       document.body.appendChild(successMsg);
       setTimeout(() => successMsg.remove(), 3000);
     } catch (err) {
@@ -171,176 +234,128 @@ function TechnicianDashboard() {
   // Add comment
   const handleAddComment = async (ticketId) => {
     if (!newComment.trim()) return;
+    setAddingComment(true);
     try {
       await addIncidentComment(ticketId, newComment);
-      // Refresh ticket data
-      const updated = assignments.find(t => t.id === ticketId);
-      if (updated) {
-        setSelectedTicket({ ...updated });
-      }
       setNewComment('');
+      loadComments(ticketId);
       
-      // Show success feedback
       const successMsg = document.createElement('div');
       successMsg.textContent = '✓ Comment added successfully';
-      successMsg.style.cssText = 'position:fixed;top:20px;right:20px;background:#059669;color:#fff;padding:12px 20px;border-radius:8px;z-index:1001;animation:slideIn 0.3s,slideOut 0.3s 2.7s';
+      successMsg.className = 'tech-notification-toast';
       document.body.appendChild(successMsg);
       setTimeout(() => successMsg.remove(), 3000);
     } catch (err) {
       alert(err.message || 'Failed to add comment');
+    } finally {
+      setAddingComment(false);
     }
   };
 
   // Summary stats
   const stats = {
     total: assignments.length,
-    open: assignments.filter(t => t.status === 'OPEN').length,
-    inProgress: assignments.filter(t => t.status === 'IN_PROGRESS').length,
-    resolved: assignments.filter(t => t.status === 'RESOLVED').length,
+    open: activeTickets.filter(t => t.status === 'OPEN').length,
+    inProgress: activeTickets.filter(t => t.status === 'IN_PROGRESS').length,
+    resolved: activeTickets.filter(t => t.status === 'RESOLVED').length,
+    closed: closedTickets.length,
     critical: assignments.filter(t => t.priority === 'CRITICAL').length,
   };
 
+  // Render ticket card
+  const renderTicketCard = (ticket, index) => (
+    <div
+      key={ticket.id}
+      onClick={() => handleTicketSelect(ticket)}
+      className={`tech-ticket-card${selectedTicket?.id === ticket.id ? ' selected' : ''}`}
+      style={{ animation: `fadeInUp 0.3s ${index * 0.05}s both` }}
+    >
+      <div className="tech-ticket-header">
+        <div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+            <h3 className="tech-ticket-title">{ticket.title}</h3>
+            <span className="tech-ticket-id">#{ticket.id?.slice?.(-6) || 'N/A'}</span>
+          </div>
+        </div>
+        <div className="tech-priority-indicator" style={{
+          background: ticket.priority === 'CRITICAL' ? '#dc2626' : ticket.priority === 'HIGH' ? '#d97706' : '#10b981',
+          animation: ticket.priority === 'CRITICAL' ? 'pulse 2s infinite' : 'none'
+        }} />
+      </div>
+      <p className="tech-ticket-description">{ticket.description}</p>
+      <div className="tech-ticket-meta">
+        <StatusBadge status={ticket.status} />
+        <PriorityBadge priority={ticket.priority} />
+        <span className="tech-ticket-category">📂 {ticket.category || 'Uncategorized'}</span>
+        <span className="tech-ticket-date">🕒 {fmtDate(ticket.createdAt)}</span>
+      </div>
+    </div>
+  );
+
   return (
-    <div style={{ padding: '20px 40px', maxWidth: 1400, margin: '0 auto', background: '#f9fafb', minHeight: '100vh' }}>
-      {/* Enhanced Header with Gradient */}
-      <section style={{ 
-        marginBottom: 40, 
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '30px 40px',
-        borderRadius: 20,
-        color: '#fff',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
-      }}>
-        <h2 style={{ margin: '0 0 8px', fontSize: 36, fontWeight: 800 }}>
-          🔧 My Work Assignments
-        </h2>
-        <p style={{ margin: 0, fontSize: 16, opacity: 0.95 }}>
-          Manage your assigned support tickets and incidents
-        </p>
+    <div className="tech-container">
+      {/* Assignment Notification */}
+      {assignmentNotification && (
+        <div className="tech-notification-toast">{assignmentNotification}</div>
+      )}
+
+      {/* Header */}
+      <section className="tech-header">
+        <h2>🔧 My Work Assignments</h2>
+        <p>Manage your assigned support tickets and incidents</p>
       </section>
 
-      {/* Enhanced Stats Cards with Hover Effects */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
-        gap: 20, 
-        marginBottom: 32 
-      }}>
+      {/* Stats Cards */}
+      <div className="tech-stats">
         {[
           { label: 'Total Assignments', value: stats.total, color: '#3b82f6', icon: '📋', bg: '#eff6ff' },
           { label: 'Open Tickets', value: stats.open, color: '#dc2626', icon: '🔴', bg: '#fef2f2' },
           { label: 'In Progress', value: stats.inProgress, color: '#f59e0b', icon: '⚠️', bg: '#fffbeb' },
           { label: 'Resolved', value: stats.resolved, color: '#059669', icon: '✅', bg: '#f0fdf4' },
+          { label: 'Closed', value: stats.closed, color: '#4b5563', icon: '🔒', bg: '#f3f4f6' },
           { label: 'Critical Issues', value: stats.critical, color: '#991b1b', icon: '🔥', bg: '#fef2f2' },
         ].map((stat, idx) => (
-          <div key={idx} style={{
-            background: stat.bg,
-            border: 'none',
-            borderRadius: 16,
-            padding: 20,
-            transition: 'transform 0.2s, box-shadow 0.2s',
-            cursor: 'pointer',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-4px)';
-            e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-              <span style={{ fontSize: 32 }}>{stat.icon}</span>
-              <h3 style={{ margin: 0, fontSize: 32, fontWeight: 800, color: stat.color }}>{stat.value}</h3>
+          <div key={idx} className="tech-stat-card" style={{ background: stat.bg }}>
+            <div className="tech-stat-value">
+              <span className="tech-stat-icon">{stat.icon}</span>
+              <h3 className="tech-stat-number" style={{ color: stat.color }}>{stat.value}</h3>
             </div>
-            <p style={{ margin: 0, fontSize: 14, color: '#6b7280', fontWeight: 600 }}>{stat.label}</p>
+            <p className="tech-stat-label">{stat.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Error Alert with Animation */}
+      {/* Error Alert */}
       {error && (
-        <div style={{
-          background: '#fee2e2',
-          border: '1px solid #fecaca',
-          borderRadius: 12,
-          padding: 14,
-          marginBottom: 20,
-          color: '#991b1b',
-          fontSize: 14,
-          fontWeight: 500,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          animation: 'slideDown 0.3s'
-        }}>
-          <span style={{ fontSize: 20 }}>❌</span>
+        <div className="tech-alert-error">
+          <span className="tech-alert-error-icon">❌</span>
           <span>{error}</span>
         </div>
       )}
 
-      {/* Loading Skeleton */}
+      {/* Loading */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <div style={{ 
-            display: 'inline-block',
-            width: 50,
-            height: 50,
-            border: '4px solid #e5e7eb',
-            borderTopColor: '#3b82f6',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
-          <p style={{ marginTop: 20, color: '#6b7280', fontSize: 16 }}>Loading your assignments...</p>
+        <div className="tech-loader">
+          <div className="tech-spinner"></div>
+          <p className="tech-loader-text">Loading your assignments...</p>
         </div>
       )}
 
-      {/* Enhanced Filters with Search */}
+      {/* Filters */}
       {!loading && (
-        <div style={{ 
-          display: 'flex', 
-          gap: 12, 
-          marginBottom: 24, 
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          background: '#fff',
-          padding: 16,
-          borderRadius: 12,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-        }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <input
-              type="text"
-              placeholder="🔍 Search by title or description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1.5px solid #d1d5db',
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 500,
-                background: '#ffffff',
-                color: '#111827',
-              }}
-            />
-          </div>
+        <div className="tech-filter-bar">
+          <input
+            type="text"
+            placeholder="🔍 Search by title or description..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="tech-search-input"
+          />
           
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '1.5px solid #d1d5db',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              background: '#ffffff',
-              color: '#111827',
-            }}
+            className="tech-filter-select"
           >
             <option value="">All Statuses</option>
             <option value="OPEN">Open</option>
@@ -352,16 +367,7 @@ function TechnicianDashboard() {
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '1.5px solid #d1d5db',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              background: '#ffffff',
-              color: '#111827',
-            }}
+            className="tech-filter-select"
           >
             <option value="">All Priorities</option>
             <option value="LOW">Low</option>
@@ -373,16 +379,7 @@ function TechnicianDashboard() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              border: '1.5px solid #d1d5db',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              background: '#ffffff',
-              color: '#111827',
-            }}
+            className="tech-filter-select"
           >
             <option value="createdAt">Sort by Date</option>
             <option value="priority">Sort by Priority</option>
@@ -391,251 +388,81 @@ function TechnicianDashboard() {
 
           <button
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            style={{
-              padding: '8px 12px',
-              border: '1.5px solid #d1d5db',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              background: '#ffffff',
-              color: '#111827',
-            }}
+            className="tech-sort-btn"
           >
             {sortOrder === 'asc' ? '↑ Ascending' : '↓ Descending'}
           </button>
         </div>
       )}
 
-      {/* Enhanced Empty State */}
-      {!loading && filtered.length === 0 && (
-        <div style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          borderRadius: 20,
-          padding: 60,
-          textAlign: 'center',
-          color: '#fff',
-        }}>
-          <span style={{ fontSize: 64, display: 'block', marginBottom: 20 }}>✨</span>
-          <p style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>No assignments matching your filters</p>
-          <p style={{ margin: '12px 0 0', fontSize: 14, opacity: 0.9 }}>Great work staying on top of tickets!</p>
-        </div>
-      )}
-
-      {/* Enhanced Tickets List with Animations */}
-      {!loading && filtered.length > 0 && (
-        <div style={{ display: 'grid', gap: 16 }}>
-          {filtered.map((ticket, index) => (
-            <div
-              key={ticket.id}
-              onClick={() => setSelectedTicket(ticket)}
-              style={{
-                background: '#ffffff',
-                border: selectedTicket?.id === ticket.id ? '2px solid #3b82f6' : '1px solid #e5e7eb',
-                borderRadius: 16,
-                padding: 20,
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: selectedTicket?.id === ticket.id ? '0 8px 25px rgba(59,130,246,0.2)' : '0 1px 3px rgba(0,0,0,0.05)',
-                transform: selectedTicket?.id === ticket.id ? 'translateY(-2px)' : 'none',
-                animation: `fadeInUp 0.3s ${index * 0.05}s both`
-              }}
-              onMouseEnter={(e) => {
-                if (selectedTicket?.id !== ticket.id) {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedTicket?.id !== ticket.id) {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
-                }
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
-                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#111827' }}>
-                      {ticket.title}
-                    </h3>
-                    <span style={{ 
-                      fontSize: 11, 
-                      color: '#6b7280', 
-                      background: '#f3f4f6', 
-                      padding: '4px 10px', 
-                      borderRadius: 20,
-                      fontWeight: 600
-                    }}>
-                      #{ticket.id?.slice(-6) || 'N/A'}
-                    </span>
-                  </div>
-                  <p style={{ 
-                    margin: '0 0 16px', 
-                    fontSize: 14, 
-                    color: '#6b7280', 
-                    lineHeight: 1.6,
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
-                  }}>
-                    {ticket.description}
-                  </p>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <StatusBadge status={ticket.status} />
-                    <PriorityBadge priority={ticket.priority} />
-                    <span style={{ 
-                      fontSize: 12, 
-                      color: '#6b7280', 
-                      padding: '4px 10px',
-                      background: '#f3f4f6',
-                      borderRadius: 6,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4
-                    }}>
-                      📂 {ticket.category || 'Uncategorized'}
-                    </span>
-                    <span style={{ 
-                      fontSize: 12, 
-                      color: '#6b7280', 
-                      padding: '4px 10px',
-                      background: '#f3f4f6',
-                      borderRadius: 6,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4
-                    }}>
-                      🕒 {fmtDate(ticket.createdAt)}
-                    </span>
-                  </div>
-                </div>
-                <div style={{ 
-                  width: 8, 
-                  height: 8, 
-                  borderRadius: '50%', 
-                  background: ticket.priority === 'CRITICAL' ? '#dc2626' : '#10b981',
-                  animation: ticket.priority === 'CRITICAL' ? 'pulse 2s infinite' : 'none'
-                }} />
+      {/* Active Tickets Section */}
+      {!loading && (
+        <>
+          {filteredActive.length > 0 && (
+            <>
+              <div className="tech-section-header">
+                <h3 className="tech-section-title">🔧 Active Tickets</h3>
+                <span className="tech-section-count">{filteredActive.length}</span>
               </div>
+              <div className="tech-tickets-grid">
+                {filteredActive.map((ticket, idx) => renderTicketCard(ticket, idx))}
+              </div>
+            </>
+          )}
+
+          {/* Closed Tickets Section */}
+          {filteredClosed.length > 0 && (
+            <>
+              <div className="tech-section-header" style={{ marginTop: 48 }}>
+                <h3 className="tech-section-title">📁 Closed & Resolved</h3>
+                <span className="tech-section-count">{filteredClosed.length}</span>
+              </div>
+              <div className="tech-tickets-grid">
+                {filteredClosed.map((ticket, idx) => renderTicketCard(ticket, idx))}
+              </div>
+            </>
+          )}
+
+          {/* Empty State */}
+          {filteredActive.length === 0 && filteredClosed.length === 0 && (
+            <div className="tech-empty-state">
+              <span className="tech-empty-icon">✨</span>
+              <p className="tech-empty-title">No assignments matching your filters</p>
+              <p className="tech-empty-subtitle">Great work staying on top of tickets!</p>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
-      {/* Enhanced Detail Panel with Better UX */}
+      {/* Detail Panel */}
       {selectedTicket && (
         <>
-          <div 
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0,0,0,0.5)',
-              zIndex: 999,
-              animation: 'fadeIn 0.3s'
-            }}
-            onClick={() => setSelectedTicket(null)}
-          />
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            right: 0,
-            width: 500,
-            height: '100vh',
-            background: '#ffffff',
-            boxShadow: '-4px 0 25px rgba(0,0,0,0.15)',
-            zIndex: 1000,
-            overflow: 'auto',
-            animation: 'slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}>
-            <div style={{
-              position: 'sticky',
-              top: 0,
-              background: '#fff',
-              borderBottom: '1px solid #e5e7eb',
-              padding: '16px 20px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              zIndex: 1
-            }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#111827' }}>
-                Ticket Details
-              </h3>
-              <button
-                onClick={() => setSelectedTicket(null)}
-                style={{
-                  width: 32,
-                  height: 32,
-                  border: 'none',
-                  background: '#f3f4f6',
-                  cursor: 'pointer',
-                  fontSize: 18,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#e5e7eb';
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#f3f4f6';
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-              >
-                ✕
-              </button>
+          <div className="tech-detail-overlay" onClick={() => setSelectedTicket(null)} />
+          <div className="tech-detail-panel">
+            <div className="tech-panel-header">
+              <h3 className="tech-panel-title">Ticket Details</h3>
+              <button className="tech-panel-close-btn" onClick={() => setSelectedTicket(null)}>✕</button>
             </div>
 
-            <div style={{ padding: '20px' }}>
+            <div className="tech-panel-content">
               {/* Title */}
-              <h2 style={{ margin: '0 0 16px', fontSize: 22, fontWeight: 800, color: '#111827', lineHeight: 1.3 }}>
-                {selectedTicket.title}
-              </h2>
+              <h2 className="tech-detail-title">{selectedTicket.title}</h2>
 
-              {/* Status Card */}
-              <div style={{
-                background: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: 12,
-                padding: 16,
-                marginBottom: 20,
-              }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#6b7280', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  Current Status
-                </label>
-                <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+              {/* Status */}
+              <div className="tech-status-section">
+                <label className="tech-status-label">Current Status</label>
+                <div className="tech-status-badges">
                   <StatusBadge status={selectedTicket.status} />
                   <PriorityBadge priority={selectedTicket.priority} />
                 </div>
 
                 {!TERMINAL_STATUSES.has(selectedTicket.status) && (
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#6b7280', marginBottom: 8, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                      Update Status
-                    </label>
+                    <label className="tech-status-label" style={{ marginTop: 12 }}>Update Status</label>
                     <select
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        border: '1.5px solid #d1d5db',
-                        borderRadius: 8,
-                        fontSize: 14,
-                        fontWeight: 500,
-                        background: '#ffffff',
-                        color: '#111827',
-                        marginBottom: 10,
-                        cursor: 'pointer'
-                      }}
+                      className="tech-status-update-select"
                     >
                       <option value="">-- Select Status --</option>
                       <option value="IN_PROGRESS">🔄 In Progress</option>
@@ -645,20 +472,7 @@ function TechnicianDashboard() {
                     {newStatus && (
                       <button
                         onClick={() => handleStatusChange(selectedTicket.id, newStatus)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 0',
-                          background: '#3b82f6',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: 8,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          fontSize: 14,
-                          transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
+                        className="tech-status-update-btn"
                       >
                         Update Status
                       </button>
@@ -667,92 +481,96 @@ function TechnicianDashboard() {
                 )}
               </div>
 
-              {/* Details Card */}
-              <div style={{
-                background: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: 12,
-                padding: 16,
-                marginBottom: 20,
-                fontSize: 13,
-              }}>
-                <div style={{ marginBottom: 12 }}>
-                  <strong style={{ color: '#374151' }}>Category:</strong>
-                  <span style={{ marginLeft: 8, color: '#6b7280' }}>{selectedTicket.category || 'N/A'}</span>
-                </div>
-                <div style={{ marginBottom: 12 }}>
-                  <strong style={{ color: '#374151' }}>Created:</strong>
-                  <span style={{ marginLeft: 8, color: '#6b7280' }}>{fmtDate(selectedTicket.createdAt)}</span>
-                </div>
-                <div style={{ marginBottom: 12 }}>
-                  <strong style={{ color: '#374151' }}>Reported by:</strong>
-                  <span style={{ marginLeft: 8, color: '#6b7280' }}>{selectedTicket.reportedByName || 'N/A'}</span>
-                </div>
-                <div>
-                  <strong style={{ color: '#374151', display: 'block', marginBottom: 8 }}>Description:</strong>
-                  <p style={{ margin: 0, color: '#4b5563', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                    {selectedTicket.description}
-                  </p>
-                </div>
+              {/* Description */}
+              <div className="tech-status-section" style={{ background: 'linear-gradient(135deg, rgba(255,237,213,0.8) 0%, rgba(254,215,170,0.8) 100%)', border: '2px solid #fb923c' }}>
+                <label className="tech-status-label" style={{ color: '#92400e' }}>📝 Description</label>
+                <p className="tech-detail-description-text" style={{ color: '#7c2d12', fontWeight: 700 }}>
+                  {selectedTicket.description}
+                </p>
               </div>
 
-              {/* Comments Section */}
-              <div style={{ marginBottom: 20 }}>
-                <h3 style={{ 
-                  margin: '0 0 12px', 
-                  fontSize: 14, 
-                  fontWeight: 800, 
-                  color: '#111827', 
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8
-                }}>
-                  💬 Comments
-                  <span style={{
-                    fontSize: 11,
-                    background: '#f3f4f6',
-                    padding: '2px 8px',
-                    borderRadius: 12,
-                    color: '#6b7280'
-                  }}>
-                    {selectedTicket.comments?.length || 0}
-                  </span>
-                </h3>
-                <div style={{
-                  background: '#f9fafb',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: 12,
-                  padding: 16,
-                  maxHeight: 300,
-                  overflow: 'auto',
-                  marginBottom: 16,
-                }}>
-                  {selectedTicket.comments?.length === 0 ? (
-                    <p style={{ margin: 0, color: '#9ca3af', fontSize: 13, textAlign: 'center', padding: 20 }}>
-                      No comments yet
-                    </p>
-                  ) : (
-                    selectedTicket.comments?.map((cmt, idx) => (
-                      <div key={idx} style={{ 
-                        marginBottom: idx < selectedTicket.comments.length - 1 ? 16 : 0,
-                        paddingBottom: idx < selectedTicket.comments.length - 1 ? 16 : 0,
-                        borderBottom: idx < selectedTicket.comments.length - 1 ? '1px solid #e5e7eb' : 'none'
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#111827' }}>
-                            {cmt.authorName || 'Unknown'}
-                          </p>
-                          <p style={{ margin: 0, fontSize: 10, color: '#9ca3af' }}>
-                            {fmtDate(cmt.createdAt)}
-                          </p>
-                        </div>
-                        <p style={{ margin: 0, fontSize: 13, color: '#4b5563', lineHeight: 1.5 }}>
-                          {cmt.content}
-                        </p>
+              {/* Details */}
+              <div className="tech-details-section">
+                <div className="tech-detail-row">
+                  <strong>Category:</strong>
+                  <span>{selectedTicket.category || 'N/A'}</span>
+                </div>
+                <div className="tech-detail-row">
+                  <strong>Location:</strong>
+                  <span>{selectedTicket.location || 'N/A'}</span>
+                </div>
+                <div className="tech-detail-row">
+                  <strong>Created:</strong>
+                  <span>{fmtDate(selectedTicket.createdAt)}</span>
+                </div>
+                <div className="tech-detail-row">
+                  <strong>Updated:</strong>
+                  <span>{selectedTicket.updatedAt ? fmtDate(selectedTicket.updatedAt) : fmtDate(selectedTicket.createdAt)}</span>
+                </div>
+                <div className="tech-detail-row">
+                  <strong>Reported by:</strong>
+                  <span>{selectedTicket.reportedByName || 'N/A'}</span>
+                </div>
+                {selectedTicket.contactDetails && (
+                  <div className="tech-detail-row">
+                    <strong>Contact:</strong>
+                    <span>{selectedTicket.contactDetails}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Images */}
+              {selectedTicket.attachmentUrls?.length > 0 && (
+                <div className="tech-images-section">
+                  <h3 className="tech-images-title">📸 Evidence Photos ({selectedTicket.attachmentUrls.length})</h3>
+                  <div className="tech-images-gallery">
+                    {selectedTicket.attachmentUrls.map((url, i) => (
+                      <div key={i} className="tech-image-thumbnail" onClick={() => setPhotoModal(url)}>
+                        <img src={url} alt={`photo-${i}`} onError={e => e.target.parentElement.style.display = 'none'} />
                       </div>
-                    ))
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <hr style={{ borderColor: '#e5e7eb', margin: '20px 0', borderStyle: 'dashed' }} />
+
+              {/* Comments */}
+              <div className="tech-comments-section">
+                <div className="tech-comments-header">
+                  <h3 className="tech-comments-title">💬 Comments</h3>
+                  <span className="tech-comments-badge">{selectedTicketComments.length}</span>
+                </div>
+                <div className="tech-comments-container">
+                  {selectedTicketComments.length === 0 ? (
+                    <p className="tech-comments-empty">No comments yet</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {[...selectedTicketComments].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)).map((c, idx) => {
+                        const isEscalation = c.content?.includes('ESCALATION REQUEST');
+                        return (
+                          <div 
+                            key={c.id || idx} 
+                            style={{
+                              background: isEscalation ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' : 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
+                              borderRadius: 12,
+                              padding: '12px 14px',
+                              border: `2px solid ${isEscalation ? '#fca5a5' : '#e5e7eb'}`,
+                              transition: 'all 0.15s'
+                            }}
+                            className="tech-comment-card"
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'center' }}>
+                              <span style={{ color: isEscalation ? '#dc2626' : '#059669', fontSize: 12, fontWeight: 800 }}>👤 {c.authorName || 'Unknown'}</span>
+                              <span style={{ color: '#6b7280', fontSize: 10, fontWeight: 600 }}>{fmtDateTime(c.createdAt)}</span>
+                            </div>
+                            <p style={{ color: isEscalation ? '#991b1b' : '#111827', fontSize: 12, margin: 0, fontWeight: isEscalation ? 800 : 600, lineHeight: 1.5 }}>
+                              {c.content}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
 
@@ -761,42 +579,15 @@ function TechnicianDashboard() {
                     <textarea
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Write a comment..."
-                      style={{
-                        width: '100%',
-                        height: 100,
-                        padding: 12,
-                        border: '1.5px solid #d1d5db',
-                        borderRadius: 8,
-                        fontSize: 13,
-                        fontFamily: 'Inter, sans-serif',
-                        resize: 'vertical',
-                        marginBottom: 10,
-                      }}
+                      placeholder="Write your comment..."
+                      className="tech-comment-textarea"
                     />
                     <button
                       onClick={() => handleAddComment(selectedTicket.id)}
-                      disabled={!newComment.trim()}
-                      style={{
-                        width: '100%',
-                        padding: '10px 0',
-                        background: newComment.trim() ? '#059669' : '#d1d5db',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 8,
-                        fontWeight: 700,
-                        cursor: newComment.trim() ? 'pointer' : 'not-allowed',
-                        fontSize: 14,
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (newComment.trim()) e.currentTarget.style.background = '#047857';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (newComment.trim()) e.currentTarget.style.background = '#059669';
-                      }}
+                      disabled={addingComment || !newComment.trim()}
+                      className="tech-comment-submit-btn"
                     >
-                      Post Comment
+                      {addingComment ? '⏳ Posting...' : '💬 Post Comment'}
                     </button>
                   </div>
                 )}
@@ -806,58 +597,9 @@ function TechnicianDashboard() {
         </>
       )}
 
-      <style>{`
-        @keyframes slideInRight {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes fadeInUp {
-          from { 
-            opacity: 0; 
-            transform: translateY(20px);
-          }
-          to { 
-            opacity: 1; 
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        
-        @keyframes slideOut {
-          from { transform: translateX(0); opacity: 1; }
-          to { transform: translateX(100%); opacity: 0; }
-        }
-        
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-      `}</style>
+      {/* Photo Modal */}
+      {photoModal && <PhotoModal url={photoModal} onClose={() => setPhotoModal(null)} />}
+
     </div>
   );
 }

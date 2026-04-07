@@ -166,6 +166,15 @@ public class IncidentTicketService {
                 ticketId, "TICKET"
         );
 
+        // Notify technician when assigned to a ticket
+        notificationService.createNotification(
+                technician,
+                "Ticket Assigned to You",
+                "You have been assigned to ticket: " + ticket.getTitle() + " (ID: " + ticket.getId() + ")",
+                NotificationType.TICKET_ASSIGNED,
+                ticketId, "TICKET"
+        );
+
         return toResponse(saved);
     }
 
@@ -218,6 +227,21 @@ public class IncidentTicketService {
                     );
                 }
             }
+        }
+
+        // Notify assigned technician when a comment is added to their ticket
+        if (ticket.getAssignee() != null && !ticket.getAssignee().getId().equals(authorId)) {
+            String notifTitle = isEscalation ? "🚨 ESCALATION: Ticket #" + ticket.getId() : "💬 Comment on Assigned Ticket #" + ticket.getId();
+            String snippet = isEscalation ? "User flagged issue as critically urgent!" : (content.length() > 50 ? content.substring(0, 50) + "..." : content);
+            String notifMsg = author.getFullName() + " on '" + ticket.getTitle() + "': " + snippet;
+            
+            notificationService.createNotification(
+                    ticket.getAssignee(),
+                    notifTitle,
+                    notifMsg,
+                    NotificationType.TICKET_COMMENT_ADDED,
+                    ticketId, "TICKET"
+            );
         }
 
         return toCommentResponse(saved);
