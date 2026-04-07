@@ -48,6 +48,7 @@ export default function Notifications({ isAdmin = false }) {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const navigate = useNavigate();
   const [now, setNow] = useState(new Date());
+  const userRole = localStorage.getItem('smartcampus_user_role') || 'USER';
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -82,7 +83,14 @@ export default function Notifications({ isAdmin = false }) {
     if (n.referenceType === 'BOOKING') navigate(isAdmin ? '/admin/bookings' : '/my-bookings');
     else if (n.referenceType === 'TICKET') {
       // Navigate to the exact ticket using referenceId for deep-link
-      const base = isAdmin ? '/admin/incidents' : '/incidents';
+      let base;
+      if (isAdmin) {
+        base = '/admin/incidents';
+      } else if (userRole === 'TECHNICIAN') {
+        base = '/technician-dashboard';
+      } else {
+        base = '/incidents';
+      }
       const ticketParam = n.referenceId ? `?ticketId=${n.referenceId}` : '';
       navigate(`${base}${ticketParam}`);
     }
