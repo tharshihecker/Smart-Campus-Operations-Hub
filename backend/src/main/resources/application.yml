@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: smartcampus-backend
+  data:
+    mongodb:
+      uri: mongodb+srv://herozeroyaaro_db_user:7LpLSMO1hepDes7r@cluster0.i7rsr1d.mongodb.net/smartcampus?appName=Cluster0
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 20MB
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: SmartCampusSLIIT2026VerySecretKeyForJWTAuthenticationMinimum256Bits
+    expiration-ms: 86400000   # 24 hours
+  google:
+    client-id: 525229368487-uae4vna5146dmah7lmshjna5rm985cr1.apps.googleusercontent.com
+
+cloudinary:
+  cloud-name: dxpmhs4r8
+  api-key: "738223427257681"
+  api-secret: "rHRazNvXXKIN18ZlA8Dd8VYkfz4"
