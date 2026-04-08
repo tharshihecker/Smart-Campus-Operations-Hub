@@ -243,6 +243,25 @@ export async function createEvent(data) { return sendJson("POST", "/admin/events
 export async function updateEvent(id, data) { return sendJson("PUT", `/admin/events/${id}`, data); }
 export async function deleteEvent(id) { return sendJson("DELETE", `/admin/events/${id}`); }
 
+export async function createEventBooking(eventId, data) { return sendJson("POST", `/events/${eventId}/book`, data); }
+export async function fetchUserEventBookings(userId) { return fetchJson(`/events/bookings/user/${userId}`); }
+export async function cancelEventBooking(bookingId, userId) { return sendJson("PUT", `/events/bookings/${bookingId}/cancel?userId=${userId}`); }
+
+export async function fetchEventAvailability(eventId) { return fetchJson(`/events/${eventId}/availability`); }
+export async function uploadEventImage(file) {
+  const headers = { ...getAuthHeader() };
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch(`${API_BASE}/admin/events/upload-image`, {
+    method: 'POST',
+    headers,
+    body: fd,
+  });
+  if (!res.ok) {
+    const t = await res.text(); throw parseErrorResponse(t);
+  }
+  return res.json();
+}
 /* ── Admin: Services ──────────────────────────────────── */
 export async function fetchAdminServices() { return fetchJson("/admin/services"); }
 export async function createService(data) { return sendJson("POST", "/admin/services", data); }
