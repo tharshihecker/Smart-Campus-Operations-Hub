@@ -1,9 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-<<<<<<< HEAD
-import { fetchUserBookings, cancelBooking, createBooking, fetchFacilities, fetchBookingQR, checkinBooking } from '../api';
-=======
 import { fetchUserBookings, cancelBooking, createBooking, updateBooking, fetchFacilities, fetchBookingQR, checkinBooking } from '../api';
->>>>>>> smart-campus-paf-2026-booking-enhancement
 import './Profile.css';
 import './MyBookings.css';
 
@@ -94,8 +90,6 @@ function MyBookings() {
       .catch(err => { setError(err.message || 'Failed to load bookings'); setLoading(false); });
   }, [userId]);
 
-<<<<<<< HEAD
-=======
   // Effect to clear action messages after 3 seconds
   useEffect(() => {
     if (actionMsg.text) {
@@ -105,8 +99,6 @@ function MyBookings() {
       return () => clearTimeout(timer);
     }
   }, [actionMsg.text]);
-
->>>>>>> smart-campus-paf-2026-booking-enhancement
   const loadFacilities = useCallback(async () => {
     try {
       const data = await fetchFacilities({ status: 'ACTIVE' });
@@ -143,10 +135,6 @@ function MyBookings() {
     }
     setFormLoading(true); setActionMsg({ type: '', text: '' });
     try {
-<<<<<<< HEAD
-      await createBooking({ ...bookingForm, userId: userId });
-      setActionMsg({ type: 'success', text: '✅ Booking submitted! Awaiting admin approval.' });
-=======
       if (bookingForm.id) {
         await updateBooking(bookingForm.id, { ...bookingForm, userId: userId });
         setActionMsg({ type: 'success', text: '✅ Booking updated successfully!' });
@@ -154,17 +142,12 @@ function MyBookings() {
         await createBooking({ ...bookingForm, userId: userId });
         setActionMsg({ type: 'success', text: '✅ Booking submitted! Awaiting admin approval.' });
       }
->>>>>>> smart-campus-paf-2026-booking-enhancement
       setShowForm(false);
       setBookingForm({ facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });
       loadBookings();
-    } catch (err) {
-<<<<<<< HEAD
-      setActionMsg({ type: 'error', text: err.message || 'Failed to create booking' });
-=======
+        } catch (err) {
       setActionMsg({ type: 'error', text: err.message || 'Failed to process booking' });
->>>>>>> smart-campus-paf-2026-booking-enhancement
-    } finally { setFormLoading(false); }
+        } finally { setFormLoading(false); }
   };
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -182,13 +165,8 @@ function MyBookings() {
 
       <div className="profile-card">
         <h3>
-<<<<<<< HEAD
-          <span className="card-icon">➕</span>
-          New Booking
-=======
           <span className="card-icon">{bookingForm.id ? '✏️' : '➕'}</span>
           {bookingForm.id ? 'Edit Booking' : 'New Booking'}
->>>>>>> smart-campus-paf-2026-booking-enhancement
           {!showForm && (
             <button type="button" className="btn-edit-trigger" onClick={() => { loadFacilities(); setShowForm(true); setActionMsg({ type: '', text: '' }); }}>
               Book a Facility
@@ -221,18 +199,12 @@ function MyBookings() {
             </label>
             <div className="profile-form-actions">
               <button type="submit" className="btn-profile primary" disabled={formLoading}>
-<<<<<<< HEAD
-                {formLoading ? 'Submitting…' : 'Submit Booking'}
-              </button>
-              <button type="button" className="btn-profile secondary" onClick={() => setShowForm(false)}>Cancel</button>
-=======
                 {formLoading ? 'Submitting…' : (bookingForm.id ? 'Update Booking' : 'Submit Booking')}
               </button>
               <button type="button" className="btn-profile secondary" onClick={() => {
                 setShowForm(false);
                 setBookingForm({ facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });
               }}>Cancel</button>
->>>>>>> smart-campus-paf-2026-booking-enhancement
             </div>
           </form>
         )}
@@ -280,12 +252,6 @@ function MyBookings() {
                   </p>
                 )}
                 <div className="booking-actions-row">
-<<<<<<< HEAD
-                  {(b.status === 'PENDING' || b.status === 'APPROVED') && (
-                    <button type="button" className="btn-profile danger" onClick={() => handleCancel(b.id)}>
-                      Cancel
-                    </button>
-=======
                   {b.status === 'PENDING' && (
                     <>
                       <button type="button" className="btn-profile warning" onClick={() => {
@@ -309,7 +275,6 @@ function MyBookings() {
                         Cancel
                       </button>
                     </>
->>>>>>> smart-campus-paf-2026-booking-enhancement
                   )}
                   {(b.status === 'APPROVED' || b.status === 'CHECKED_IN') && (
                     <button type="button" className="btn-profile primary" onClick={() => setQrBooking(b)}>

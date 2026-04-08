@@ -1,10 +1,7 @@
 package com.sliit.smartcampus.notification;
 
 import com.sliit.smartcampus.user.User;
-<<<<<<< HEAD
-=======
 import org.springframework.data.annotation.CreatedDate;
->>>>>>> smart-campus-paf-2026-booking-enhancement
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -33,16 +30,8 @@ public class Notification {
 
     private String referenceType; // "BOOKING" or "TICKET"
 
-<<<<<<< HEAD
-    private LocalDateTime createdAt;
-
-    public void setCreatedAt() { if (createdAt == null) createdAt = LocalDateTime.now(); }
-
-=======
     @CreatedDate
     private LocalDateTime createdAt;
-
->>>>>>> smart-campus-paf-2026-booking-enhancement
     // Getters and Setters
     public String getId() { return id; }
     public User getUser() { return user; }

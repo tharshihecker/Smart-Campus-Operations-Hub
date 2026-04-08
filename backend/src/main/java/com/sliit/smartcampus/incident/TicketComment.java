@@ -1,13 +1,9 @@
 package com.sliit.smartcampus.incident;
 
 import com.sliit.smartcampus.user.User;
-<<<<<<< HEAD
-import org.springframework.data.annotation.Id;
-=======
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
->>>>>>> smart-campus-paf-2026-booking-enhancement
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import jakarta.validation.constraints.NotBlank;
@@ -29,31 +25,13 @@ public class TicketComment {
     @NotBlank
     private String content;
 
-<<<<<<< HEAD
-    private LocalDateTime createdAt;
-
-=======
     @CreatedDate
     private LocalDateTime createdAt;
 
     @LastModifiedDate
->>>>>>> smart-campus-paf-2026-booking-enhancement
     private LocalDateTime updatedAt;
 
     private boolean deleted = false;
-
-<<<<<<< HEAD
-    public void setCreatedAt() {
-        if(createdAt == null) createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    public void setUpdatedAt() {
-        updatedAt = LocalDateTime.now();
-    }
-
-=======
->>>>>>> smart-campus-paf-2026-booking-enhancement
     // Getters and Setters
     public String getId() { return id; }
     public IncidentTicket getTicket() { return ticket; }

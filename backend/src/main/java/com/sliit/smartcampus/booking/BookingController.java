@@ -73,9 +73,6 @@ public class BookingController {
                 LocalTime.parse(endTime)
         );
     }
-
-<<<<<<< HEAD
-=======
     @GetMapping("/{bookingId}")
     public BookingResponse getById(@PathVariable String bookingId) {
         return bookingRepository.findById(bookingId)
@@ -87,8 +84,6 @@ public class BookingController {
     public BookingResponse update(@PathVariable String bookingId, @Valid @RequestBody BookingRequest request) {
         return bookingService.updateBooking(bookingId, request);
     }
-
->>>>>>> smart-campus-paf-2026-booking-enhancement
     @PutMapping("/{bookingId}/cancel")
     public BookingResponse cancel(@PathVariable String bookingId, @RequestParam String userId) {
         return bookingService.cancelBooking(bookingId, userId);

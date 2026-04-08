@@ -53,10 +53,6 @@ public class IncidentTicketService {
         ticket.setLocation(request.getLocation());
         ticket.setContactDetails(request.getContactDetails());
         ticket.setStatus(TicketStatus.OPEN);
-<<<<<<< HEAD
-        ticket.setCreatedAt();
-=======
->>>>>>> smart-campus-paf-2026-booking-enhancement
 
         IncidentTicket saved = ticketRepository.save(ticket);
 
@@ -119,18 +115,13 @@ public class IncidentTicketService {
 
         // SLA: record first response time (first move away from OPEN)
         if (oldStatus == TicketStatus.OPEN && newStatus != TicketStatus.OPEN
-                && ticket.getFirstResponseAt() == null) {
+            && ticket.getFirstResponseAt() == null) {
             ticket.setFirstResponseAt(java.time.LocalDateTime.now());
         }
         // SLA: record resolution time
         if (newStatus == TicketStatus.RESOLVED && ticket.getResolvedAt() == null) {
             ticket.setResolvedAt(java.time.LocalDateTime.now());
         }
-
-<<<<<<< HEAD
-        ticket.setUpdatedAt();
-=======
->>>>>>> smart-campus-paf-2026-booking-enhancement
         IncidentTicket saved = ticketRepository.save(ticket);
 
         // Notify reporter
@@ -157,10 +148,6 @@ public class IncidentTicketService {
                 ticket.setFirstResponseAt(java.time.LocalDateTime.now());
             }
         }
-<<<<<<< HEAD
-        ticket.setUpdatedAt();
-=======
->>>>>>> smart-campus-paf-2026-booking-enhancement
         IncidentTicket saved = ticketRepository.save(ticket);
 
         // Notify reporter
@@ -196,10 +183,6 @@ public class IncidentTicketService {
         comment.setTicket(ticket);
         comment.setAuthor(author);
         comment.setContent(content);
-<<<<<<< HEAD
-        comment.setCreatedAt();
-=======
->>>>>>> smart-campus-paf-2026-booking-enhancement
         TicketComment saved = commentRepository.save(comment);
 
         // Notify reporter if comment is by someone else
@@ -216,12 +199,7 @@ public class IncidentTicketService {
         boolean isEscalation = content.contains("ESCALATION REQUEST");
         
         if (isEscalation) {
-<<<<<<< HEAD
-            ticket.setPriority(com.sliit.smartcampus.incident.TicketPriority.CRITICAL);
-            ticket.setUpdatedAt();
-=======
             ticket.setPriority(TicketPriority.CRITICAL);
->>>>>>> smart-campus-paf-2026-booking-enhancement
             ticketRepository.save(ticket);
         }
 
@@ -270,10 +248,6 @@ public class IncidentTicketService {
             throw new IllegalArgumentException("You can only edit your own comments");
         }
         comment.setContent(content);
-<<<<<<< HEAD
-        comment.setUpdatedAt();
-=======
->>>>>>> smart-campus-paf-2026-booking-enhancement
         return toCommentResponse(commentRepository.save(comment));
     }
 
@@ -284,10 +258,6 @@ public class IncidentTicketService {
             throw new IllegalArgumentException("You can only delete your own comments");
         }
         comment.setDeleted(true);
-<<<<<<< HEAD
-        comment.setUpdatedAt();
-=======
->>>>>>> smart-campus-paf-2026-booking-enhancement
         commentRepository.save(comment);
     }
 
