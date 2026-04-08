@@ -226,13 +226,6 @@
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-.btn-profile.danger:hover {
-    background: var(--brand-danger);
-    color: #fff;
-}
-
-<<<<<<< HEAD
-=======
 .btn-profile.warning {
     background: rgba(245, 158, 11, 0.1);
     color: var(--brand-warning);
@@ -244,7 +237,6 @@
     color: #fff;
 }
 
->>>>>>> smart-campus-paf-2026-booking-enhancement
 .booking-timestamp {
     font-size: 0.8rem;
     color: var(--text-muted);
