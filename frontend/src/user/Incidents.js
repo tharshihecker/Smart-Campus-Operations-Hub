@@ -784,18 +784,19 @@ export default function Incidents() {
                       <div onClick={() => { clearTicketParam(); setSelected(t); }}
                         className="profile-card inc-card"
                         style={{
-                          padding: '18px 22px 0 22px', cursor: 'pointer',
-                          border: `2px solid ${t.priority === 'CRITICAL' ? '#dc2626' : t.priority === 'HIGH' ? '#d97706' : '#2563eb'}`,
-                          borderRadius: 14, overflow: 'hidden', backgroundColor: t.priority === 'CRITICAL' ? 'rgba(220, 38, 38, 0.02)' : 'var(--bg-card)'
+                          padding: '24px', cursor: 'pointer',
+                          border: `1px solid var(--border-subtle)`,
+                          borderRadius: 14, overflow: 'hidden', backgroundColor: 'var(--bg-card)',
+                          display: 'flex', flexDirection: 'column', gap: 12
                         }}>
                         {/* Top row: ID + title + badges */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                               <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>#{t.id}</span>
-                              <p style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: 15, lineHeight: 1.3 }}>{t.title}</p>
+                              <p style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem', lineHeight: 1.3 }}>{t.title}</p>
                             </div>
-                            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8, fontWeight: 600 }}>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>
                               📁 {t.category} &nbsp;•&nbsp; 📍 {t.location}
                             </p>
                           </div>
@@ -805,36 +806,36 @@ export default function Incidents() {
                           </div>
                         </div>
                         {/* Middle row: assignee + date */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, paddingBottom: 12 }}>
-                          <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, fontWeight: 600 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>
                             {t.assigneeName ? `👷 ${t.assigneeName}` : '👤 Unassigned'}
                           </p>
-                          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>🕐 {fmtDate(t.createdAt)}</p>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>🕐 {fmtDate(t.createdAt)}</p>
                         </div>
                         {t.attachmentUrls?.length > 0 && (
-                          <span style={{ marginBottom: 12, display: 'inline-block', fontSize: 11, color: 'var(--brand-teal)', fontWeight: 700, background: 'var(--bg-surface)', padding: '2px 8px', borderRadius: 6 }}>
+                          <span style={{ display: 'inline-block', fontSize: '0.85rem', color: 'var(--brand-teal)', fontWeight: 700, background: 'rgba(14, 165, 233, 0.1)', padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(14, 165, 233, 0.2)', width: 'fit-content' }}>
                             📎 {t.attachmentUrls.length} photo{t.attachmentUrls.length > 1 ? 's' : ''}
                           </span>
                         )}
                         {/* Footer action bar */}
-                        <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '0 -22px', padding: '10px 22px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, background: 'var(--bg-surface)' }}
+                        <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 'auto', paddingTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}
                           onClick={e => e.stopPropagation()}>
                           {canDelete ? (
                             <button
                               onClick={() => setDeleteTarget(t)}
-                              style={{ padding: '6px 14px', background: 'rgba(239,68,68,0.09)', border: '1.5px solid rgba(239,68,68,0.4)', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 800, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.18s' }}
-                              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)'; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.09)'; }}
+                              style={{ padding: '8px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.18s' }}
+                              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; }}
                             >
                               🗑 Delete
                             </button>
                           ) : isProcessing ? (
-                            <span style={{ fontSize: 11, fontWeight: 700, color: '#92400e', background: 'rgba(217,119,6,0.1)', border: '1.5px solid rgba(217,119,6,0.35)', borderRadius: 8, padding: '6px 12px' }}
+                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#92400e', background: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 8, padding: '8px 12px' }}
                               title="Cannot delete this ticket">
                               🔒 {t.status === 'IN_PROGRESS' || t.status === 'RESOLVED' ? 'In Process' : t.status.charAt(0) + t.status.slice(1).toLowerCase()} — Cannot Delete
                             </span>
                           ) : (
-                            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>Click card to view details →</span>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Click card to view details →</span>
                           )}
                         </div>
                       </div>
@@ -866,9 +867,9 @@ export default function Incidents() {
               {historyOpen && (
                 <div style={{ marginTop: 16 }}>
                   {/* Info banner */}
-                  <div style={{ background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)', border: '2px dashed #e5e7eb', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ background: 'transparent', border: '2px dashed var(--border-medium)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 20 }}>🔒</span>
-                    <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#070707ff' }}>
+                    <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>
                       These tickets are finalized. You can view details but no further actions are available.
                     </p>
                   </div>
@@ -878,17 +879,18 @@ export default function Incidents() {
                         <div onClick={() => { clearTicketParam(); setSelected(t); }}
                           className="profile-card inc-card"
                           style={{
-                            padding: '18px 22px', cursor: 'pointer', opacity: 0.85,
-                            border: '2px solid #9ca3af',
-                            borderRadius: 14, overflow: 'hidden', backgroundColor: 'rgba(249, 250, 251, 0.5)'
+                            padding: '24px', cursor: 'pointer', opacity: 0.85,
+                            border: '1px solid var(--border-subtle)',
+                            borderRadius: 14, overflow: 'hidden',
+                            display: 'flex', flexDirection: 'column', gap: 12
                           }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                                 <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>#{t.id}</span>
-                                <p style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: 15, lineHeight: 1.3 }}>{t.title}</p>
+                                <p style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem', lineHeight: 1.3 }}>{t.title}</p>
                               </div>
-                              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8, fontWeight: 600 }}>
+                              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>
                                 📁 {t.category} &nbsp;•&nbsp; 📍 {t.location}
                               </p>
                             </div>
@@ -897,7 +899,7 @@ export default function Incidents() {
                               <StatusBadge status={t.status} />
                             </div>
                           </div>
-                          <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '10px 0 0', fontWeight: 600 }}>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>
                             🕐 {fmtDate(t.createdAt)}
                           </p>
                         </div>

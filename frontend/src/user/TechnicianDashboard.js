@@ -128,9 +128,10 @@ function TechnicianDashboard() {
         const data = await fetchTechnicianAssignedIncidents();
         setAssignments(data || []);
         
-        // Show notification if assignments are available
-        if (data && data.length > 0) {
-          setAssignmentNotification(`📋 You have ${data.length} assigned ticket(s)`);
+        // Show notification only for active (non-closed) assignments
+        const activeTickets = (data || []).filter(t => !TERMINAL_STATUSES.has(t.status));
+        if (activeTickets.length > 0) {
+          setAssignmentNotification(`📋 You have ${activeTickets.length} assigned ticket(s)`);
           setTimeout(() => setAssignmentNotification(''), 4000);
         }
       } catch (err) {
