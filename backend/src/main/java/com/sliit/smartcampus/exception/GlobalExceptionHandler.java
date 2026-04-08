@@ -9,6 +9,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+<<<<<<< HEAD
+=======
+import org.springframework.web.server.ResponseStatusException;
+>>>>>>> smart-campus-paf-2026-booking-enhancement
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -67,6 +71,17 @@ public class GlobalExceptionHandler {
                         request.getRequestURI(), LocalDateTime.now()));
     }
 
+<<<<<<< HEAD
+=======
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatus(
+            ResponseStatusException ex, HttpServletRequest request) {
+        return ResponseEntity.status(ex.getStatusCode())
+                .body(new ErrorResponse(ex.getStatusCode().value(), "Error", ex.getReason(),
+                        request.getRequestURI(), LocalDateTime.now()));
+    }
+
+>>>>>>> smart-campus-paf-2026-booking-enhancement
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(
             Exception ex, HttpServletRequest request) {

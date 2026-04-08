@@ -74,6 +74,21 @@ public class BookingController {
         );
     }
 
+<<<<<<< HEAD
+=======
+    @GetMapping("/{bookingId}")
+    public BookingResponse getById(@PathVariable String bookingId) {
+        return bookingRepository.findById(bookingId)
+                .map(BookingResponse::from)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+    }
+
+    @PutMapping("/{bookingId}")
+    public BookingResponse update(@PathVariable String bookingId, @Valid @RequestBody BookingRequest request) {
+        return bookingService.updateBooking(bookingId, request);
+    }
+
+>>>>>>> smart-campus-paf-2026-booking-enhancement
     @PutMapping("/{bookingId}/cancel")
     public BookingResponse cancel(@PathVariable String bookingId, @RequestParam String userId) {
         return bookingService.cancelBooking(bookingId, userId);

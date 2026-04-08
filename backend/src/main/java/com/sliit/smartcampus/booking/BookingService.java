@@ -190,14 +190,82 @@ public class BookingService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only cancel your own bookings");
         }
 
+<<<<<<< HEAD
         if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.COMPLETED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot cancel a " + booking.getStatus() + " booking");
+=======
+        // Rule 4: Only PENDING bookings can be cancelled by user.
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot cancel a " + booking.getStatus() + " booking. Only PENDING bookings can be cancelled.");
+>>>>>>> smart-campus-paf-2026-booking-enhancement
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
         return BookingResponse.from(bookingRepository.save(booking));
     }
 
+<<<<<<< HEAD
+=======
+    public BookingResponse updateBooking(String bookingId, BookingRequest request) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+
+        // Rule 1: If booking.status == "APPROVED", User is NOT allowed to cancel or update.
+        if (booking.getStatus() == BookingStatus.APPROVED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Approved bookings cannot be updated.");
+        }
+
+        // Rule 1: Only PENDING bookings can be updated.
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only PENDING bookings can be updated. Current status: " + booking.getStatus());
+        }
+
+        // Validate time ordering
+        if (request.getStartTime() != null && request.getEndTime() != null) {
+            if (!request.getStartTime().isBefore(request.getEndTime())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start time must be before end time");
+            }
+        }
+
+        LocalDate date = request.getBookingDate() != null ? request.getBookingDate() : booking.getBookingDate();
+        LocalTime start = request.getStartTime() != null ? request.getStartTime() : booking.getStartTime();
+        LocalTime end = request.getEndTime() != null ? request.getEndTime() : booking.getEndTime();
+
+        if (date.isBefore(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot book for a past date");
+        }
+
+        Facility facility = booking.getFacility();
+        if (start.isBefore(facility.getAvailableFrom()) || end.isAfter(facility.getAvailableTo())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Booking time must be within facility availability: " +
+                    facility.getAvailableFrom() + " - " + facility.getAvailableTo());
+        }
+
+        // Rule 2 & 3: Conflict validation
+        List<Booking> overlapping = bookingRepository.findOverlappingBookings(
+                facility.getId(), date, start, end);
+        
+        // Exclude the current booking from overlap check
+        boolean hasConflict = overlapping.stream()
+                .anyMatch(b -> !b.getId().equals(bookingId));
+
+        if (hasConflict) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Selected time slot is not available.");
+        }
+
+        // Update fields
+        if (request.getBookingDate() != null) booking.setBookingDate(request.getBookingDate());
+        if (request.getStartTime() != null) booking.setStartTime(request.getStartTime());
+        if (request.getEndTime() != null) booking.setEndTime(request.getEndTime());
+        if (request.getPurpose() != null) booking.setPurpose(request.getPurpose());
+        if (request.getNotes() != null) booking.setNotes(request.getNotes());
+        if (request.getAttendeeCount() != null) booking.setAttendeeCount(request.getAttendeeCount());
+
+        return BookingResponse.from(bookingRepository.save(booking));
+    }
+
+>>>>>>> smart-campus-paf-2026-booking-enhancement
     public BookingResponse updateBookingStatus(String bookingId, BookingStatus newStatus, String adminRemarks) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));

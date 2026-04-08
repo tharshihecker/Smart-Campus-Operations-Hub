@@ -1,7 +1,13 @@
 package com.sliit.smartcampus.incident;
 
 import com.sliit.smartcampus.user.User;
+<<<<<<< HEAD
 import org.springframework.data.annotation.Id;
+=======
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+>>>>>>> smart-campus-paf-2026-booking-enhancement
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import jakarta.validation.constraints.NotBlank;
@@ -56,6 +62,7 @@ public class IncidentTicket {
     @DBRef
     private List<TicketComment> comments = new ArrayList<>();
 
+<<<<<<< HEAD
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -69,6 +76,14 @@ public class IncidentTicket {
         updatedAt = LocalDateTime.now();
     }
 
+=======
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
+
+>>>>>>> smart-campus-paf-2026-booking-enhancement
     // Getters and Setters
     public String getId() { return id; }
     public User getReporter() { return reporter; }

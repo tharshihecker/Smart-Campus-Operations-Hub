@@ -62,6 +62,10 @@ public class SecurityConfig {
                 // Health and status endpoints
                 .requestMatchers("/api/health", "/api/status").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+<<<<<<< HEAD
+=======
+                .requestMatchers("/error").permitAll()
+>>>>>>> smart-campus-paf-2026-booking-enhancement
                 // File serving
                 .requestMatchers("/uploads/**").permitAll()
                 // All other endpoints require authentication

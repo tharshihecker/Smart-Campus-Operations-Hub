@@ -2,7 +2,13 @@ package com.sliit.smartcampus.booking;
 
 import com.sliit.smartcampus.facility.Facility;
 import com.sliit.smartcampus.user.User;
+<<<<<<< HEAD
 import org.springframework.data.annotation.Id;
+=======
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+>>>>>>> smart-campus-paf-2026-booking-enhancement
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDate;
@@ -36,6 +42,7 @@ public class Booking {
 
     private String adminRemarks;
 
+<<<<<<< HEAD
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -49,6 +56,14 @@ public class Booking {
         updatedAt = LocalDateTime.now();
     }
 
+=======
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
+
+>>>>>>> smart-campus-paf-2026-booking-enhancement
     public String getId() { return id; }
     public Facility getFacility() { return facility; }
     public void setFacility(Facility facility) { this.facility = facility; }

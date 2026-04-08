@@ -182,6 +182,10 @@ export async function deleteFacility(id) { return sendJson("DELETE", `/admin/fac
 
 /* ── Bookings (user) ──────────────────────────────────── */
 export async function createBooking(data) { return sendJson("POST", "/bookings", data); }
+<<<<<<< HEAD
+=======
+export async function updateBooking(bookingId, data) { return sendJson("PUT", `/bookings/${bookingId}`, data); }
+>>>>>>> smart-campus-paf-2026-booking-enhancement
 export async function fetchUserBookings(userId) { return fetchJson(`/bookings/user/${userId}`); }
 export async function fetchFacilityBookings(facilityId) { return fetchJson(`/bookings/facility/${facilityId}`); }
 
