@@ -4,9 +4,7 @@ import Signup from './Signup';
 import Login from './Login';
 import Home from './Home';
 import Landing from './Landing';
-import Events from './Events';
-import Resources from './Resources';
-import Services from './Services';
+import Explore from './Explore';
 import Facilities from './Facilities';
 import Profile from './Profile';
 import MyBookings from './MyBookings';
@@ -89,16 +87,7 @@ function UserTopNav({ isAuthenticated, onLogout, toggleTheme, theme }) {
                 <NavLink to="/facilities" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Facilities</NavLink>
                 <NavLink to="/my-bookings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>My Bookings</NavLink>
                 <NavLink to="/incidents" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Incidents</NavLink>
-                
-                <div className="nav-dropdown">
-                  <span className="nav-link nav-dropdown-toggle">Explore ▾</span>
-                  <div className="nav-dropdown-menu">
-                    <NavLink to="/events" className={({ isActive }) => `dropdown-link ${isActive ? 'active' : ''}`}>📅 Events</NavLink>
-                    <NavLink to="/resources" className={({ isActive }) => `dropdown-link ${isActive ? 'active' : ''}`}>🎒 Resources</NavLink>
-                    <NavLink to="/services" className={({ isActive }) => `dropdown-link ${isActive ? 'active' : ''}`}>🛠️ Services</NavLink>
-                  </div>
-                </div>
-
+                <NavLink to="/explore" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Explore</NavLink>
                 <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   {displayName ? `👤 ${displayName}` : 'Profile'}
                 </NavLink>
@@ -192,9 +181,7 @@ function UserApp() {
           <Route path="/login" element={<Login onLoginSuccess={authApi.login} />} />
           <Route path="/home" element={protectedRoute(<Home />)} />
           <Route path="/technician-dashboard" element={protectedRoute(<TechnicianDashboard />)} />
-          <Route path="/events" element={protectedRoute(<Events />)} />
-          <Route path="/resources" element={protectedRoute(<Resources />)} />
-          <Route path="/services" element={protectedRoute(<Services />)} />
+          <Route path="/explore" element={protectedRoute(<Explore />)} />
           <Route path="/facilities" element={protectedRoute(<Facilities />)} />
           <Route path="/profile" element={protectedRoute(<Profile />)} />
           <Route path="/my-bookings" element={protectedRoute(<MyBookings />)} />
