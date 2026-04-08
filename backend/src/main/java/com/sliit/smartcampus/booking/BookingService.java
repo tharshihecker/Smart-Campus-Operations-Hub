@@ -190,22 +190,15 @@ public class BookingService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only cancel your own bookings");
         }
 
-<<<<<<< HEAD
-        if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.COMPLETED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot cancel a " + booking.getStatus() + " booking");
-=======
         // Rule 4: Only PENDING bookings can be cancelled by user.
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot cancel a " + booking.getStatus() + " booking. Only PENDING bookings can be cancelled.");
->>>>>>> smart-campus-paf-2026-booking-enhancement
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
         return BookingResponse.from(bookingRepository.save(booking));
     }
 
-<<<<<<< HEAD
-=======
     public BookingResponse updateBooking(String bookingId, BookingRequest request) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
@@ -264,8 +257,6 @@ public class BookingService {
 
         return BookingResponse.from(bookingRepository.save(booking));
     }
-
->>>>>>> smart-campus-paf-2026-booking-enhancement
     public BookingResponse updateBookingStatus(String bookingId, BookingStatus newStatus, String adminRemarks) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));

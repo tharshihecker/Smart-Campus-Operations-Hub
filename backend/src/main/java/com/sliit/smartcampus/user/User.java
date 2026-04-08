@@ -1,12 +1,8 @@
 package com.sliit.smartcampus.user;
 
-<<<<<<< HEAD
-import org.springframework.data.annotation.Id;
-=======
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
->>>>>>> smart-campus-paf-2026-booking-enhancement
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
 import java.time.LocalDateTime;
@@ -47,28 +43,11 @@ public class User {
 
     private boolean enabled = true;
 
-<<<<<<< HEAD
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
-    public void setCreatedAt() {
-        if(createdAt == null) createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    public void setUpdatedAt() {
-        updatedAt = LocalDateTime.now();
-    }
-
-=======
     @CreatedDate
     private LocalDateTime createdAt;
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
->>>>>>> smart-campus-paf-2026-booking-enhancement
     // Getters and setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
