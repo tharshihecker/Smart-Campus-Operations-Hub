@@ -87,7 +87,6 @@ function ManageBookings() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Facility</th>
                 <th>User</th>
                 <th>Date</th>
@@ -102,7 +101,6 @@ function ManageBookings() {
             <tbody>
               {bookings.map((b) => (
                 <tr key={b.id}>
-                  <td>{b.id}</td>
                   <td>
                     <strong>{b.facilityName}</strong>
                     <br />

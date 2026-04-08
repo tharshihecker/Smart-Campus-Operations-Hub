@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { fetchTechnicianAssignedIncidents, updateIncidentStatus, addIncidentComment, fetchIncidentComments, getCurrentUserId, getCurrentUserRole } from '../api';
+import { sanitizeMessage } from '../utils/ui';
 import './TechnicianDashboard.css';
 
 const TERMINAL_STATUSES = new Set(['CLOSED', 'REJECTED']);
@@ -227,7 +228,7 @@ function TechnicianDashboard() {
       document.body.appendChild(successMsg);
       setTimeout(() => successMsg.remove(), 3000);
     } catch (err) {
-      alert(err.message || 'Failed to update status');
+      setError && setError(sanitizeMessage ? sanitizeMessage(err.message || 'Failed to update status') : (err.message || 'Failed to update status'));
     }
   };
 
@@ -246,7 +247,7 @@ function TechnicianDashboard() {
       document.body.appendChild(successMsg);
       setTimeout(() => successMsg.remove(), 3000);
     } catch (err) {
-      alert(err.message || 'Failed to add comment');
+      setError && setError(sanitizeMessage ? sanitizeMessage(err.message || 'Failed to add comment') : (err.message || 'Failed to add comment'));
     } finally {
       setAddingComment(false);
     }
