@@ -92,12 +92,11 @@ function ManageResources() {
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
-              <tr><th>ID</th><th>Title</th><th>Category</th><th>Description</th><th>Actions</th></tr>
+              <tr><th>Title</th><th>Category</th><th>Description</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {resources.map((res) => (
                 <tr key={res.id}>
-                  <td>{res.id}</td>
                   <td><strong>{res.title}</strong></td>
                   <td><span className="badge badge-active">{res.category}</span></td>
                   <td style={{ maxWidth: "350px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{res.description}</td>

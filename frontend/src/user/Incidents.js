@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { sanitizeMessage } from '../utils/ui';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Incidents.css';
 import {
@@ -614,6 +615,7 @@ export default function Incidents() {
   }, [location.search, navigate]);
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState(null);
   const [filter, setFilter] = useState('ALL');
@@ -929,7 +931,7 @@ export default function Incidents() {
               if (selected && selected.id === deleteTarget.id) { setSelected(null); clearTicketParam(); }
               setDeleteTarget(null);
             } catch (err) {
-              alert('Failed to delete: ' + (err.message || 'Server error'));
+              setError && setError(sanitizeMessage ? sanitizeMessage(err.message || 'Failed to delete') : ('Failed to delete: ' + (err.message || 'Server error')));
             } finally {
               setDeleting(false);
             }

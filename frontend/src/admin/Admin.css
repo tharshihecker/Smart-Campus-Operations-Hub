@@ -386,3 +386,74 @@
     flex-direction: column;
   }
 }
+
+/* Modal styles used by ManageEvents modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2,6,23,0.6); /* dark, non-transparent backdrop */
+  z-index: 60;
+}
+.modal {
+  width: min(920px, 94%);
+  background: #ffffff; /* solid white card */
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 18px 40px rgba(2,6,23,0.35);
+  border: 1px solid #e6eef8;
+}
+.modal h3 { margin: 0 0 8px; }
+.modal-body { display: grid; gap: 10px; }
+
+/* Ensure modal text and controls are readable (dark on white) */
+.modal { color: #0f172a; }
+.modal label { color: #0f172a; font-weight: 600; margin-bottom: 6px; display: block; }
+.modal input, .modal textarea, .modal select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+.modal input:focus, .modal textarea:focus, .modal select:focus {
+  outline: 2px solid rgba(3, 105, 161, 0.12);
+  border-color: #0369a1;
+}
+.modal .btn-primary { color: #ffffff; }
+.modal .btn-secondary { color: #475569; }
+.modal img { border-radius: 6px; border: 1px solid #e6eef8; }
+.modal { z-index: 70; }
+
+/* File input wrapper */
+.file-input-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.file-input-btn {
+  display: inline-block;
+  padding: 8px 12px;
+  background: #eef2ff;
+  color: #1e293b;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid #c7d2fe;
+  font-weight: 600;
+}
+.file-input-filename {
+  color: #475569;
+  font-size: 0.95rem;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-upload-btn { padding: 8px 12px; }
+
+.modal h3 { color: #0f172a; font-size: 1.2rem; }
+

@@ -97,12 +97,11 @@ function ManageServices() {
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
-              <tr><th>ID</th><th>Title</th><th>Status</th><th>Description</th><th>Actions</th></tr>
+              <tr><th>Title</th><th>Status</th><th>Description</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {services.map((svc) => (
                 <tr key={svc.id}>
-                  <td>{svc.id}</td>
                   <td><strong>{svc.title}</strong></td>
                   <td>{statusBadge(svc.status)}</td>
                   <td style={{ maxWidth: "350px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{svc.description}</td>
