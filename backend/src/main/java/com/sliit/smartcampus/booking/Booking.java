@@ -37,6 +37,8 @@ public class Booking {
     private BookingStatus status = BookingStatus.PENDING;
 
     private String adminRemarks;
+    
+    private String qrToken;
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -64,6 +66,8 @@ public class Booking {
     public void setStatus(BookingStatus status) { this.status = status; }
     public String getAdminRemarks() { return adminRemarks; }
     public void setAdminRemarks(String adminRemarks) { this.adminRemarks = adminRemarks; }
+    public String getQrToken() { return qrToken; }
+    public void setQrToken(String qrToken) { this.qrToken = qrToken; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

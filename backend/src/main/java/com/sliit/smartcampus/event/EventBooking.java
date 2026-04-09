@@ -31,10 +31,18 @@ public class EventBooking {
 
     public enum BookingStatus {
         CONFIRMED,
-        WAITLISTED
+        WAITLISTED,
+        CHECKED_IN,
+        CANCELLED
     }
 
     private BookingStatus status = BookingStatus.CONFIRMED;
+
+    // QR token sent to user for check-in (single-use)
+    private String qrToken;
+
+    // Timestamp when user checked in via QR
+    private java.time.LocalDateTime checkedInAt;
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -61,4 +69,10 @@ public class EventBooking {
 
     public BookingStatus getStatus() { return status; }
     public void setStatus(BookingStatus status) { this.status = status; }
+
+    public String getQrToken() { return qrToken; }
+    public void setQrToken(String qrToken) { this.qrToken = qrToken; }
+
+    public java.time.LocalDateTime getCheckedInAt() { return checkedInAt; }
+    public void setCheckedInAt(java.time.LocalDateTime checkedInAt) { this.checkedInAt = checkedInAt; }
 }

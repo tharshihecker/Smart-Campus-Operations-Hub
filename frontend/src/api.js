@@ -246,6 +246,11 @@ export async function deleteEvent(id) { return sendJson("DELETE", `/admin/events
 export async function createEventBooking(eventId, data) { return sendJson("POST", `/events/${eventId}/book`, data); }
 export async function fetchUserEventBookings(userId) { return fetchJson(`/events/bookings/user/${userId}`); }
 export async function cancelEventBooking(bookingId, userId) { return sendJson("PUT", `/events/bookings/${bookingId}/cancel?userId=${userId}`); }
+export async function scanEventBookingByToken(token) { return fetchJson(`/events/bookings/scan/${encodeURIComponent(token)}`); }
+export async function confirmEventCheckin(token) { 
+  const adminId = getCurrentUserId(); 
+  return sendJson("POST", "/events/bookings/scan", { token, adminId }); 
+}
 
 export async function fetchEventAvailability(eventId) { return fetchJson(`/events/${eventId}/availability`); }
 export async function uploadEventImage(file) {

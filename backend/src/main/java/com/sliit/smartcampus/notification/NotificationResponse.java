@@ -10,5 +10,6 @@ public record NotificationResponse(
         boolean read,
         String referenceId,
         String referenceType,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String qrToken
 ) {}
