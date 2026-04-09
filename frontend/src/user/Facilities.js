@@ -76,17 +76,7 @@ const buildShareUrl = (facilityId) =>
   `${window.location.origin}/facilities?highlight=${facilityId}`;
 
 const buildFacilityQRData = (facility) =>
-  JSON.stringify({
-    id: facility.id,
-    name: facility.name,
-    type: facility.type,
-    location: facility.location,
-    capacity: facility.capacity,
-    openHours: `${fmtTime(facility.availableFrom)}–${fmtTime(facility.availableTo)}`,
-    status: facility.status,
-    description: facility.description,
-    url: buildShareUrl(facility.id),
-  });
+  `${window.location.origin}/facilities?highlight=${facility.id}&book=true`;
 
 const defaultFilters = {
   q: "", type: "", minCapacity: "", location: "",
@@ -590,18 +580,23 @@ function Facilities() {
       .catch(err => { setError(err.message || "Failed to load facilities"); setLoading(false); });
   }, [queryFilters]);
 
-  /* Auto-open highlighted facility from shared link */
+  /* Auto-open highlighted facility from shared/QR link */
   useEffect(() => {
     if (highlightId && facilities.length) {
       const f = facilities.find(f => String(f.id) === String(highlightId));
       if (f) {
-        setQrFacility(f);
+        const p = new URLSearchParams(window.location.search);
+        if (p.get("book") === "true" && f.status === "ACTIVE" && userId) {
+          setBookingFacility(f);
+        } else {
+          setQrFacility(f);
+        }
         setTimeout(() => {
           document.getElementById(`fac-card-${f.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 300);
       }
     }
-  }, [highlightId, facilities]);
+  }, [highlightId, facilities, userId]);
 
   const onFilterChange = e => {
     const { name, value } = e.target;
