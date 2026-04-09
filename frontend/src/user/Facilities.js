@@ -386,7 +386,7 @@ function BookingPanel({ facility, userId, onClose }) {
                   return <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--brand-danger)' }}>🚫 Fully booked for the entire day.</p>;
                 }
                 return (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
                     {freeBlocks.map((block, idx) => (
                       <button
                         key={idx} type="button"
@@ -394,10 +394,14 @@ function BookingPanel({ facility, userId, onClose }) {
                           setForm(prev => ({ ...prev, startTime: block.start, endTime: block.end }));
                         }}
                         style={{
-                          background: '#16a34a', color: '#ffffff', border: 'none', padding: '6px 12px',
-                          borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold',
-                          boxShadow: '0 2px 6px rgba(22,163,74,0.35)'
-                        }}>
+                          background: 'rgba(20, 184, 166, 0.08)', color: 'var(--brand-teal)', border: '1px solid rgba(20, 184, 166, 0.25)', padding: '6px 4px',
+                          borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '600',
+                          textAlign: 'center', transition: 'all 0.2s', whiteSpace: 'nowrap',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                        }}
+                        onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.2)'; e.currentTarget.style.borderColor = 'var(--brand-teal)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.08)'; e.currentTarget.style.borderColor = 'rgba(20, 184, 166, 0.25)'; }}
+                      >
                         {fmtTime(block.start)} – {fmtTime(block.end)}
                       </button>
                     ))}
@@ -706,33 +710,36 @@ function Facilities() {
                   </div>
                 )}
 
-                <div className="facility-actions">
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: "16px" }}>
-                    <button
-                      type="button" className="btn-secondary"
-                      onClick={() => setQrFacility(facility)}
-                      title="View QR & Share options"
-                      style={{ flex: 1 }}
-                    >
-                      📱 Share & QR
-                    </button>
-                  </div>
+                <div className="facility-actions" style={{ display: "flex", gap: "10px", alignItems: "stretch" }}>
+                  <button
+                    type="button" className="btn-secondary"
+                    onClick={() => setQrFacility(facility)}
+                    title="View QR & Share options"
+                    style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", padding: "12px 8px" }}
+                  >
+                    📱 Share & QR
+                  </button>
 
                   {facility.status === "ACTIVE" && userId ? (
                     <button
                       type="button" className="btn-primary"
                       onClick={() => { setBookingFacility(facility); setQrFacility(null); }}
+                      style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", padding: "12px 8px" }}
                     >
-                      📅 Book This Facility
+                      📅 Book
                     </button>
                   ) : facility.status !== "ACTIVE" ? (
-                    <p style={{ color: "var(--brand-danger)", fontWeight: 700, margin: 0, fontSize: "0.9rem" }}>
-                      🚫 Not available for booking
-                    </p>
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(239, 68, 68, 0.05)", borderRadius: "var(--radius-md)" }}>
+                      <p style={{ color: "var(--brand-danger)", fontWeight: 700, margin: 0, fontSize: "0.9rem" }}>
+                        🚫 Unavailable
+                      </p>
+                    </div>
                   ) : (
-                    <p style={{ color: "var(--text-muted)", fontWeight: 600, margin: 0, fontSize: "0.9rem" }}>
-                      Log in to book
-                    </p>
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(100, 116, 139, 0.05)", borderRadius: "var(--radius-md)" }}>
+                      <p style={{ color: "var(--text-muted)", fontWeight: 600, margin: 0, fontSize: "0.9rem" }}>
+                        Log in to book
+                      </p>
+                    </div>
                   )}
                 </div>
               </article>

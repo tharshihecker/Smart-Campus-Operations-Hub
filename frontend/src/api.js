@@ -153,6 +153,8 @@ export function isLoggedIn() {
 export async function fetchProfile(userId) { return fetchJson(`/user/profile/${userId}`); }
 export async function updateProfile(userId, data) { return sendJson("PUT", `/user/profile/${userId}`, data); }
 export async function changePassword(userId, data) { return sendJson("PUT", `/user/change-password/${userId}`, data); }
+export async function requestPasswordResetOtp(userId) { return sendJson("POST", `/user/generate-otp/${userId}`); }
+export async function resetPasswordWithOtp(userId, data) { return sendJson("POST", `/user/reset-password-otp/${userId}`, data); }
 export async function updateNotificationPrefs(userId, prefs) {
   return sendJson("PUT", `/user/notification-prefs/${userId}`, prefs);
 }
