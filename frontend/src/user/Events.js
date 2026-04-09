@@ -14,6 +14,8 @@ function Events() {
   const [nic, setNic] = useState('');
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [toast, setToast] = useState(null);
@@ -89,18 +91,26 @@ function Events() {
             <div style={{ marginTop: 8 }}>
               {(() => {
                 const userId = getCurrentUserId();
-                const isBooked = userId && userBookings.some(b => b.eventId === event.id);
-                if (isBooked) {
-                  const booking = userBookings.find(b => b.eventId === event.id);
+                // Filter out cancelled bookings
+                const activeBooking = userId && userBookings.find(b => b.eventId === event.id && b.status !== 'CANCELLED');
+                if (activeBooking) {
+                  if (activeBooking.status === 'CHECKED_IN') {
+                    return (
+                      <>
+                        <button className="btn-secondary" disabled>Booked</button>
+                        <span style={{ marginLeft: 8, padding: '6px 12px', background: '#d1fae5', color: '#065f46', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700 }}>
+                          ✅ Already Entered
+                        </span>
+                      </>
+                    );
+                  }
                   return (
                     <>
                       <button className="btn-secondary" disabled>Booked</button>
                       <button className="btn-danger" style={{ marginLeft: 8 }} onClick={async () => {
                         try {
-                            await cancelEventBooking(booking.id, getCurrentUserId());
-                            // remove booking locally
-                            setUserBookings(prev => prev.filter(x => x.id !== booking.id));
-                            // update availability for this event
+                            await cancelEventBooking(activeBooking.id, getCurrentUserId());
+                            setUserBookings(prev => prev.filter(x => x.id !== activeBooking.id));
                             try { const av = await fetchEventAvailability(event.id); setAvailability(prev => ({ ...prev, [event.id]: av })); } catch (e) {}
                             setToast({ type: 'success', title: 'Booking cancelled', message: 'Your booking was cancelled successfully.' });
                         } catch (err) { setToast({ type: 'error', title: 'Cancel failed', message: sanitizeMessage(err.message || 'Cancel failed') }); }
@@ -118,11 +128,14 @@ function Events() {
                         const profile = await fetchProfile(userId);
                         setGuestName(profile.fullName || '');
                         setGuestEmail(profile.email || '');
+                        setGuestPhone(profile.phone || '');
+                        setStudentNumber(profile.studentNumber || profile.studentNo || '');
                       } catch (e) {
                         // ignore
                       }
                     }
-                    setShowModal(true);
+                              setError('');
+                              setShowModal(true);
                   }}>Book</button>
                 );
               })()}
@@ -135,34 +148,52 @@ function Events() {
         <div className="modal-overlay">
           <div className="modal">
             <h3>Book: {currentEvent.title}</h3>
-            <label>Student Number</label>
-            <input value={studentNumber} onChange={(e) => setStudentNumber(e.target.value)} />
-            <label>NIC</label>
-            <input value={nic} onChange={(e) => setNic(e.target.value)} />
+            {error && <p className="state-text error">{error}</p>}
             <label>Name</label>
             <input value={guestName} onChange={(e) => setGuestName(e.target.value)} />
-            <label>Email (optional)</label>
-            <input value={guestEmail} onChange={(e) => setGuestEmail(e.target.value)} />
+            <label>Email (cannot change)</label>
+            <input value={guestEmail} readOnly style={{ background: '#f3f4f6' }} />
+            <label>Student Number</label>
+            <input value={studentNumber} onChange={(e) => setStudentNumber(e.target.value)} />
+            <label>Phone </label>
+            <input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} />
             <div style={{ marginTop: 12 }}>
-              <button className="btn-primary" onClick={async () => {
+              <button className="btn-primary" disabled={submitting} onClick={async () => {
+                if (submitting) return;
+                // validate student number and phone
+                const studentValid = /^IT\d{8}$/i.test(studentNumber || '');
+                const phoneValid = (guestPhone || '') === '' || /^\+?\d{7,15}$/.test(guestPhone);
+                if (!studentValid) {
+                  setError('Student number must start with IT followed by 8 digits (e.g. IT12345678).');
+                  return;
+                }
+                if (!phoneValid) {
+                  setError('Enter a valid phone number (digits only, 7–15 digits, optional leading +).');
+                  return;
+                }
+                setSubmitting(true);
                 try {
                   const userId = getCurrentUserId();
-                  const payload = { userId, studentNumber, nic, guestName, guestEmail };
-                    const res = await createEventBooking(currentEvent.id, payload);
-                    const title = res.status === 'CONFIRMED' ? 'Booking confirmed' : 'Added to waitlist';
-                    const seatMsg = res.seatNumber ? ` Seat: ${res.seatNumber}` : '';
-                    setToast({ type: 'success', title, message: `Booking #${res.bookingNumber}.${seatMsg}` });
-                    // add to local bookings so UI updates
-                    setUserBookings(prev => [...prev, { id: res.bookingId, eventId: currentEvent.id, bookingNumber: res.bookingNumber, status: res.status, seatNumber: res.seatNumber }]);
-                    // update availability for this event
-                    try { const av = await fetchEventAvailability(currentEvent.id); setAvailability(prev => ({ ...prev, [currentEvent.id]: av })); } catch (e) {}
+                  const payload = { userId, studentNumber, nic, guestName, guestEmail, phone: guestPhone };
+                  const res = await createEventBooking(currentEvent.id, payload);
+                  const title = res.status === 'CONFIRMED' ? 'Booking confirmed' : 'Added to waitlist';
+                  const seatMsg = res.seatNumber ? ` Seat: ${res.seatNumber}` : '';
+                  const qrMsg = res.qrToken ? ` QR: ${res.qrToken}` : '';
+                  setToast({ type: 'success', title, message: `Booking #${res.bookingNumber}.${seatMsg}${qrMsg}` });
+                  // add to local bookings so UI updates
+                  setUserBookings(prev => [...prev, { id: res.bookingId, eventId: currentEvent.id, bookingNumber: res.bookingNumber, status: res.status, seatNumber: res.seatNumber, qrToken: res.qrToken }]);
+                  // update availability for this event
+                  try { const av = await fetchEventAvailability(currentEvent.id); setAvailability(prev => ({ ...prev, [currentEvent.id]: av })); } catch (e) {}
+                  // close modal on success
                   setShowModal(false);
-                  setStudentNumber(''); setNic(''); setGuestName(''); setGuestEmail('');
+                  setStudentNumber(''); setNic(''); setGuestName(''); setGuestEmail(''); setGuestPhone('');
                 } catch (err) {
-                  setToast({ type: 'error', title: 'Booking failed', message: sanitizeMessage(err.message || 'Booking failed') });
+                  setError(sanitizeMessage(err.message || 'Booking failed'));
+                } finally {
+                  setSubmitting(false);
                 }
-              }}>Confirm Booking</button>
-              <button className="btn-secondary" onClick={() => setShowModal(false)} style={{ marginLeft: 8 }}>Cancel</button>
+              }}> {submitting ? 'Submitting…' : 'Confirm Booking'}</button>
+              <button className="btn-secondary" onClick={() => { setShowModal(false); setError(''); }} style={{ marginLeft: 8 }}>Cancel</button>
             </div>
           </div>
         </div>

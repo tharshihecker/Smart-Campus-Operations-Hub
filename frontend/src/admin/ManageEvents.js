@@ -6,6 +6,7 @@ import {
   deleteEvent,
   uploadEventImage,
 } from "../api";
+import { useNavigate } from 'react-router-dom';
 import "./Admin.css";
 
 const blankForm = { title: "", description: "", eventDate: "", bookingCloseDate: "", startTime: "", endTime: "", capacity: "", imageUrl: "", location: "" };
@@ -20,6 +21,7 @@ function ManageEvents() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const loadData = async () => {
     setLoading(true);
@@ -87,8 +89,20 @@ function ManageEvents() {
 
   return (
     <section className="admin-panel">
-      <h2>Manage Events</h2>
-      <p className="admin-subtitle">Create, edit, and remove campus events, workshops, and activities.</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div>
+          <h2>Manage Events</h2>
+          <p className="admin-subtitle">Create, edit, and remove campus events, workshops, and activities.</p>
+        </div>
+        <button 
+          type="button" 
+          className="btn-primary" 
+          onClick={() => navigate('/admin/event-checkin')}
+          style={{ height: 'fit-content' }}
+        >
+          📱 Event Check-In
+        </button>
+      </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <form style={{ display: 'inline-block' }} onSubmit={(e)=>{e.preventDefault(); openCreateModal();}}>
