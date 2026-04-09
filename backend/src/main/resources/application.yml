@@ -1,14 +1,17 @@
 spring:
   application:
     name: smartcampus-backend
+
   data:
     mongodb:
       uri: mongodb+srv://herozeroyaaro_db_user:7LpLSMO1hepDes7r@cluster0.i7rsr1d.mongodb.net/smartcampus?appName=Cluster0
+
   servlet:
     multipart:
       enabled: true
       max-file-size: 5MB
       max-request-size: 20MB
+
   mail:
     host: smtp.gmail.com
     port: 587
@@ -20,7 +23,7 @@ spring:
           auth: true
           starttls:
             enable: true
-            required: true
+            required: true   # kept from feature branch (good practice)
 
 server:
   port: 8080
@@ -28,11 +31,14 @@ server:
 app:
   jwt:
     secret: SmartCampusSLIIT2026VerySecretKeyForJWTAuthenticationMinimum256Bits
-    expiration-ms: 86400000   # 24 hours
+    expiration-ms: 86400000
+
   google:
     client-id: 525229368487-uae4vna5146dmah7lmshjna5rm985cr1.apps.googleusercontent.com
-  email:
-    from: vkaura1010@gmail.com
+
+  mail:
+    enabled: true          # from main (feature-safe toggle)
+    from: vkaura1010@gmail.com   # merged from both
 
 cloudinary:
   cloud-name: dxpmhs4r8
