@@ -59,8 +59,8 @@ public class EventBookingService {
         if (userId != null && !userId.isBlank()) {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "User not found"));
-            // Prevent duplicate booking by same user
-            if (bookingRepository.existsByEventIdAndUser_Id(eventId, userId)) {
+            // Prevent duplicate booking by same user (exclude cancelled bookings)
+            if (bookingRepository.existsByEventIdAndUser_IdAndStatusNot(eventId, userId, EventBooking.BookingStatus.CANCELLED)) {
                 throw new ResponseStatusException(BAD_REQUEST, "You have already booked this event");
             }
             b.setUser(user);
@@ -76,14 +76,15 @@ public class EventBookingService {
 
         // Determine capacity and assign seat or waitlist
         if (ev.getCapacity() != null && ev.getCapacity() > 0) {
+            // Count both CONFIRMED and CHECKED_IN bookings as they occupy seats
             List<EventBooking> confirmed = bookingRepository.findByEventIdAndStatusOrderByCreatedAtAsc(eventId, EventBooking.BookingStatus.CONFIRMED);
-            int used = confirmed.size();
+            List<EventBooking> checkedIn = bookingRepository.findByEventIdAndStatusOrderByCreatedAtAsc(eventId, EventBooking.BookingStatus.CHECKED_IN);
+            int used = confirmed.size() + checkedIn.size();
             if (used < ev.getCapacity()) {
                 // assign lowest available seat number 1..capacity
-                Set<Integer> usedSeats = confirmed.stream()
-                        .map(EventBooking::getSeatNumber)
-                        .filter(s -> s != null)
-                        .collect(Collectors.toSet());
+                Set<Integer> usedSeats = new java.util.HashSet<>();
+                confirmed.forEach(bk -> { if (bk.getSeatNumber() != null) usedSeats.add(bk.getSeatNumber()); });
+                checkedIn.forEach(bk -> { if (bk.getSeatNumber() != null) usedSeats.add(bk.getSeatNumber()); });
                 Integer assigned = null;
                 for (int i = 1; i <= ev.getCapacity(); i++) {
                     if (!usedSeats.contains(i)) { assigned = i; break; }
@@ -105,8 +106,12 @@ public class EventBookingService {
         String title;
         String msg;
         if (b.getStatus() == EventBooking.BookingStatus.CONFIRMED) {
+            // generate QR token ONLY for confirmed bookings
+            String token = UUID.randomUUID().toString();
+            b.setQrToken(token);
+            bookingRepository.save(b);
             title = "Event booking confirmed";
-            msg = String.format("Your booking for '%s' is confirmed. Booking ID: %s. Seat: %s",
+            msg = String.format("Your booking for '%s' is confirmed. Booking ID: %s. Seat: %s.",
                     ev.getTitle(), b.getBookingNumber(), b.getSeatNumber() == null ? "N/A" : b.getSeatNumber());
             if (b.getUser() != null) {
                 notificationService.createNotification(b.getUser(), title, msg, NotificationType.BOOKING_APPROVED, b.getId(), "event_booking");
@@ -115,8 +120,9 @@ public class EventBookingService {
                 System.out.printf("[MAIL] To=%s Subject=%s Message=%s\n", guestEmail, title, msg);
             }
         } else {
+            // Waitlisted - NO QR token generated
             title = "Event booking waitlisted";
-            msg = String.format("Your booking for '%s' is waitlisted. Booking ID: %s", ev.getTitle(), b.getBookingNumber());
+            msg = String.format("Your booking for '%s' is waitlisted. Booking ID: %s. You will receive a QR code once confirmed.", ev.getTitle(), b.getBookingNumber());
             if (b.getUser() != null) {
                 notificationService.createNotification(b.getUser(), title, msg, NotificationType.BOOKING_APPROVED, b.getId(), "event_booking");
                 System.out.printf("[MAIL] To=%s Subject=%s Message=%s\n", b.getUser().getEmail(), title, msg);
@@ -129,7 +135,8 @@ public class EventBookingService {
     }
 
     public java.util.List<EventBooking> getUserBookings(String userId) {
-        return bookingRepository.findByUser_Id(userId);
+        // Return only non-cancelled bookings
+        return bookingRepository.findByUser_IdAndStatusNot(userId, EventBooking.BookingStatus.CANCELLED);
     }
 
     public EventBooking cancelBooking(String bookingId, String userId) {
@@ -140,10 +147,18 @@ public class EventBookingService {
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN, "You can only cancel your own bookings");
         }
 
-        // store status and event id before deletion
+        // Block cancellation if already checked in
+        if (b.getStatus() == EventBooking.BookingStatus.CHECKED_IN) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "Cannot cancel a booking that has already been checked in");
+        }
+
+        // store status and event id before update
         EventBooking.BookingStatus prevStatus = b.getStatus();
         String eventId = b.getEventId();
-        bookingRepository.delete(b);
+        
+        // Mark as cancelled instead of deleting
+        b.setStatus(EventBooking.BookingStatus.CANCELLED);
+        bookingRepository.save(b);
 
         // Notify user about cancellation
         String title = "Event booking cancelled";
@@ -159,11 +174,12 @@ public class EventBookingService {
                 // compute lowest available seat
                 CampusEvent ev = eventRepository.findById(eventId).orElse(null);
                 if (ev != null && ev.getCapacity() != null && ev.getCapacity() > 0) {
+                    // Get all active bookings (CONFIRMED and CHECKED_IN)
                     List<EventBooking> confirmed = bookingRepository.findByEventIdAndStatusOrderByCreatedAtAsc(eventId, EventBooking.BookingStatus.CONFIRMED);
-                    Set<Integer> usedSeats = confirmed.stream()
-                            .map(EventBooking::getSeatNumber)
-                            .filter(s -> s != null)
-                            .collect(Collectors.toSet());
+                    List<EventBooking> checkedIn = bookingRepository.findByEventIdAndStatusOrderByCreatedAtAsc(eventId, EventBooking.BookingStatus.CHECKED_IN);
+                    Set<Integer> usedSeats = new java.util.HashSet<>();
+                    confirmed.forEach(bk -> { if (bk.getSeatNumber() != null) usedSeats.add(bk.getSeatNumber()); });
+                    checkedIn.forEach(bk -> { if (bk.getSeatNumber() != null) usedSeats.add(bk.getSeatNumber()); });
                     Integer assigned = null;
                     for (int i = 1; i <= ev.getCapacity(); i++) {
                         if (!usedSeats.contains(i)) { assigned = i; break; }
@@ -171,11 +187,13 @@ public class EventBookingService {
                     promote.setSeatNumber(assigned);
                 }
                 promote.setStatus(EventBooking.BookingStatus.CONFIRMED);
+                // generate QR for promoted booking
+                promote.setQrToken(UUID.randomUUID().toString());
                 bookingRepository.save(promote);
 
                 // Notify promoted user
                 String pTitle = "Event booking confirmed from waitlist";
-                String pMsg = String.format("Your booking for '%s' is now confirmed. Booking ID: %s. Seat: %s",
+                String pMsg = String.format("Your booking for '%s' is now confirmed. Booking ID: %s. Seat: %s.",
                         eventRepository.findById(eventId).map(CampusEvent::getTitle).orElse("(event)"), promote.getBookingNumber(), promote.getSeatNumber() == null ? "N/A" : promote.getSeatNumber());
                 if (promote.getUser() != null) {
                     notificationService.createNotification(promote.getUser(), pTitle, pMsg, NotificationType.BOOKING_APPROVED, promote.getId(), "event_booking");
@@ -191,5 +209,42 @@ public class EventBookingService {
 
     private String generateBookingNumber() {
         return "EV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+
+    public EventBooking confirmBookingByQr(String qrToken, String adminId) {
+        if (qrToken == null || qrToken.isBlank()) throw new ResponseStatusException(BAD_REQUEST, "QR token required");
+        EventBooking b = bookingRepository.findByQrToken(qrToken);
+        if (b == null) throw new ResponseStatusException(NOT_FOUND, "Booking not found for provided QR");
+        
+        // Check if booking is cancelled
+        if (b.getStatus() == EventBooking.BookingStatus.CANCELLED) {
+            throw new ResponseStatusException(BAD_REQUEST, "This booking has been cancelled and cannot be checked in");
+        }
+        
+        // Check if already checked in
+        if (b.getStatus() == EventBooking.BookingStatus.CHECKED_IN) {
+            throw new ResponseStatusException(BAD_REQUEST, "This QR has already been used for check-in");
+        }
+        
+        // Check if booking is confirmed
+        if (b.getStatus() != EventBooking.BookingStatus.CONFIRMED) {
+            throw new ResponseStatusException(BAD_REQUEST, "Booking is not confirmed");
+        }
+
+        b.setStatus(EventBooking.BookingStatus.CHECKED_IN);
+        b.setCheckedInAt(java.time.LocalDateTime.now());
+        bookingRepository.save(b);
+
+        // Notify user that check-in completed
+        String title = "Event check-in confirmed";
+        String msg = String.format("Your booking for '%s' has been checked in. Booking ID: %s.",
+                eventRepository.findById(b.getEventId()).map(CampusEvent::getTitle).orElse("(event)"), b.getBookingNumber());
+        if (b.getUser() != null) {
+            notificationService.createNotification(b.getUser(), title, msg, NotificationType.BOOKING_APPROVED, b.getId(), "event_booking");
+        } else if (b.getGuestEmail() != null && !b.getGuestEmail().isBlank()) {
+            System.out.printf("[MAIL] To=%s Subject=%s Message=%s\n", b.getGuestEmail(), title, msg);
+        }
+
+        return b;
     }
 }

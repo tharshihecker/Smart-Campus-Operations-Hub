@@ -17,6 +17,7 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -265,6 +266,12 @@ public class BookingService {
         if (adminRemarks != null && !adminRemarks.isBlank()) {
             booking.setAdminRemarks(adminRemarks);
         }
+        
+        // Generate QR token when booking is approved
+        if (newStatus == BookingStatus.APPROVED && (booking.getQrToken() == null || booking.getQrToken().isBlank())) {
+            booking.setQrToken(UUID.randomUUID().toString());
+        }
+        
         Booking saved = bookingRepository.save(booking);
 
         // Send notification to user
