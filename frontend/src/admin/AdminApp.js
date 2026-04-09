@@ -9,6 +9,7 @@ import ManageServices from './ManageServices';
 import ManageResources from './ManageResources';
 import ManageBookings from './ManageBookings';
 import ManageIncidents from './ManageIncidents';
+import EventCheckIn from './EventCheckIn';
 import Notifications from '../user/Notifications';
 import { fetchUnreadCount } from '../api';
 import '../App.css';
@@ -149,6 +150,7 @@ function AdminApp() {
           <Route path="/bookings" element={protectedRoute(ManageBookings)} />
           <Route path="/incidents" element={protectedRoute(ManageIncidents)} />
           <Route path="/events" element={protectedRoute(ManageEvents)} />
+          <Route path="/event-checkin" element={protectedRoute(EventCheckIn)} />
           <Route path="/services" element={protectedRoute(ManageServices)} />
           <Route path="/resources" element={protectedRoute(ManageResources)} />
           <Route path="/notifications" element={protectedRoute(() => <Notifications isAdmin={true} />)} />
