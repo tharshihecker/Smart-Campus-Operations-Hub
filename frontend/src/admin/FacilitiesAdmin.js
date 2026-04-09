@@ -30,15 +30,9 @@ const blankForm = {
   status: "ACTIVE", description: "",
 };
 
-/** Build QR payload to encode facility details */
+/** Build QR payload — encodes a direct booking URL so scanning opens the browser */
 const buildQRData = (f) =>
-  JSON.stringify({
-    id: f.id, name: f.name, type: f.type,
-    location: f.location, capacity: f.capacity,
-    available: `${f.availableFrom}–${f.availableTo}`,
-    status: f.status, description: f.description,
-    url: `${window.location.origin}/facilities?highlight=${f.id}`,
-  });
+  `${window.location.origin}/facilities?highlight=${f.id}&book=true`;
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
 function StatCard({ color, icon, label, value, sub }) {
