@@ -201,7 +201,6 @@ function AdminHome() {
           { to: '/admin/bookings', icon: '📅', title: 'Bookings', desc: 'Approve or reject booking requests.' },
           { to: '/admin/incidents', icon: '🔧', title: 'Incidents', desc: 'Assign techs and manage ticket flow.' },
           { to: '/admin/events', icon: '🎯', title: 'Events', desc: 'Manage campus events and activities.' },
-          { to: '/admin/services', icon: '🛠️', title: 'Services', desc: 'Manage campus service channels.' },
         ].map(a => (
           <Link key={a.to} to={a.to} className="quick-action-card">
             <div className="quick-action-icon">{a.icon}</div>
