@@ -39,4 +39,10 @@ public interface BookingRepository extends MongoRepository<Booking, String> {
 
     @Query(value = "{ 'bookingDate': { $gte: ?0, $lte: ?1 } }", sort = "{ 'bookingDate': 1, 'startTime': 1 }")
     List<Booking> findBookingsInRange(LocalDate startDate, LocalDate endDate);
+
+    List<Booking> findByStatusAndBookingDateBetweenOrderByBookingDateAscStartTimeAsc(
+            BookingStatus status,
+            LocalDate startDate,
+            LocalDate endDate
+    );
 }

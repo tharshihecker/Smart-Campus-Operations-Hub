@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import {
   fetchFacilities, fetchFacilityStatuses, fetchFacilityTypes,
-  createBooking, fetchFacilityAvailability,
+  createBooking, fetchFacilityAvailability, fetchFacilityBookingsByDate, joinWaitlist
 } from "../api";
 import "./Facilities.css";
 
@@ -18,6 +18,41 @@ function fmtTime(t = "") {
   const ampm = hour >= 12 ? "PM" : "AM";
   const hr12 = hour % 12 === 0 ? 12 : hour % 12;
   return `${hr12}:${m} ${ampm}`;
+}
+
+/** Compute inverse free blocks and split into 1-hour increments */
+function getFreeBlocks(openFrom, openTo, bookings, chunkMins = 60) {
+  const toMins = (t) => { const [h, m] = t.split(':'); return parseInt(h) * 60 + parseInt(m); };
+  const toStr = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+
+  let start = toMins(toHHMM(openFrom));
+  let end = toMins(toHHMM(openTo));
+  let sorted = [...bookings].map(b => [toMins(toHHMM(b.startTime)), toMins(toHHMM(b.endTime))]).sort((a, b) => a[0] - b[0]);
+
+  // Compute raw free gaps
+  let gaps = [];
+  let cur = start;
+  for (let b of sorted) {
+    if (b[0] > cur) gaps.push([cur, b[0]]);
+    cur = Math.max(cur, b[1]);
+  }
+  if (cur < end) gaps.push([cur, end]);
+
+  // Split each gap into fixed-size chunks
+  let blocks = [];
+  for (let [gStart, gEnd] of gaps) {
+    let s = gStart;
+    while (s + chunkMins <= gEnd) {
+      blocks.push({ start: toStr(s), end: toStr(s + chunkMins) });
+      s += chunkMins;
+    }
+    // If remaining gap >= 30 mins and not already covered, add it
+    if (s < gEnd && (gEnd - s) >= 30) {
+      blocks.push({ start: toStr(s), end: toStr(gEnd) });
+    }
+  }
+
+  return blocks;
 }
 
 /** Truncate "HH:MM:SS" → "HH:MM" for time input value */
@@ -145,9 +180,9 @@ function FacilityQRModal({ facility, onClose }) {
 
 /* ── Booking Panel ───────────────────────────────────────────────────────── */
 function BookingPanel({ facility, userId, onClose }) {
-  const openFrom  = toHHMM(facility.availableFrom);   // e.g. "08:00"
-  const openTo    = toHHMM(facility.availableTo);     // e.g. "22:00"
-  const today     = todayStr();
+  const openFrom = toHHMM(facility.availableFrom);   // e.g. "08:00"
+  const openTo = toHHMM(facility.availableTo);     // e.g. "22:00"
+  const today = todayStr();
 
   const [form, setForm] = useState({
     bookingDate: today,
@@ -157,10 +192,22 @@ function BookingPanel({ facility, userId, onClose }) {
     notes: "",
     attendeeCount: 1,
   });
-  const [msg,          setMsg]          = useState({ type: "", text: "" });
-  const [loading,      setLoading]      = useState(false);
+  const [msg, setMsg] = useState({ type: "", text: "" });
+  const [loading, setLoading] = useState(false);
   const [availability, setAvailability] = useState(null);   // { totalCapacity, usedSeats, remainingSeats, ... }
   const [checkingAvail, setCheckingAvail] = useState(false);
+
+  const [dayBookings, setDayBookings] = useState([]);
+  const [loadingDay, setLoadingDay] = useState(false);
+
+  useEffect(() => {
+    if (!form.bookingDate) return;
+    setLoadingDay(true);
+    fetchFacilityBookingsByDate(facility.id, form.bookingDate)
+      .then(setDayBookings)
+      .catch(() => setDayBookings([]))
+      .finally(() => setLoadingDay(false));
+  }, [form.bookingDate, facility.id]);
 
   /* ── Minimum start time: if booking today, must be ≥ now (and ≥ openFrom) ── */
   const minStartTime = useMemo(() => {
@@ -177,8 +224,8 @@ function BookingPanel({ facility, userId, onClose }) {
     // Add 30 min to start
     const [h, m] = form.startTime.split(":").map(Number);
     const total = h * 60 + m + 30;
-    const nh = String(Math.floor(total / 60)).padStart(2, "0");
-    const nm = String(total % 60).padStart(2, "0");
+    const nh = String(Math.floor(total / 60)).padStart(2, '0');
+    const nm = String(total % 60).padStart(2, '0');
     return `${nh}:${nm}`;
   }, [form.startTime, openFrom]);
 
@@ -264,7 +311,7 @@ function BookingPanel({ facility, userId, onClose }) {
       setMsg({ type: "error", text: `Only ${availability.remainingSeats} seat(s) left for this time slot.` });
       return;
     }
-    if (isFull) { setMsg({ type: "error", text: "This slot is fully booked." }); return; }
+    if (isFull) { setMsg({ type: "error", text: "This slot is fully booked. You can join the waitlist below." }); return; }
 
     setLoading(true);
     setMsg({ type: "", text: "" });
@@ -283,6 +330,31 @@ function BookingPanel({ facility, userId, onClose }) {
       setTimeout(onClose, 2200);
     } catch (err) {
       setMsg({ type: "error", text: err.message || "Booking failed" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleWaitlist = async () => {
+    if (!userId) { setMsg({ type: "error", text: "Please log in to join waitlist." }); return; }
+    if (hasErrors) { setMsg({ type: "error", text: timeErrors[0] }); return; }
+
+    setLoading(true);
+    setMsg({ type: "", text: "" });
+    try {
+      await joinWaitlist({
+        facilityId: facility.id,
+        userId,
+        bookingDate: form.bookingDate,
+        startTime: form.startTime,
+        endTime: form.endTime,
+        purpose: form.purpose,
+        attendeeCount: form.attendeeCount || 1,
+      });
+      setMsg({ type: "success", text: "Successfully joined waitlist! You will be notified if a slot opens up." });
+      setTimeout(onClose, 2500);
+    } catch (err) {
+      setMsg({ type: "error", text: err.message || "Failed to join waitlist." });
     } finally {
       setLoading(false);
     }
@@ -307,137 +379,173 @@ function BookingPanel({ facility, userId, onClose }) {
 
         <div className="booking-panel" style={{ marginTop: 0, padding: 0, border: 'none', background: 'transparent', boxShadow: 'none' }}>
           {/* Open hours info banner */}
-          <div className="fac-open-hours-banner">
+          <div className="fac-open-hours-banner" style={{ marginBottom: '12px' }}>
             <span className="fac-open-hours-icon">🕐</span>
             <span>
               Open: <strong>{fmtTime(openFrom)}</strong> – <strong>{fmtTime(openTo)}</strong>
             </span>
           </div>
 
-      {/* Live availability bar */}
-      {checkingAvail && (
-        <div className="fac-cap-checking">⏳ Checking availability…</div>
-      )}
-      {!checkingAvail && availability && (
-        <div className={`fac-cap-bar ${isFull ? "fac-cap-bar--full" : ""}`}>
-          <div className="fac-cap-fill" style={{ width: `${usedPct}%` }} />
-          <span className="fac-cap-label">
-            {isFull
-              ? `🚫 FULLY BOOKED for this slot (${availability.totalCapacity}/${availability.totalCapacity})`
-              : `👥 ${availability.usedSeats}/${availability.totalCapacity} seats taken · ✅ ${availability.remainingSeats} available`
+          <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--border)' }}>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-main)' }}>✨ Available Time Slots for {form.bookingDate}</h4>
+            <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Click a free slot below to automatically select it.</p>
+            {loadingDay ? <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Calculating free slots...</p> :
+              (() => {
+                const freeBlocks = getFreeBlocks(openFrom, openTo, dayBookings);
+                if (freeBlocks.length === 0) {
+                  return <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--brand-danger)' }}>🚫 Fully booked for the entire day.</p>;
+                }
+                return (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {freeBlocks.map((block, idx) => (
+                      <button
+                        key={idx} type="button"
+                        onClick={() => {
+                          setForm(prev => ({ ...prev, startTime: block.start, endTime: block.end }));
+                        }}
+                        style={{
+                          background: '#16a34a', color: '#ffffff', border: 'none', padding: '6px 12px',
+                          borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold',
+                          boxShadow: '0 2px 6px rgba(22,163,74,0.35)'
+                        }}>
+                        {fmtTime(block.start)} – {fmtTime(block.end)}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()
             }
-          </span>
-        </div>
-      )}
-      {!checkingAvail && !availability && form.bookingDate && form.startTime && form.endTime && !hasErrors && (
-        <div className="fac-cap-checking">ℹ️ Select valid times to check availability</div>
-      )}
-
-      {/* Time validation errors */}
-      {timeErrors.map((err, i) => (
-        <div key={i} className="profile-alert compact error">{err}</div>
-      ))}
-
-      {msg.text && (
-        <div className={`profile-alert compact ${msg.type}`}>{msg.text}</div>
-      )}
-
-      <form onSubmit={handleSubmit} className="booking-form">
-        {/* Date */}
-        <div className="form-group">
-          <label>Date *</label>
-          <input
-            type="date"
-            name="bookingDate"
-            min={today}
-            value={form.bookingDate}
-            onChange={onChange}
-            required
-          />
-        </div>
-
-        {/* Time row */}
-        <div className="form-row">
-          <div className="form-group">
-            <label>Start Time * <span className="fac-time-hint">({fmtTime(openFrom)} – {fmtTime(openTo)})</span></label>
-            <input
-              type="time"
-              name="startTime"
-              min={minStartTime}
-              max={openTo}
-              step="900"
-              value={form.startTime}
-              onChange={onChange}
-              required
-            />
           </div>
-          <div className="form-group">
-            <label>End Time * <span className="fac-time-hint">(max {fmtTime(openTo)})</span></label>
-            <input
-              type="time"
-              name="endTime"
-              min={minEndTime}
-              max={openTo}
-              step="900"
-              value={form.endTime}
-              onChange={onChange}
-              required
-            />
-          </div>
-        </div>
 
-        {/* Purpose + Attendees */}
-        <div className="form-row">
-          <div className="form-group flex-2">
-            <label>Purpose *</label>
-            <input
-              name="purpose"
-              value={form.purpose}
-              onChange={onChange}
-              placeholder="e.g. Guest Lecture"
-              required
-            />
-          </div>
-          <div className="form-group flex-1">
-            <label>
-              Attendees
-              {availability && (
-                <span className="fac-seat-hint"> (max {availability.remainingSeats})</span>
-              )}
-            </label>
-            <input
-              type="number"
-              name="attendeeCount"
-              min="1"
-              max={availability ? availability.remainingSeats : facility.capacity}
-              value={form.attendeeCount}
-              onChange={onChange}
-            />
-          </div>
-        </div>
+          {/* Live availability bar */}
+          {checkingAvail && (
+            <div className="fac-cap-checking">⏳ Checking availability…</div>
+          )}
+          {!checkingAvail && availability && (
+            <div className={`fac-cap-bar ${isFull ? "fac-cap-bar--full" : ""}`}>
+              <div className="fac-cap-fill" style={{ width: `${usedPct}%` }} />
+              <span className="fac-cap-label">
+                {isFull
+                  ? `🚫 FULLY BOOKED for this slot (${availability.totalCapacity}/${availability.totalCapacity})`
+                  : `👥 ${availability.usedSeats}/${availability.totalCapacity} seats taken · ✅ ${availability.remainingSeats} available`
+                }
+              </span>
+            </div>
+          )}
+          {!checkingAvail && !availability && form.bookingDate && form.startTime && form.endTime && !hasErrors && (
+            <div className="fac-cap-checking">ℹ️ Select valid times to check availability</div>
+          )}
 
-        {/* Notes */}
-        <div className="form-group">
-          <label>Notes</label>
-          <input
-            name="notes"
-            value={form.notes}
-            onChange={onChange}
-            placeholder="Optional notes"
-          />
-        </div>
+          {/* Time validation errors */}
+          {timeErrors.map((err, i) => (
+            <div key={i} className="profile-alert compact error">{err}</div>
+          ))}
 
-        <div className="booking-actions">
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={loading || isFull || hasErrors}
-          >
-            {loading ? "Submitting…" : isFull ? "🚫 Fully Booked" : "📅 Submit Booking"}
-          </button>
-          <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-        </div>
-      </form>
+          {msg.text && (
+            <div className={`profile-alert compact ${msg.type}`}>{msg.text}</div>
+          )}
+
+          <form onSubmit={handleSubmit} className="booking-form">
+            {/* Date */}
+            <div className="form-group">
+              <label>Date *</label>
+              <input
+                type="date"
+                name="bookingDate"
+                min={today}
+                value={form.bookingDate}
+                onChange={onChange}
+                required
+              />
+            </div>
+
+            {/* Time row */}
+            <div className="form-row">
+              <div className="form-group">
+                <label>Start Time * <span className="fac-time-hint">({fmtTime(openFrom)} – {fmtTime(openTo)})</span></label>
+                <input
+                  type="time"
+                  name="startTime"
+                  min={minStartTime}
+                  max={openTo}
+                  step="900"
+                  value={form.startTime}
+                  onChange={onChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>End Time * <span className="fac-time-hint">(max {fmtTime(openTo)})</span></label>
+                <input
+                  type="time"
+                  name="endTime"
+                  min={minEndTime}
+                  max={openTo}
+                  step="900"
+                  value={form.endTime}
+                  onChange={onChange}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Purpose + Attendees */}
+            <div className="form-row">
+              <div className="form-group flex-2">
+                <label>Purpose *</label>
+                <input
+                  name="purpose"
+                  value={form.purpose}
+                  onChange={onChange}
+                  placeholder="e.g. Guest Lecture"
+                  required
+                />
+              </div>
+              <div className="form-group flex-1">
+                <label>
+                  Attendees
+                  {availability && (
+                    <span className="fac-seat-hint"> (max {availability.remainingSeats})</span>
+                  )}
+                </label>
+                <input
+                  type="number"
+                  name="attendeeCount"
+                  min="1"
+                  max={availability ? availability.remainingSeats : facility.capacity}
+                  value={form.attendeeCount}
+                  onChange={onChange}
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="form-group">
+              <label>Notes</label>
+              <input
+                name="notes"
+                value={form.notes}
+                onChange={onChange}
+                placeholder="Optional notes"
+              />
+            </div>
+
+            <div className="booking-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
+              <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>Cancel</button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {(isFull || (availability && form.attendeeCount > availability.remainingSeats)) && (
+                  <button type="button" className="btn-secondary" style={{ background: '#f59e0b', color: 'white' }} onClick={handleWaitlist} disabled={loading || hasErrors}>
+                    {loading ? "Joining..." : "Join Waitlist"}
+                  </button>
+                )}
+                {!isFull && (!availability || form.attendeeCount <= availability.remainingSeats) && (
+                  <button type="submit" className="btn-primary" disabled={loading || hasErrors || checkingAvail}>
+                    {loading ? "Submitting…" : "📅 Submit Booking"}
+                  </button>
+                )}
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -446,15 +554,15 @@ function BookingPanel({ facility, userId, onClose }) {
 
 /* ── Main Component ──────────────────────────────────────────────────────── */
 function Facilities() {
-  const [filters,          setFilters]          = useState(defaultFilters);
-  const [facilityTypes,    setFacilityTypes]    = useState([]);
+  const [filters, setFilters] = useState(defaultFilters);
+  const [facilityTypes, setFacilityTypes] = useState([]);
   const [facilityStatuses, setFacilityStatuses] = useState([]);
-  const [facilities,       setFacilities]       = useState([]);
-  const [loading,          setLoading]          = useState(true);
-  const [error,            setError]            = useState("");
+  const [facilities, setFacilities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [bookingFacility, setBookingFacility] = useState(null);
-  const [qrFacility,      setQrFacility]      = useState(null);
+  const [qrFacility, setQrFacility] = useState(null);
 
   const userId = localStorage.getItem("smartcampus_user_id");
 

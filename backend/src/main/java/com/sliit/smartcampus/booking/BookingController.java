@@ -89,6 +89,11 @@ public class BookingController {
         return bookingService.cancelBooking(bookingId, userId);
     }
 
+    @PostMapping("/{bookingId}/resend-email")
+    public Map<String, Object> resendEmail(@PathVariable String bookingId) {
+        return bookingService.resendBookingEmail(bookingId);
+    }
+
     /**
      * Generate a QR code PNG (base64) for an APPROVED booking.
      * The QR encodes: "SMARTCAMPUS-BOOKING:{bookingId}:{facilityName}:{date}"
@@ -162,5 +167,14 @@ public class BookingController {
                 "facilityName", booking.getFacility().getName(),
                 "status", "CHECKED_IN"
         ));
+    }
+    @PutMapping("/{bookingId}/accept-counter")
+    public BookingResponse acceptCounter(@PathVariable String bookingId, @RequestParam String userId) {
+        return bookingService.acceptCounterProposal(bookingId, userId);
+    }
+
+    @PutMapping("/{bookingId}/reject-counter")
+    public BookingResponse rejectCounter(@PathVariable String bookingId, @RequestParam String userId) {
+        return bookingService.rejectCounterProposal(bookingId, userId);
     }
 }

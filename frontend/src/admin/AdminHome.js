@@ -168,8 +168,8 @@ function AdminHome() {
                   : (analytics.topFacilities || []).map((f, i) => (
                     <div key={f.facilityId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.87rem' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>
-                        <span style={{ color: ['#fbbf24','#94a3b8','#f97316'][i] ?? 'var(--text-muted)', marginRight: 6 }}>
-                          {['🥇','🥈','🥉'][i] ?? `#${i+1}`}
+                        <span style={{ color: ['#fbbf24', '#94a3b8', '#f97316'][i] ?? 'var(--text-muted)', marginRight: 6 }}>
+                          {['🥇', '🥈', '🥉'][i] ?? `#${i + 1}`}
                         </span>
                         {f.facilityName}
                       </span>

@@ -3,6 +3,7 @@ import {
   fetchAllBookings,
   updateBookingStatus,
   deleteBooking,
+  counterProposeBooking
 } from "../api";
 import "./Admin.css";
 
@@ -16,6 +17,8 @@ function ManageBookings() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [remarksMap, setRemarksMap] = useState({});
+  const [counterId, setCounterId] = useState(null);
+  const [counterForm, setCounterForm] = useState({ newDate: '', newStartTime: '', newEndTime: '', note: '' });
 
   const loadData = async (status) => {
     setLoading(true); setError("");
@@ -45,6 +48,21 @@ function ManageBookings() {
       setMessage("Booking deleted.");
       await loadData(filterStatus);
     } catch (err) { setError(err.message || "Failed to delete booking"); }
+    finally { setBusy(false); }
+  };
+
+  const handleCounterSubmit = async (bookingId) => {
+    if (!counterForm.newDate || !counterForm.newStartTime || !counterForm.newEndTime) {
+      setError("Please fill in date and times for the counter-proposal.");
+      return;
+    }
+    setBusy(true); setMessage(""); setError("");
+    try {
+      await counterProposeBooking(bookingId, counterForm);
+      setMessage(`Counter-proposal sent for Booking #${bookingId}.`);
+      setCounterId(null);
+      await loadData(filterStatus);
+    } catch (err) { setError(err.message || "Failed to counter-propose"); }
     finally { setBusy(false); }
   };
 
@@ -126,6 +144,10 @@ function ManageBookings() {
                       <>
                         <button className="btn-approve btn-sm" onClick={() => handleStatusChange(b.id, "APPROVED")} disabled={busy}>Approve</button>
                         <button className="btn-reject btn-sm" onClick={() => handleStatusChange(b.id, "REJECTED")} disabled={busy}>Reject</button>
+                        <button className="btn-sm" style={{ background: '#f59e0b', color: '#fff', border: 'none' }} onClick={() => {
+                          setCounterId(b.id);
+                          setCounterForm({ newDate: b.bookingDate, newStartTime: b.startTime, newEndTime: b.endTime, note: '' });
+                        }} disabled={busy}>Propose Alternate Time</button>
                       </>
                     )}
                     {b.status === "APPROVED" && (
@@ -143,6 +165,37 @@ function ManageBookings() {
       <p style={{ marginTop: "16px", color: "#94a3b8", fontSize: "0.85rem" }}>
         Showing {bookings.length} booking(s)
       </p>
+
+      {/* Counter-Propose Modal Overlay */}
+      {counterId && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
+          <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', minWidth: '300px', maxWidth: '400px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ marginTop: 0, marginBottom: '16px' }}>Counter-Propose Time</h3>
+            <div style={{ marginBottom: '10px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>New Date</label>
+              <input type="date" value={counterForm.newDate} onChange={e => setCounterForm(f => ({ ...f, newDate: e.target.value }))} className="form-control" />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>Start Time</label>
+                <input type="time" value={counterForm.newStartTime} onChange={e => setCounterForm(f => ({ ...f, newStartTime: e.target.value }))} className="form-control" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>End Time</label>
+                <input type="time" value={counterForm.newEndTime} onChange={e => setCounterForm(f => ({ ...f, newEndTime: e.target.value }))} className="form-control" />
+              </div>
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>Reason / Note</label>
+              <input type="text" placeholder="e.g. Lab cleaning at 1PM" value={counterForm.note} onChange={e => setCounterForm(f => ({ ...f, note: e.target.value }))} className="form-control" />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" onClick={() => setCounterId(null)} disabled={busy}>Cancel</button>
+              <button className="btn-primary" onClick={() => handleCounterSubmit(counterId)} disabled={busy}>Send Proposal</button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

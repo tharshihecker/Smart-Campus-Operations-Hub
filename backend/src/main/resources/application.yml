@@ -9,6 +9,18 @@ spring:
       enabled: true
       max-file-size: 5MB
       max-request-size: 20MB
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: vkaura1010@gmail.com
+    password: xzcl lsfj ddqb lfjx
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
 
 server:
   port: 8080
@@ -19,6 +31,8 @@ app:
     expiration-ms: 86400000   # 24 hours
   google:
     client-id: 525229368487-uae4vna5146dmah7lmshjna5rm985cr1.apps.googleusercontent.com
+  email:
+    from: vkaura1010@gmail.com
 
 cloudinary:
   cloud-name: dxpmhs4r8

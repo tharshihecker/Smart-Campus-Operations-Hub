@@ -29,7 +29,7 @@ function AdminNotificationBell({ userId, isAuthenticated }) {
     try {
       const data = await fetchUnreadCount();
       setCount(data.count || 0);
-    } catch {}
+    } catch { }
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -97,12 +97,12 @@ function AdminTopNav({ isAuthenticated, onLogout }) {
 function AdminApp() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem(ADMIN_AUTH_KEY) === 'true');
-  
+
   // Check if user trying to access admin panel is actually an admin
   useEffect(() => {
     const userRole = localStorage.getItem('smartcampus_user_role');
     const token = localStorage.getItem('smartcampus_token');
-    
+
     if (token && userRole && userRole !== 'ADMIN') {
       // Non-admin trying to access admin panel, redirect to user portal
       localStorage.removeItem(ADMIN_AUTH_KEY);

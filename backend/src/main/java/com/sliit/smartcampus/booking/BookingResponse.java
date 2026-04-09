@@ -19,7 +19,12 @@ public record BookingResponse(
         Integer attendeeCount,
         BookingStatus status,
         String adminRemarks,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        // Counter-proposal fields
+        LocalDate counterProposedDate,
+        LocalTime counterProposedStartTime,
+        LocalTime counterProposedEndTime,
+        String counterProposalNote
 ) {
     public static BookingResponse from(Booking booking) {
         return new BookingResponse(
@@ -37,7 +42,11 @@ public record BookingResponse(
                 booking.getAttendeeCount(),
                 booking.getStatus(),
                 booking.getAdminRemarks(),
-                booking.getCreatedAt()
+                booking.getCreatedAt(),
+                booking.getCounterProposedDate(),
+                booking.getCounterProposedStartTime(),
+                booking.getCounterProposedEndTime(),
+                booking.getCounterProposalNote()
         );
     }
 }

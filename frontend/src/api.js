@@ -189,9 +189,23 @@ export async function fetchFacilityBookings(facilityId) { return fetchJson(`/boo
 
 export async function cancelBooking(bookingId, userId) { return sendJson("PUT", `/bookings/${bookingId}/cancel?userId=${userId}`); }
 export async function fetchBookingQR(bookingId) { return fetchJson(`/bookings/${bookingId}/qr`); }
+export async function resendBookingEmail(bookingId) { return sendJson("POST", `/bookings/${bookingId}/resend-email`); }
 export async function checkinBooking(bookingId, userId) {
   return sendJson("POST", `/bookings/${bookingId}/checkin?userId=${userId}`);
 }
+
+/* ── Counter-Proposals (User) ── */
+export async function acceptCounterProposal(bookingId, userId) {
+  return sendJson("PUT", `/bookings/${bookingId}/accept-counter?userId=${userId}`);
+}
+export async function rejectCounterProposal(bookingId, userId) {
+  return sendJson("PUT", `/bookings/${bookingId}/reject-counter?userId=${userId}`);
+}
+
+/* ── Waitlist ── */
+export async function joinWaitlist(data) { return sendJson("POST", "/waitlist", data); }
+export async function cancelWaitlist(id, userId) { return sendJson("DELETE", `/waitlist/${id}?userId=${userId}`); }
+export async function fetchUserWaitlist(userId) { return fetchJson(`/waitlist/user/${userId}`); }
 
 /**
  * Returns all active (PENDING/APPROVED/CHECKED_IN) bookings for a facility on a specific date.
@@ -218,6 +232,9 @@ export async function fetchAllBookings(status) {
 }
 export async function updateBookingStatus(bookingId, status, adminRemarks) {
   return sendJson("PUT", `/admin/bookings/${bookingId}/status`, { status, adminRemarks });
+}
+export async function counterProposeBooking(bookingId, data) {
+  return sendJson("POST", `/admin/bookings/${bookingId}/counter-propose`, data);
 }
 export async function deleteBooking(bookingId) { return sendJson("DELETE", `/admin/bookings/${bookingId}`); }
 export async function fetchBookingStatuses() { return fetchJson("/admin/bookings/statuses"); }
