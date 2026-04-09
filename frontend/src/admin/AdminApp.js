@@ -5,8 +5,6 @@ import AdminHome from './AdminHome';
 import AdminLogin from './AdminLogin';
 import ManageUsers from './ManageUsers';
 import ManageEvents from './ManageEvents';
-import ManageServices from './ManageServices';
-import ManageResources from './ManageResources';
 import ManageBookings from './ManageBookings';
 import ManageIncidents from './ManageIncidents';
 import EventCheckIn from './EventCheckIn';
@@ -71,16 +69,7 @@ function AdminTopNav({ isAuthenticated, onLogout }) {
             <NavLink to="/admin/bookings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Bookings</NavLink>
             <NavLink to="/admin/incidents" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Incidents</NavLink>
             <NavLink to="/admin/users" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Users</NavLink>
-            <div style={{ position: 'relative' }}>
-              <button type="button" className="nav-link" onClick={() => setMenuOpen(!menuOpen)} style={{ cursor: 'pointer' }}>More ▾</button>
-              {menuOpen && (
-                <div style={{ position: 'absolute', top: '100%', right: 0, background: '#1e2437', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.4)', zIndex: 50, minWidth: 160, padding: '6px 0' }}>
-                  <NavLink to="/admin/events" className="nav-link" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '8px 16px' }}>Events</NavLink>
-                  <NavLink to="/admin/services" className="nav-link" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '8px 16px' }}>Services</NavLink>
-                  <NavLink to="/admin/resources" className="nav-link" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '8px 16px' }}>Resources</NavLink>
-                </div>
-              )}
-            </div>
+            <NavLink to="/admin/events" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Events</NavLink>
             <AdminNotificationBell isAuthenticated={isAuthenticated} userId={localStorage.getItem('smartcampus_user_id')} />
             <button type="button" className="nav-button" onClick={onLogout}>Logout</button>
           </>
@@ -151,8 +140,7 @@ function AdminApp() {
           <Route path="/incidents" element={protectedRoute(ManageIncidents)} />
           <Route path="/events" element={protectedRoute(ManageEvents)} />
           <Route path="/event-checkin" element={protectedRoute(EventCheckIn)} />
-          <Route path="/services" element={protectedRoute(ManageServices)} />
-          <Route path="/resources" element={protectedRoute(ManageResources)} />
+          
           <Route path="/notifications" element={protectedRoute(() => <Notifications isAdmin={true} />)} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
