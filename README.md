@@ -1,199 +1,341 @@
 # Smart Campus Operations Hub
 
-**IT3030 PAF Assignment 2026 – NUSLIIT JFN3**
+<div align="center">
 
-A production-inspired full-stack web system for university campus operations management, built with **Spring Boot** (backend) and **React** (frontend).
+## IT3030 - PAF Assignment 2026 (Semester 1)
+### Faculty of Computing - SLIIT
 
----
+[![Spring Boot](https://img.shields.io/badge/Backend-Spring_Boot_3.4.2-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](./backend)
+[![React](https://img.shields.io/badge/Frontend-React_19-61DAFB?style=for-the-badge&logo=react&logoColor=0B2239)](./frontend)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](./backend/src/main/resources/application.yml)
+[![GitHub Actions](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)](./.github/workflows/ci.yml)
 
-## 🚀 Quick Start
+</div>
+
+## Overview
+
+Smart Campus Operations Hub is a full-stack university operations platform built for the IT3030 Programming Applications and Frameworks group assignment. The system combines facility and asset booking, maintenance and incident handling, notifications, authentication, and admin operations in one web application.
+
+This repository contains:
+
+- A Spring Boot REST API for business logic, validation, security, and persistence
+- A React client web application for students, staff, technicians, and administrators
+- Role-based workflows for bookings, incidents, notifications, and campus operations
+- Value-added features such as QR check-in, waitlist management, analytics, event bookings, and seeded demo data
+
+
+
+## Business Scenario
+
+The university requires a centralized Smart Campus Operations Hub to manage:
+
+- Facilities and assets catalogue
+- Resource booking workflows
+- Maintenance and incident ticket handling
+- Notifications for operational updates
+- Secure authentication and role-based authorization
+
+## Implemented Modules
+
+### Core assignment modules
+
+#### Module A - Facilities and Assets Catalogue
+
+- Manage facilities and bookable resources
+- Resource types include lecture halls, labs, meeting rooms, projectors, and cameras
+- Metadata includes capacity, location, available time window, description, and current status
+- Search and filter support for type, status, location, and capacity
+
+#### Module B - Booking Management
+
+- Users can create resource booking requests
+- Booking workflow includes `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED`, and check-in related flows
+- Conflict detection prevents overlapping bookings for the same facility
+- Admin users can approve, reject, delete, or counter-propose booking requests
+- Users can view, update, cancel, and check in to their own bookings
+
+#### Module C - Maintenance and Incident Ticketing
+
+- Users can create incident tickets with priority, category, location, and contact details
+- Supports up to 3 image attachments through multipart upload
+- Status workflow includes `OPEN`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`, and `REJECTED`
+- Admin can assign technicians, update status, add notes, and moderate incident operations
+- Users and admins can add comments, with ownership rules for edit/delete actions
+
+#### Module D - Notifications
+
+- In-app notifications for booking changes, incident updates, and comment activity
+- Unread count badge in both user and admin portals
+- Mark single notification as read, mark all as read, or delete notifications
+- Frontend polling updates notification state in the UI
+
+#### Module E - Authentication and Authorization
+
+- Username/password login and signup
+- Google sign-in integration through backend token verification
+- JWT-based authentication for protected API access
+- Role-based access for `USER`, `TECHNICIAN`, and `ADMIN`
+- Separate user portal and admin portal route protection
+
+### Value-added features beyond the minimum
+
+- Event management and event booking
+- Event QR check-in flow
+- Waitlist handling for bookings
+- Admin analytics dashboard
+- Learning resources module
+- Campus services module
+- Seeded demo users and sample records for faster demonstrations
+- Email integration for selected booking-related actions
+
+## Technology Stack
+
+| Layer | Technologies |
+| --- | --- |
+| Frontend | React 19, React Router, React Scripts, Testing Library |
+| Backend | Spring Boot 3.4.2, Spring Web, Spring Security, Spring Validation |
+| Database | MongoDB |
+| Authentication | JWT + Google OAuth token verification |
+| Media Upload | Cloudinary |
+| Notifications / Mail | Spring Mail |
+| QR Utilities | ZXing |
+| Build Tools | Maven, npm |
+| CI | GitHub Actions |
+
+## System Architecture
+
+```text
+React Client (User Portal + Admin Portal)
+        |
+        | HTTP / JSON + JWT
+        v
+Spring Boot REST API
+        |
+        | Repository Layer
+        v
+MongoDB
+
+External integrations:
+- Google OAuth verification
+- Cloudinary image hosting
+- SMTP mail service
+```
+
+## Repository Structure
+
+```text
+.
+|-- backend
+|   |-- pom.xml
+|   `-- src
+|       |-- main
+|       |   |-- java/com/sliit/smartcampus
+|       |   |   |-- booking
+|       |   |   |-- config
+|       |   |   |-- event
+|       |   |   |-- exception
+|       |   |   |-- facility
+|       |   |   |-- health
+|       |   |   |-- home
+|       |   |   |-- incident
+|       |   |   |-- notification
+|       |   |   |-- resource
+|       |   |   |-- security
+|       |   |   |-- service
+|       |   |   `-- user
+|       |   `-- resources/application.yml
+|       `-- test
+|-- frontend
+|   |-- package.json
+|   `-- src
+|       |-- admin
+|       |-- components
+|       |-- user
+|       `-- utils
+`-- .github/workflows/ci.yml
+```
+
+## Main Frontend Areas
+
+### User portal
+
+- Landing page
+- Login and signup
+- Home dashboard
+- Facilities browser
+- My bookings
+- Incidents
+- Notifications
+- Profile
+- Technician dashboard
+- Events
+
+### Admin portal
+
+- Admin dashboard
+- Facilities management
+- Booking management
+- Incident management
+- User management
+- Event management
+- Event QR check-in
+- Notifications
+
+## Main API Areas
+
+| Area | Base Path |
+| --- | --- |
+| User auth and profile | `/api/user` |
+| Google auth | `/api/auth` |
+| Facilities | `/api/facilities` |
+| Admin facilities | `/api/admin/facilities` |
+| Bookings | `/api/bookings` |
+| Admin bookings | `/api/admin/bookings` |
+| Waitlist | `/api/waitlist` |
+| Incidents | `/api/incidents` |
+| Admin incidents | `/api/admin/incidents` |
+| Notifications | `/api/notifications` |
+| Users admin | `/api/admin/users` |
+| Events | `/api/events` |
+| Admin events | `/api/admin/events` |
+| Resources | `/api/resources` |
+| Services | `/api/services` |
+| Analytics | `/api/admin/analytics` |
+| Home summary | `/api/home` |
+
+## Local Setup
 
 ### Prerequisites
+
 - Java 21
 - Maven 3.9+
 - Node.js 18+
-- MySQL 8.0
+- npm 9+
+- MongoDB connection or MongoDB Atlas access
 
-### 1. Database Setup
-```sql
-CREATE DATABASE paf;
+### 1. Clone the repository
+
+```bash
+git clone <your-repository-url>
+cd IT3030-PAF-2026-smart-campus-NUSLIIT_JFN3
 ```
 
-### 2. Backend
+### 2. Backend setup
+
+The backend is configured through [`backend/src/main/resources/application.yml`](./backend/src/main/resources/application.yml).
+
+Important services currently referenced by the project:
+
+- MongoDB
+- Google OAuth client ID
+- Cloudinary
+- SMTP mail server
+- JWT secret
+
+Run the backend:
+
 ```bash
 cd backend
 mvn spring-boot:run
 ```
-The backend starts on `http://localhost:8080`  
-*(Schema auto-created via `ddl-auto: update`; sample data seeded on startup)*
 
-### 3. Frontend
+Backend default URL:
+
+```text
+http://localhost:8080
+```
+
+### 3. Frontend setup
+
 ```bash
 cd frontend
 npm install
 npm start
 ```
-The React app starts on `http://localhost:3000`
 
----
+Frontend default URL:
 
-## 🔐 Default Credentials
-
-| Role        | Username      | Password   |
-|-------------|---------------|------------|
-| Admin       | `admin`       | `admin123` |
-| Technician  | `techsupport` | `tech123`  |
-| Demo User   | `demouser`    | `user123`  |
-
-Admin Portal: `http://localhost:3000/admin`
-
----
-
-## 📦 System Modules
-
-### Module A – Facilities & Assets Catalogue
-- Bookable resources: lecture halls, labs, meeting rooms, equipment
-- Metadata: type, capacity, location, availability windows, status (ACTIVE / MAINTENANCE / OUT_OF_SERVICE)
-- Search & filter by type, capacity, location
-
-### Module B – Booking Management
-- Booking workflow: `PENDING → APPROVED/REJECTED`; approved can be `CANCELLED`
-- **Conflict detection** prevents overlapping bookings for the same resource
-- Admin approval/rejection with reasons; users see only their bookings
-
-### Module C – Maintenance & Incident Ticketing
-- File-based incident reports with up to **3 image attachments**
-- Status workflow: `OPEN → IN_PROGRESS → RESOLVED → CLOSED` (or `REJECTED`)
-- Technician assignment; resolution notes; comment thread with ownership (edit/delete own)
-
-### Module D – Notifications
-- Automatic notifications on booking approval/rejection and ticket status changes
-- Real-time unread badge on notification bell (30s polling)
-- Mark individual or all-read; delete; filter by READ/UNREAD
-
-### Module E – Authentication & Authorization
-- **JWT-based** authentication (24h expiry)
-- Roles: `USER`, `TECHNICIAN`, `ADMIN`
-- Role-based access control on all API endpoints
-
----
-
-## 🏗 Architecture
-
-```
-Frontend (React)            Backend (Spring Boot)          Database (MySQL)
-─────────────────           ──────────────────────         ───────────────
-UserApp / AdminApp  ──HTTP/JWT──►  REST API (port 8080)  ──JPA──►  MySQL DB
-                                  Layered: Controller
-                                           Service
-                                           Repository
+```text
+http://localhost:3000
 ```
 
----
+## Seeded Demo Accounts
 
-## 📡 Key API Endpoints
+The backend data initializer creates demo users if they do not already exist.
 
-### Auth
-| Method | Endpoint              | Description        |
-|--------|-----------------------|--------------------|
-| POST   | `/api/user/signup`    | Register (returns JWT) |
-| POST   | `/api/user/login`     | Login (returns JWT)    |
+| Role | Username | Password |
+| --- | --- | --- |
+| Admin | `admin` | `admin123` |
+| Technician | `techsupport` | `tech123` |
+| User | `demouser` | `user123` |
 
-### Facilities
-| Method | Endpoint                      | Description           |
-|--------|-------------------------------|-----------------------|
-| GET    | `/api/facilities`             | List with filters     |
-| GET    | `/api/facilities/{id}`        | Get by ID             |
-| POST   | `/api/admin/facilities`       | Create (Admin)        |
-| PUT    | `/api/admin/facilities/{id}`  | Update (Admin)        |
-| DELETE | `/api/admin/facilities/{id}`  | Delete (Admin)        |
+## Demo Data Seeded at Startup
 
-### Bookings
-| Method | Endpoint                              | Description              |
-|--------|---------------------------------------|--------------------------|
-| POST   | `/api/bookings`                       | Create booking           |
-| GET    | `/api/bookings/user/{userId}`         | My bookings              |
-| PUT    | `/api/bookings/{id}/cancel`           | Cancel booking           |
-| PUT    | `/api/admin/bookings/{id}/status`     | Approve/Reject (Admin)   |
+The application seeds sample data for easier demonstrations:
 
-### Incidents
-| Method | Endpoint                          | Description              |
-|--------|-----------------------------------|--------------------------|
-| POST   | `/api/incidents`                  | Create ticket + files    |
-| GET    | `/api/incidents`                  | My tickets               |
-| GET    | `/api/admin/incidents`            | All tickets (Admin)      |
-| PUT    | `/api/admin/incidents/{id}/status`| Update status (Admin)    |
-| PUT    | `/api/admin/incidents/{id}/assign`| Assign technician (Admin)|
-| POST   | `/api/incidents/{id}/comments`    | Add comment              |
-| DELETE | `/api/incidents/comments/{id}`    | Delete own comment       |
+- Users
+- Facilities
+- Events
+- Learning resources
+- Campus services
+- Example incident tickets
 
-### Notifications
-| Method | Endpoint                          | Description        |
-|--------|-----------------------------------|--------------------|
-| GET    | `/api/notifications`              | My notifications   |
-| GET    | `/api/notifications/unread-count` | Unread count       |
-| PUT    | `/api/notifications/{id}/read`    | Mark read          |
-| PUT    | `/api/notifications/mark-all-read`| Mark all read      |
-| DELETE | `/api/notifications/{id}`         | Delete             |
+## Security Notes
 
----
+- JWT is used for stateless API authentication
+- Protected endpoints require a bearer token
+- Role restrictions are applied in the backend and frontend
+- File uploads are supported for incident evidence
+- Google sign-in is integrated through backend token verification
 
-## 🧪 Testing
+## Testing Status
 
-### Run Backend Tests
+Current repository testing artifacts include:
+
+- Backend Spring Boot test scaffold
+- Backend `BookingServiceTest`
+- Frontend default React Testing Library test
+
+Important note:
+
+- The existing backend test configuration is not fully aligned with the current MongoDB-based application design, so CI currently focuses on reliable build validation rather than forcing unstable test execution.
+
+## GitHub Actions Workflow
+
+This repository includes a GitHub Actions workflow at [`./.github/workflows/ci.yml`](./.github/workflows/ci.yml).
+
+The workflow:
+
+- Runs on every push
+- Runs on every pull request
+- Can be triggered manually with `workflow_dispatch`
+- Builds the backend with Maven
+- Builds the frontend with npm
+
+## Suggested Individual Contribution Mapping
+
+Replace this section with your actual group member names or IDs before final submission.
+
+| Member | Suggested area |
+| --- | --- |
+| Member 1 | Facilities and resource catalogue |
+| Member 2 | Booking workflow and conflict handling |
+| Member 3 | Incidents, attachments, and technician flow |
+| Member 4 | Notifications, auth, security, and OAuth improvements |
+
+
+
+
+
+## Run Commands Summary
+
 ```bash
+# backend
 cd backend
-mvn test
+mvn spring-boot:run
+
+# frontend
+cd frontend
+npm install
+npm start
 ```
-Tests use H2 in-memory DB (no MySQL required for tests).
-
-### Test Coverage
-- `BookingServiceTest` – conflict detection, capacity check, cancel authorization, date validation
-
----
-
-## 🔄 CI/CD
-
-GitHub Actions workflow (`.github/workflows/ci.yml`):
-- **Backend**: Build, run tests with MySQL service container
-- **Frontend**: Install dependencies, run tests, build production bundle
-
----
-
-## 📁 Project Structure
-
-```
-├── backend/
-│   ├── src/main/java/com/sliit/smartcampus/
-│   │   ├── booking/       # Module B: Booking management
-│   │   ├── config/        # SecurityConfig, DataInitializer, WebConfig
-│   │   ├── exception/     # GlobalExceptionHandler, ResourceNotFoundException
-│   │   ├── facility/      # Module A: Facilities catalogue
-│   │   ├── incident/      # Module C: Incident ticketing
-│   │   ├── notification/  # Module D: Notifications
-│   │   ├── security/      # JWT utilities and filter
-│   │   └── user/          # Module E: Auth & user management
-│   └── src/test/
-└── frontend/
-    ├── src/
-    │   ├── admin/         # Admin portal pages
-    │   │   ├── ManageIncidents.js
-    │   │   ├── ManageBookings.js
-    │   │   └── ...
-    │   └── user/          # User portal pages
-    │       ├── Incidents.js
-    │       ├── Notifications.js
-    │       └── ...
-    └── package.json
-```
-
----
-
-## 👥 Team Contribution
-
-| Member | Modules Implemented |
-|--------|---------------------|
-| Member 1 | Module A – Facilities & Assets (FacilityController, FacilityService, FacilityRepository, FacilitiesAdmin.js, Facilities.js) |
-| Member 2 | Module B – Booking Management (BookingController, BookingService, conflict detection, ManageBookings.js, MyBookings.js) |
-| Member 3 | Module C – Incident Ticketing (IncidentTicketController, IncidentTicketService, file upload, comments, Incidents.js, ManageIncidents.js) |
-| Member 4 | Module D+E – Notifications & Auth (NotificationService, JWT security, SecurityConfig, UserController, Notifications.js) |
