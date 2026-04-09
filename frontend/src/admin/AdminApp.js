@@ -10,6 +10,7 @@ import ManageIncidents from './ManageIncidents';
 import EventCheckIn from './EventCheckIn';
 import Notifications from '../user/Notifications';
 import { fetchUnreadCount } from '../api';
+import { useNotificationSound } from '../utils/useNotificationSound';
 import '../App.css';
 
 const ADMIN_AUTH_KEY = 'smartcampus_admin_auth';
@@ -22,6 +23,9 @@ function ProtectedAdminRoute({ isAuthenticated, children }) {
 
 function AdminNotificationBell({ userId, isAuthenticated }) {
   const [count, setCount] = useState(0);
+
+  // 🔔 Play bell sound whenever new notifications arrive for admin
+  useNotificationSound(count);
 
   const loadCount = useCallback(async () => {
     if (!isAuthenticated) return;
