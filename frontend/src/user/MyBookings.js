@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fetchUserBookings, cancelBooking, createBooking, updateBooking, fetchFacilities, fetchBookingQR, resendBookingEmail, checkinBooking, fetchFacilityBookingsByDate, acceptCounterProposal, rejectCounterProposal } from '../api';
 import './Profile.css';
 import './MyBookings.css';
@@ -131,6 +132,7 @@ function QRModal({ booking, onClose, onResendEmail }) {
 }
 
 function MyBookings() {
+  const navigate = useNavigate();
   const userId = localStorage.getItem('smartcampus_user_id');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -267,8 +269,8 @@ function MyBookings() {
           <span className="card-icon">{bookingForm.id ? '✏️' : '➕'}</span>
           {bookingForm.id ? 'Edit Booking' : 'New Booking'}
           {!showForm && (
-            <button type="button" className="btn-edit-trigger" onClick={() => { loadFacilities(); setShowForm(true); setActionMsg({ type: '', text: '' }); }}>
-              Book a Facility
+            <button type="button" className="btn-edit-trigger btn-primary" style={{ padding: '8px 16px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => navigate('/facilities')}>
+              <span>🏢</span> Book a Facility
             </button>
           )}
         </h3>
@@ -285,16 +287,20 @@ function MyBookings() {
                       const freeBlocks = getFreeBlocks(selectedFacility.availableFrom.slice(0, 5), selectedFacility.availableTo.slice(0, 5), dayBookings);
                       if (freeBlocks.length === 0) return <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--brand-danger)' }}>🚫 Fully booked for the entire day.</p>;
                       return (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
                           {freeBlocks.map((block, idx) => (
                             <button
                               key={idx} type="button"
                               onClick={() => setBookingForm(prev => ({ ...prev, startTime: block.start, endTime: block.end }))}
                               style={{
-                                background: '#16a34a', color: '#ffffff', border: 'none', padding: '6px 12px',
-                                borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold',
-                                boxShadow: '0 2px 6px rgba(22,163,74,0.35)'
-                              }}>
+                                background: 'rgba(20, 184, 166, 0.08)', color: 'var(--brand-teal)', border: '1px solid rgba(20, 184, 166, 0.25)', padding: '6px 4px',
+                                borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '600',
+                                textAlign: 'center', transition: 'all 0.2s', whiteSpace: 'nowrap',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                              }}
+                              onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.2)'; e.currentTarget.style.borderColor = 'var(--brand-teal)'; }}
+                              onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.08)'; e.currentTarget.style.borderColor = 'rgba(20, 184, 166, 0.25)'; }}
+                            >
                               {fmtTime(block.start)} – {fmtTime(block.end)}
                             </button>
                           ))}

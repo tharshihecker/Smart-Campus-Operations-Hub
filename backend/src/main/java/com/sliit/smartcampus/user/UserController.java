@@ -1,9 +1,13 @@
 package com.sliit.smartcampus.user;
 
 import com.sliit.smartcampus.security.JwtUtil;
+import com.sliit.smartcampus.notification.EmailService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 
 import java.util.Map;
 import java.util.Objects;
@@ -14,11 +18,13 @@ public class UserController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final EmailService emailService;
 
-    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.emailService = emailService;
     }
 
     @PostMapping("/signup")
@@ -133,6 +139,45 @@ public class UserController {
                     return ResponseEntity.ok((Object) "Password changed successfully");
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/generate-otp/{userId}")
+    public ResponseEntity<?> generateOtp(@PathVariable String userId) {
+        return userRepository.findById(userId)
+            .map(u -> {
+                String otp = String.format("%06d", new SecureRandom().nextInt(999999));
+                u.setOtp(otp);
+                u.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
+                userRepository.save(u);
+                
+                emailService.sendPasswordResetOtp(u, otp);
+                
+                return ResponseEntity.ok((Object) "OTP sent to email");
+            })
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/reset-password-otp/{userId}")
+    public ResponseEntity<?> resetPasswordOtp(@PathVariable String userId, @RequestBody Map<String, String> payload) {
+        String otp = payload.get("otp");
+        String newPassword = payload.get("newPassword");
+        
+        if (otp == null || newPassword == null || newPassword.length() < 6) return ResponseEntity.badRequest().body("Invalid input");
+
+        return userRepository.findById(userId)
+            .map(u -> {
+                if (u.getOtp() == null || u.getOtpExpiry() == null) return ResponseEntity.badRequest().body((Object) "No OTP requested");
+                if (LocalDateTime.now().isAfter(u.getOtpExpiry())) return ResponseEntity.badRequest().body((Object) "OTP expired");
+                if (!u.getOtp().equals(otp)) return ResponseEntity.badRequest().body((Object) "Invalid OTP");
+                
+                u.setPassword(passwordEncoder.encode(newPassword));
+                u.setOtp(null);
+                u.setOtpExpiry(null);
+                userRepository.save(u);
+                
+                return ResponseEntity.ok((Object) "Password changed successfully");
+            })
+            .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/notification-prefs/{userId}")

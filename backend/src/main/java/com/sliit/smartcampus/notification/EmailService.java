@@ -144,6 +144,31 @@ public class EmailService {
         }
     }
 
+    public void sendPasswordResetOtp(User user, String otp) {
+        if (user == null || user.getEmail() == null || user.getEmail().isBlank()) {
+            log.warn("User or email missing for OTP");
+            return;
+        }
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
+            helper.setFrom(fromEmail);
+            helper.setTo(user.getEmail());
+            helper.setSubject("Password Reset OTP - Smart Campus");
+            String html = "<div style='font-family:Arial,sans-serif;padding:20px;max-width:500px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px;'>" +
+                "<h2 style='color:#0f766e;'>Password Reset OTP</h2>" +
+                "<p>We received a request to change your password. Use the following OTP to proceed:</p>" +
+                "<div style='font-size:24px;font-weight:bold;letter-spacing:4px;padding:16px;background:#f3f4f6;text-align:center;border-radius:8px;margin:20px 0;'>" + otp + "</div>" +
+                "<p>This OTP will expire in 10 minutes. If you did not request this, please ignore this email.</p>" +
+                "</div>";
+            helper.setText(html, true);
+            mailSender.send(msg);
+            log.info("Sent password reset OTP to {}", user.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to send OTP email", e);
+        }
+    }
+
     private String row(String label, String value) {
         return "<tr>" +
                "<td style='padding:8px 0;color:#6b7280;font-size:0.9rem;width:120px'><strong>" + label + "</strong></td>" +
