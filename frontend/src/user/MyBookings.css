@@ -212,6 +212,17 @@
     border: 1px solid rgba(14, 165, 233, 0.15);
 }
 
+.booking-note {
+    margin: 8px 0;
+    font-size: 0.85rem;
+    color: var(--brand-teal);
+    background: rgba(14, 165, 233, 0.05);
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(14, 165, 233, 0.1);
+    font-weight: 600;
+}
+
 .booking-actions-row {
     display: flex;
     gap: 12px;
@@ -235,6 +246,18 @@
 .btn-profile.warning:hover {
     background: var(--brand-warning);
     color: #fff;
+}
+
+.btn-profile.secondary {
+    background: rgba(107, 114, 128, 0.1);
+    color: var(--text-secondary);
+    border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+.btn-profile.secondary:hover {
+    background: rgb(107, 114, 128);
+    color: #fff;
+    border-color: rgb(107, 114, 128);
 }
 
 .booking-timestamp {

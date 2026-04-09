@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { fetchUserBookings, cancelBooking, createBooking, updateBooking, fetchFacilities, fetchBookingQR, checkinBooking } from '../api';
+import { fetchUserBookings, cancelBooking, createBooking, updateBooking, fetchFacilities, fetchBookingQR, resendBookingEmail, checkinBooking, fetchFacilityBookingsByDate, acceptCounterProposal, rejectCounterProposal } from '../api';
 import './Profile.css';
 import './MyBookings.css';
 
@@ -8,11 +8,53 @@ function statusBadge(status) {
   return <span className={cls}>{status}</span>;
 }
 
+/** Compute inverse free blocks and split into 1-hour increments */
+function getFreeBlocks(openFrom, openTo, bookings, chunkMins = 60) {
+  const toMins = (t) => { const [h, m] = t.split(':'); return parseInt(h) * 60 + parseInt(m); };
+  const toStr = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+
+  let start = toMins(openFrom);
+  let end = toMins(openTo);
+  let sorted = [...bookings].map(b => [toMins(b.startTime.slice(0, 5)), toMins(b.endTime.slice(0, 5))]).sort((a, b) => a[0] - b[0]);
+
+  // Compute raw free gaps
+  let gaps = [];
+  let cur = start;
+  for (let b of sorted) {
+    if (b[0] > cur) gaps.push([cur, b[0]]);
+    cur = Math.max(cur, b[1]);
+  }
+  if (cur < end) gaps.push([cur, end]);
+
+  // Split each gap into fixed-size chunks
+  let blocks = [];
+  for (let [gStart, gEnd] of gaps) {
+    let s = gStart;
+    while (s + chunkMins <= gEnd) {
+      blocks.push({ start: toStr(s), end: toStr(s + chunkMins) });
+      s += chunkMins;
+    }
+    if (s < gEnd && (gEnd - s) >= 30) {
+      blocks.push({ start: toStr(s), end: toStr(gEnd) });
+    }
+  }
+
+  return blocks;
+}
+
+function fmtTime(t = "") {
+  if (!t) return "";
+  const [h, m] = t.split(":");
+  return `${h % 12 || 12}:${m} ${h >= 12 ? "PM" : "AM"}`;
+}
+
 /* ── QR Modal ─────────────────────────────────────────── */
-function QRModal({ booking, onClose }) {
+function QRModal({ booking, onClose, onResendEmail }) {
   const [qrData, setQrData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [checkinMsg, setCheckinMsg] = useState('');
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMsg, setResendMsg] = useState({ type: '', text: '' });
   const userId = localStorage.getItem('smartcampus_user_id');
   const today = new Date().toISOString().split('T')[0];
   const isToday = booking.bookingDate === today;
@@ -29,6 +71,19 @@ function QRModal({ booking, onClose }) {
       setCheckinMsg(res.message || '✅ Checked in!');
     } catch (err) {
       setCheckinMsg(err.message || 'Check-in failed');
+    }
+  };
+
+  const handleResend = async () => {
+    setResendLoading(true);
+    setResendMsg({ type: '', text: '' });
+    try {
+      await onResendEmail(booking.id);
+      setResendMsg({ type: 'success', text: '✅ Email sent successfully.' });
+    } catch (err) {
+      setResendMsg({ type: 'error', text: err.message || 'Failed to send email.' });
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -50,10 +105,18 @@ function QRModal({ booking, onClose }) {
         )}
 
         <div className="modal-actions">
+          {(booking.status === 'APPROVED' || booking.status === 'CHECKED_IN') && (
+            <button type="button" onClick={handleResend} className="btn-secondary" disabled={resendLoading}>
+              {resendLoading ? 'Sending…' : '✉️ Send Email'}
+            </button>
+          )}
           {isToday && booking.status === 'APPROVED' && !checkinMsg && (
             <button type="button" onClick={handleCheckin} className="btn-primary">
               ✅ Check In Now
             </button>
+          )}
+          {resendMsg.text && (
+            <p className={resendMsg.type === 'error' ? 'error-text' : 'success-text'}>{resendMsg.text}</p>
           )}
           {checkinMsg && (
             <p className="success-text">{checkinMsg}</p>
@@ -81,6 +144,18 @@ function MyBookings() {
   const [bookingForm, setBookingForm] = useState({
     facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1,
   });
+
+  const [dayBookings, setDayBookings] = useState([]);
+  const [loadingDay, setLoadingDay] = useState(false);
+
+  useEffect(() => {
+    if (!bookingForm.bookingDate || !bookingForm.facilityId) return;
+    setLoadingDay(true);
+    fetchFacilityBookingsByDate(bookingForm.facilityId, bookingForm.bookingDate)
+      .then(b => setDayBookings(b.filter(bk => bk.id !== bookingForm.id))) // exclude self
+      .catch(() => setDayBookings([]))
+      .finally(() => setLoadingDay(false));
+  }, [bookingForm.bookingDate, bookingForm.facilityId, bookingForm.id]);
 
   const loadBookings = useCallback(() => {
     if (!userId) { setError('Session expired. Please log in again.'); setLoading(false); return; }
@@ -122,6 +197,29 @@ function MyBookings() {
     }
   };
 
+  const handleAcceptCounter = async (bookingId) => {
+    setActionMsg({ type: '', text: '' });
+    try {
+      await acceptCounterProposal(bookingId, userId);
+      setActionMsg({ type: 'success', text: '✅ Counter-proposal accepted. Booking confirmed.' });
+      loadBookings();
+    } catch (err) {
+      setActionMsg({ type: 'error', text: err.message || 'Failed to accept counter-proposal' });
+    }
+  };
+
+  const handleRejectCounter = async (bookingId) => {
+    if (!window.confirm('Reject this proposal? The booking will be rejected permanently.')) return;
+    setActionMsg({ type: '', text: '' });
+    try {
+      await rejectCounterProposal(bookingId, userId);
+      setActionMsg({ type: 'success', text: 'Booking rejected successfully.' });
+      loadBookings();
+    } catch (err) {
+      setActionMsg({ type: 'error', text: err.message || 'Failed to reject counter-proposal' });
+    }
+  };
+
   const handleFormChange = e => {
     const { name, value } = e.target;
     setBookingForm(prev => ({ ...prev, [name]: name === 'attendeeCount' ? Number(value) : value }));
@@ -145,9 +243,9 @@ function MyBookings() {
       setShowForm(false);
       setBookingForm({ facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });
       loadBookings();
-        } catch (err) {
+    } catch (err) {
       setActionMsg({ type: 'error', text: err.message || 'Failed to process booking' });
-        } finally { setFormLoading(false); }
+    } finally { setFormLoading(false); }
   };
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -173,41 +271,72 @@ function MyBookings() {
             </button>
           )}
         </h3>
-        {showForm && (
-          <form onSubmit={handleCreateBooking} className="profile-form">
-            <div className="profile-form-row">
-              <label>Facility *
-                <select name="facilityId" value={bookingForm.facilityId} onChange={handleFormChange} required>
-                  <option value="">Select a facility</option>
-                  {facilities.map(f => <option key={f.id} value={f.id}>{f.name} — {f.location} (Cap: {f.capacity})</option>)}
-                </select>
+        {showForm && (() => {
+          const selectedFacility = facilities.find(f => f.id === bookingForm.facilityId);
+          return (
+            <form onSubmit={handleCreateBooking} className="profile-form">
+              {selectedFacility && bookingForm.bookingDate && (
+                <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--border)' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-main)' }}>✨ Available Time Slots for {bookingForm.bookingDate}</h4>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Click a free slot below to automatically select it.</p>
+                  {loadingDay ? <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Calculating free slots...</p> :
+                    (() => {
+                      const freeBlocks = getFreeBlocks(selectedFacility.availableFrom.slice(0, 5), selectedFacility.availableTo.slice(0, 5), dayBookings);
+                      if (freeBlocks.length === 0) return <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--brand-danger)' }}>🚫 Fully booked for the entire day.</p>;
+                      return (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {freeBlocks.map((block, idx) => (
+                            <button
+                              key={idx} type="button"
+                              onClick={() => setBookingForm(prev => ({ ...prev, startTime: block.start, endTime: block.end }))}
+                              style={{
+                                background: '#16a34a', color: '#ffffff', border: 'none', padding: '6px 12px',
+                                borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold',
+                                boxShadow: '0 2px 6px rgba(22,163,74,0.35)'
+                              }}>
+                              {fmtTime(block.start)} – {fmtTime(block.end)}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()
+                  }
+                </div>
+              )}
+              <div className="profile-form-row">
+                <label>Facility *
+                  <select name="facilityId" value={bookingForm.facilityId} onChange={handleFormChange} required>
+                    <option value="">Select a facility</option>
+                    {facilities.map(f => <option key={f.id} value={f.id}>{f.name} — {f.location} (Cap: {f.capacity})</option>)}
+                  </select>
+                </label>
+                <label>Date *
+                  <input type="date" name="bookingDate" min={todayStr} value={bookingForm.bookingDate} onChange={handleFormChange} required />
+                </label>
+              </div>
+              <div className="profile-form-row">
+                <label>Start Time *<input type="time" name="startTime" value={bookingForm.startTime} onChange={handleFormChange} required /></label>
+                <label>End Time *<input type="time" name="endTime" value={bookingForm.endTime} onChange={handleFormChange} required /></label>
+              </div>
+              <div className="profile-form-row">
+                <label>Purpose *<input name="purpose" value={bookingForm.purpose} onChange={handleFormChange} placeholder="e.g. Guest Lecture" required /></label>
+                <label>Attendee Count<input type="number" name="attendeeCount" min="1" value={bookingForm.attendeeCount} onChange={handleFormChange} /></label>
+              </div>
+              <label>Notes
+                <textarea name="notes" value={bookingForm.notes} onChange={handleFormChange} placeholder="Additional notes for admin…" rows={2} />
               </label>
-              <label>Date *
-                <input type="date" name="bookingDate" min={todayStr} value={bookingForm.bookingDate} onChange={handleFormChange} required />
-              </label>
-            </div>
-            <div className="profile-form-row">
-              <label>Start Time *<input type="time" name="startTime" value={bookingForm.startTime} onChange={handleFormChange} required /></label>
-              <label>End Time *<input type="time" name="endTime" value={bookingForm.endTime} onChange={handleFormChange} required /></label>
-            </div>
-            <div className="profile-form-row">
-              <label>Purpose *<input name="purpose" value={bookingForm.purpose} onChange={handleFormChange} placeholder="e.g. Guest Lecture" required /></label>
-              <label>Attendee Count<input type="number" name="attendeeCount" min="1" value={bookingForm.attendeeCount} onChange={handleFormChange} /></label>
-            </div>
-            <label>Notes
-              <textarea name="notes" value={bookingForm.notes} onChange={handleFormChange} placeholder="Additional notes for admin…" rows={2} />
-            </label>
-            <div className="profile-form-actions">
-              <button type="submit" className="btn-profile primary" disabled={formLoading}>
-                {formLoading ? 'Submitting…' : (bookingForm.id ? 'Update Booking' : 'Submit Booking')}
-              </button>
-              <button type="button" className="btn-profile secondary" onClick={() => {
-                setShowForm(false);
-                setBookingForm({ facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });
-              }}>Cancel</button>
-            </div>
-          </form>
-        )}
+              <div className="profile-form-actions">
+                <button type="submit" className="btn-profile primary" disabled={formLoading}>
+                  {formLoading ? 'Submitting…' : (bookingForm.id ? 'Update Booking' : 'Submit Booking')}
+                </button>
+                <button type="button" className="btn-profile secondary" onClick={() => {
+                  setShowForm(false);
+                  setBookingForm({ facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });
+                }}>Cancel</button>
+              </div>
+            </form>
+          );
+        })}
       </div>
 
       <div className="profile-card">
@@ -251,6 +380,9 @@ function MyBookings() {
                     <strong>Admin Remarks:</strong> {b.adminRemarks}
                   </p>
                 )}
+                {b.status === 'APPROVED' && (
+                  <p className="booking-note">📩 QR code also emailed to your registered email address.</p>
+                )}
                 <div className="booking-actions-row">
                   {b.status === 'PENDING' && (
                     <>
@@ -276,10 +408,27 @@ function MyBookings() {
                       </button>
                     </>
                   )}
+                  {b.status === 'COUNTER_PROPOSED' && (
+                    <div style={{ background: '#fdf6e3', padding: '12px', borderRadius: '8px', border: '1px solid #fcebb6', width: '100%', marginBottom: '10px' }}>
+                      <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#b45309', fontWeight: 'bold' }}>⚠️ Admin Counter-Proposal</p>
+                      <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem' }}>The admin suggested a new time for your booking:</p>
+                      <ul style={{ margin: '0 0 10px 0', paddingLeft: '20px', fontSize: '0.85rem' }}>
+                        <li><strong>Date:</strong> {b.counterProposedDate}</li>
+                        <li><strong>Time:</strong> {b.counterProposedStartTime} – {b.counterProposedEndTime}</li>
+                        {b.counterProposalNote && <li><strong>Note:</strong> {b.counterProposalNote}</li>}
+                      </ul>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button type="button" className="btn-profile primary" onClick={() => handleAcceptCounter(b.id)}>Accept Alternate Time</button>
+                        <button type="button" className="btn-profile danger" onClick={() => handleRejectCounter(b.id)}>Reject (Cancel Booking)</button>
+                      </div>
+                    </div>
+                  )}
                   {(b.status === 'APPROVED' || b.status === 'CHECKED_IN') && (
-                    <button type="button" className="btn-profile primary" onClick={() => setQrBooking(b)}>
-                      📱 Show QR Code
-                    </button>
+                    <>
+                      <button type="button" className="btn-profile primary" onClick={() => setQrBooking(b)}>
+                        📱 Show QR Code
+                      </button>
+                    </>
                   )}
                 </div>
                 <div className="booking-timestamp">
@@ -291,7 +440,13 @@ function MyBookings() {
         )}
       </div>
 
-      {qrBooking && <QRModal booking={qrBooking} onClose={() => setQrBooking(null)} />}
+      {qrBooking && (
+        <QRModal
+          booking={qrBooking}
+          onClose={() => setQrBooking(null)}
+          onResendEmail={resendBookingEmail}
+        />
+      )}
     </section>
   );
 }

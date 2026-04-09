@@ -1,5 +1,6 @@
 package com.sliit.smartcampus.booking;
 
+import com.sliit.smartcampus.email.EmailService;
 import com.sliit.smartcampus.facility.Facility;
 import com.sliit.smartcampus.facility.FacilityRepository;
 import com.sliit.smartcampus.facility.ResourceStatus;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
@@ -26,15 +28,22 @@ public class BookingService {
     private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
+    private com.sliit.smartcampus.booking.waitlist.WaitlistService waitlistService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setWaitlistService(com.sliit.smartcampus.booking.waitlist.WaitlistService ws) { this.waitlistService = ws; }
 
     public BookingService(BookingRepository bookingRepository,
                           FacilityRepository facilityRepository,
                           UserRepository userRepository,
-                          NotificationService notificationService) {
+                          NotificationService notificationService,
+                          EmailService emailService) {
         this.bookingRepository = bookingRepository;
         this.facilityRepository = facilityRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.emailService = emailService;
     }
 
     public BookingResponse createBooking(BookingRequest request) {
@@ -117,7 +126,56 @@ public class BookingService {
         booking.setAttendeeCount(request.getAttendeeCount());
         booking.setStatus(BookingStatus.PENDING);
 
-        return BookingResponse.from(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        if (user.isNotifBookingUpdates()) {
+            emailService.sendBookingEmail(user, saved,
+                    "Booking Request Received",
+                    buildBookingRequestEmail(saved),
+                    false);
+        }
+        return BookingResponse.from(saved);
+    }
+
+    private String buildBookingRequestEmail(Booking booking) {
+        return "<p>Hello " + booking.getUser().getFullName() + ",</p>"
+                + "<p>Your booking request for <strong>" + booking.getFacility().getName() + "</strong> has been submitted and is awaiting admin approval.</p>"
+                + "<p><strong>Date:</strong> " + booking.getBookingDate() + "<br/>"
+                + "<strong>Time:</strong> " + booking.getStartTime() + " - " + booking.getEndTime() + "<br/>"
+                + "<strong>Attendees:</strong> " + (booking.getAttendeeCount() == null ? 1 : booking.getAttendeeCount()) + "</p>"
+                + "<p>We will notify you by email when the booking is approved or rejected.</p>"
+                + "<p>Thank you,<br/>Smart Campus Team</p>";
+    }
+
+    private String buildBookingApprovalEmail(Booking booking, String adminRemarks) {
+        return "<p>Hello " + booking.getUser().getFullName() + ",</p>"
+                + "<p>Great news! Your booking for <strong>" + booking.getFacility().getName() + "</strong> has been approved.</p>"
+                + "<p><strong>Date:</strong> " + booking.getBookingDate() + "<br/>"
+                + "<strong>Time:</strong> " + booking.getStartTime() + " - " + booking.getEndTime() + "</p>"
+                + (adminRemarks != null && !adminRemarks.isBlank() ? "<p><strong>Admin remarks:</strong> " + adminRemarks + "</p>" : "")
+                + "<p>Please use the attached QR code at the facility entrance for check-in.</p>"
+                + "<p><img src=\"cid:bookingQr\" alt=\"Booking QR Code\" style=\"max-width:320px;border:1px solid #ddd;padding:8px;\"/></p>"
+                + "<p>See your booking details in the Smart Campus portal.</p>"
+                + "<p>Thank you,<br/>Smart Campus Team</p>";
+    }
+
+    private String buildBookingRejectionEmail(Booking booking, String adminRemarks) {
+        return "<p>Hello " + booking.getUser().getFullName() + ",</p>"
+                + "<p>We're sorry, but your booking for <strong>" + booking.getFacility().getName() + "</strong> has been rejected.</p>"
+                + "<p><strong>Date:</strong> " + booking.getBookingDate() + "<br/>"
+                + "<strong>Time:</strong> " + booking.getStartTime() + " - " + booking.getEndTime() + "</p>"
+                + (adminRemarks != null && !adminRemarks.isBlank() ? "<p><strong>Reason:</strong> " + adminRemarks + "</p>" : "")
+                + "<p>Please contact support if you need help with a new booking.</p>"
+                + "<p>Thank you,<br/>Smart Campus Team</p>";
+    }
+
+    private String buildBookingReminderEmail(Booking booking) {
+        return "<p>Hello " + booking.getUser().getFullName() + ",</p>"
+                + "<p>This is a reminder that your booking for <strong>" + booking.getFacility().getName() + "</strong> starts in about 24 hours.</p>"
+                + "<p><strong>Date:</strong> " + booking.getBookingDate() + "<br/>"
+                + "<strong>Time:</strong> " + booking.getStartTime() + " - " + booking.getEndTime() + "</p>"
+                + "<p>Please bring and use this QR code at the facility entrance for check-in.</p>"
+                + "<p><img src=\"cid:bookingQr\" alt=\"Booking QR Code\" style=\"max-width:320px;border:1px solid #ddd;padding:8px;\"/></p>"
+                + "<p>Thank you,<br/>Smart Campus Team</p>";
     }
 
     /**
@@ -197,7 +255,9 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
-        return BookingResponse.from(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+        if (waitlistService != null) waitlistService.processWaitlistForCancelledBooking(saved);
+        return BookingResponse.from(saved);
     }
 
     public BookingResponse updateBooking(String bookingId, BookingRequest request) {
@@ -282,12 +342,13 @@ public class BookingService {
 
         if (newStatus == BookingStatus.APPROVED) {
             title = "Booking Approved ✓";
-            message = "Your booking for '" + facilityName + "' on " + booking.getBookingDate() + " has been approved.";
+            message = "Your booking for '" + facilityName + "' on " + booking.getBookingDate() + " has been approved"
+                    + (adminRemarks != null && !adminRemarks.isBlank() ? ": " + adminRemarks : ".");
             type = NotificationType.BOOKING_APPROVED;
         } else if (newStatus == BookingStatus.REJECTED) {
             title = "Booking Rejected";
             message = "Your booking for '" + facilityName + "' has been rejected" +
-                      (adminRemarks != null ? ": " + adminRemarks : ".");
+                      (adminRemarks != null && !adminRemarks.isBlank() ? ": " + adminRemarks : ".");
             type = NotificationType.BOOKING_REJECTED;
         } else {
             title = "Booking Updated";
@@ -297,7 +358,46 @@ public class BookingService {
 
         notificationService.createNotification(booking.getUser(), title, message, type, bookingId, "BOOKING");
 
+        if (booking.getUser().isNotifBookingUpdates()) {
+            if (newStatus == BookingStatus.APPROVED) {
+                emailService.sendBookingEmail(booking.getUser(), booking,
+                        title,
+                        buildBookingApprovalEmail(booking, adminRemarks),
+                        true);
+            } else if (newStatus == BookingStatus.REJECTED) {
+                emailService.sendBookingEmail(booking.getUser(), booking,
+                        title,
+                        buildBookingRejectionEmail(booking, adminRemarks),
+                        false);
+            }
+        }
+
         return BookingResponse.from(saved);
+    }
+
+    public Map<String, Object> resendBookingEmail(String bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+
+        if (booking.getStatus() != BookingStatus.APPROVED && booking.getStatus() != BookingStatus.CHECKED_IN) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "QR email can only be resent for APPROVED or CHECKED_IN bookings. Current status: " + booking.getStatus());
+        }
+
+        boolean sent = emailService.sendBookingEmail(booking.getUser(), booking,
+                "Booking QR Code Resent",
+                buildBookingApprovalEmail(booking, booking.getAdminRemarks()),
+                true);
+
+        if (!sent) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                    "Email resend failed. Please verify SMTP username/app password and try again.");
+        }
+
+        return Map.of(
+                "message", "Booking email resent successfully.",
+                "bookingId", bookingId
+        );
     }
 
     public void deleteBooking(String bookingId) {
@@ -305,5 +405,96 @@ public class BookingService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found");
         }
         bookingRepository.deleteById(bookingId);
+    }
+
+    public int processUpcomingBookingReminders() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime reminderWindowStart = now.plusHours(24);
+        LocalDateTime reminderWindowEnd = reminderWindowStart.plusMinutes(30);
+        LocalDate startDate = now.toLocalDate();
+        LocalDate endDate = reminderWindowEnd.toLocalDate().plusDays(1);
+
+        List<Booking> candidates = bookingRepository.findByStatusAndBookingDateBetweenOrderByBookingDateAscStartTimeAsc(
+                BookingStatus.APPROVED, startDate, endDate);
+
+        int sent = 0;
+        for (Booking booking : candidates) {
+            if (booking.getReminderSentAt() != null) {
+                continue;
+            }
+            LocalDateTime bookingStart = LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
+            if (bookingStart.isBefore(reminderWindowStart) || !bookingStart.isBefore(reminderWindowEnd)) {
+                continue;
+            }
+            if (!booking.getUser().isNotifBookingUpdates()) {
+                continue;
+            }
+            boolean emailSent = emailService.sendBookingEmail(
+                    booking.getUser(),
+                    booking,
+                    "Booking Reminder (24 Hours): " + booking.getFacility().getName(),
+                    buildBookingReminderEmail(booking),
+                    true
+            );
+            if (emailSent) {
+                booking.setReminderSentAt(LocalDateTime.now());
+                bookingRepository.save(booking);
+                sent++;
+            }
+        }
+        return sent;
+    }
+    /** Admin counter-proposes an alternate time slot */
+    public BookingResponse counterPropose(String bookingId, java.time.LocalDate newDate, java.time.LocalTime newStart, java.time.LocalTime newEnd, String note) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only PENDING bookings can be counter-proposed.");
+        }
+        booking.setStatus(BookingStatus.COUNTER_PROPOSED);
+        booking.setCounterProposedDate(newDate);
+        booking.setCounterProposedStartTime(newStart);
+        booking.setCounterProposedEndTime(newEnd);
+        booking.setCounterProposalNote(note);
+        Booking saved = bookingRepository.save(booking);
+
+        notificationService.createNotification(booking.getUser(),
+                "Admin Counter-Proposal ⏰", 
+                "Admin has suggested an alternative time for your booking at " + booking.getFacility().getName() 
+                + ": " + newDate + " " + newStart + " – " + newEnd + ". Please accept or reject.",
+                NotificationType.SYSTEM, saved.getId(), "BOOKING");
+        return BookingResponse.from(saved);
+    }
+
+    /** User accepts a counter-proposal → updates booking to new slot, resets to PENDING */
+    public BookingResponse acceptCounterProposal(String bookingId, String userId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+        if (!booking.getUser().getId().equals(userId))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your booking");
+        if (booking.getStatus() != BookingStatus.COUNTER_PROPOSED)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking is not in COUNTER_PROPOSED state.");
+        booking.setBookingDate(booking.getCounterProposedDate());
+        booking.setStartTime(booking.getCounterProposedStartTime());
+        booking.setEndTime(booking.getCounterProposedEndTime());
+        booking.setCounterProposedDate(null);
+        booking.setCounterProposedStartTime(null);
+        booking.setCounterProposedEndTime(null);
+        booking.setCounterProposalNote(null);
+        booking.setStatus(BookingStatus.PENDING);
+        return BookingResponse.from(bookingRepository.save(booking));
+    }
+
+    /** User rejects a counter-proposal → booking is REJECTED */
+    public BookingResponse rejectCounterProposal(String bookingId, String userId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+        if (!booking.getUser().getId().equals(userId))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your booking");
+        if (booking.getStatus() != BookingStatus.COUNTER_PROPOSED)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking is not in COUNTER_PROPOSED state.");
+        booking.setStatus(BookingStatus.REJECTED);
+        booking.setAdminRemarks("User rejected the counter-proposal.");
+        return BookingResponse.from(bookingRepository.save(booking));
     }
 }
