@@ -15,8 +15,8 @@ backend/target/
 Thumbs.db
 
 # Environment
-.env
 
 # Frontend build
 frontend/build/
 
+config.bat

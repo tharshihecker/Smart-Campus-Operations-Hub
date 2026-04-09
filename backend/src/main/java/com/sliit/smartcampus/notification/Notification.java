@@ -29,6 +29,9 @@ public class Notification {
     private String referenceId;
 
     private String referenceType; // "BOOKING" or "TICKET"
+    
+    // QR token for bookings (early extracted so frontend doesn't need regex)
+    private String qrToken;
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -48,5 +51,7 @@ public class Notification {
     public void setReferenceId(String referenceId) { this.referenceId = referenceId; }
     public String getReferenceType() { return referenceType; }
     public void setReferenceType(String referenceType) { this.referenceType = referenceType; }
+    public String getQrToken() { return qrToken; }
+    public void setQrToken(String qrToken) { this.qrToken = qrToken; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

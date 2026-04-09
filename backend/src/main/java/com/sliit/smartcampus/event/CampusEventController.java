@@ -28,9 +28,11 @@ public class CampusEventController {
         CampusEvent ev = eventRepository.findById(eventId).orElse(null);
         if (ev == null) return java.util.Map.of("error", "Event not found");
         int capacity = ev.getCapacity() == null ? -1 : ev.getCapacity();
+        // Count both CONFIRMED and CHECKED_IN as they occupy seats
         java.util.List<EventBooking> confirmed = bookingRepository.findByEventIdAndStatusOrderByCreatedAtAsc(eventId, EventBooking.BookingStatus.CONFIRMED);
+        java.util.List<EventBooking> checkedIn = bookingRepository.findByEventIdAndStatusOrderByCreatedAtAsc(eventId, EventBooking.BookingStatus.CHECKED_IN);
         java.util.List<EventBooking> waitlist = bookingRepository.findByEventIdAndStatusOrderByCreatedAtAsc(eventId, EventBooking.BookingStatus.WAITLISTED);
-        int confirmedCount = confirmed.size();
+        int confirmedCount = confirmed.size() + checkedIn.size();
         int waitlistCount = waitlist.size();
         int remaining = capacity < 0 ? -1 : Math.max(0, capacity - confirmedCount);
         return java.util.Map.of(
