@@ -155,6 +155,8 @@ function UserApp() {
       setIsAuthenticated(true);
 
       if (data?.role === 'ADMIN') {
+        // ✅ Also set admin auth so AdminApp recognises the session (no second login needed)
+        localStorage.setItem('smartcampus_admin_auth', 'true');
         navigate('/admin/home', { replace: true });
       } else if (data?.role === 'TECHNICIAN') {
         navigate('/technician-dashboard', { replace: true });
