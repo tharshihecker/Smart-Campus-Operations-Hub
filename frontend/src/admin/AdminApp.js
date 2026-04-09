@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import FacilitiesAdmin from './FacilitiesAdmin';
 import AdminHome from './AdminHome';
-import AdminLogin from './AdminLogin';
+// AdminLogin removed — /admin/login now redirects to unified /login page
 import ManageUsers from './ManageUsers';
 import ManageEvents from './ManageEvents';
 import ManageBookings from './ManageBookings';
@@ -17,7 +17,7 @@ const ADMIN_AUTH_KEY = 'smartcampus_admin_auth';
 
 function ProtectedAdminRoute({ isAuthenticated, children }) {
   const userRole = localStorage.getItem('smartcampus_user_role');
-  if (!isAuthenticated || userRole !== 'ADMIN') return <Navigate to="/admin/login" replace />;
+  if (!isAuthenticated || userRole !== 'ADMIN') return <Navigate to="/login" replace />;
   return children;
 }
 
@@ -135,8 +135,9 @@ function AdminApp() {
       <AdminTopNav isAuthenticated={isAuthenticated} onLogout={authApi.logout} />
       <main className="page-body">
         <Routes>
-          <Route path="/" element={<Navigate to={isAuthenticated ? '/admin/home' : '/admin/login'} replace />} />
-          <Route path="/login" element={<AdminLogin onLoginSuccess={authApi.login} />} />
+          <Route path="/" element={<Navigate to={isAuthenticated ? '/admin/home' : '/login'} replace />} />
+          {/* Redirect /admin/login → unified /login — no second login needed */}
+          <Route path="/login" element={<Navigate to="/login" replace />} />
           <Route path="/home" element={protectedRoute(AdminHome)} />
           <Route path="/facilities" element={protectedRoute(FacilitiesAdmin)} />
           <Route path="/users" element={protectedRoute(ManageUsers)} />
