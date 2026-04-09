@@ -224,7 +224,7 @@ function ActivityFeed({ tickets }) {
     }))
     .filter(e => e.date && !isNaN(e.date))
     .sort((a, b) => b.date - a.date)
-    .slice(0, 6);
+    .slice(0, 3);
 
   const iconMap = { OPEN: '🔓', IN_PROGRESS: '⚙️', RESOLVED: '✅', CLOSED: '🔒', REJECTED: '❌' };
   const colorMap = { OPEN: '#2563eb', IN_PROGRESS: '#d97706', RESOLVED: '#059669', CLOSED: '#4b5563', REJECTED: '#dc2626' };
