@@ -95,7 +95,7 @@ public class WaitlistService {
     /** Get user's waitlist entries */
     @Transactional(readOnly = true)
     public List<WaitlistResponse> getUserWaitlist(String userId) {
-        return waitlistRepository.findByUserIdOrderByCreatedAtDesc(userId)
+        return waitlistRepository.findActiveUserWaitlist(userId)
                 .stream().map(WaitlistResponse::from).toList();
     }
 
@@ -140,6 +140,26 @@ public class WaitlistService {
         emailService.sendBookingEmail(next.getUser(), saved,
                 "Waitlist Slot Available – Booking Created",
                 buildWaitlistNotifyEmail(next, saved), false);
+    }
+
+    /**
+     * Called when a booking is updated to a smaller attendeeCount or a different slot.
+     * Notifies ALL waiting entries for the same slot that space has opened up.
+     */
+    public void notifyWaitlistForCapacityIncrease(String facilityId, LocalDate date, LocalTime start, LocalTime end) {
+        List<Waitlist> waiting = waitlistRepository.findWaitingByFacilityAndSlot(facilityId, date, start, end);
+        if (waiting.isEmpty()) return;
+
+        Facility facility = facilityRepository.findById(facilityId).orElse(null);
+        if (facility == null) return;
+
+        for (Waitlist w : waiting) {
+            notificationService.createNotification(w.getUser(),
+                    "Space Available! 🟢",
+                    "Good news! Space has opened up for " + facility.getName() + " on " + date
+                    + " (" + start + " – " + end + "). Click here to book now!",
+                    NotificationType.SYSTEM, facilityId, "WAITLIST_OPEN");
+        }
     }
 
     private String buildWaitlistNotifyEmail(Waitlist w, Booking b) {

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { fetchUserBookings, cancelBooking, createBooking, updateBooking, fetchFacilities, fetchBookingQR, resendBookingEmail, checkinBooking, fetchFacilityBookingsByDate, acceptCounterProposal, rejectCounterProposal } from '../api';
+import { fetchUserBookings, cancelBooking, createBooking, updateBooking, fetchFacilities, fetchBookingQR, resendBookingEmail, checkinBooking, fetchFacilityBookingsByDate, acceptCounterProposal, rejectCounterProposal, fetchUserWaitlist, cancelWaitlist, joinWaitlist } from '../api';
 import './Profile.css';
 import './MyBookings.css';
 
@@ -130,8 +130,175 @@ function QRModal({ booking, onClose, onResendEmail }) {
   );
 }
 
+/* ── Booking Skeleton ────────────────────────────────── */
+function BookingSkeleton() {
+  return (
+    <div className="skeleton-card">
+      <div className="skeleton-header">
+        <div className="skeleton-title"></div>
+        <div className="skeleton-badge"></div>
+      </div>
+      <div className="skeleton-meta">
+        <div className="skeleton-meta-item"></div>
+        <div className="skeleton-meta-item"></div>
+      </div>
+      <div className="skeleton-text"></div>
+      <div className="skeleton-text" style={{ width: '80%' }}></div>
+    </div>
+  );
+}
+
+/* ── Success Summary Modal ────────────────────────────── */
+function SuccessSummaryModal({ booking, onClose }) {
+  if (!booking) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content summary-card">
+        <div className="summary-header">
+          <span className="summary-icon">✅</span>
+          <h3>Booking Successful!</h3>
+          <p>Your request has been submitted for approval.</p>
+        </div>
+
+        <div className="summary-details">
+          <div className="summary-row">
+            <span className="summary-label">Facility</span>
+            <span className="summary-value">{booking.facilityName}</span>
+          </div>
+          <div className="summary-row">
+            <span className="summary-label">Date</span>
+            <span className="summary-value">{booking.bookingDate}</span>
+          </div>
+          <div className="summary-row">
+            <span className="summary-label">Time</span>
+            <span className="summary-value">{booking.startTime} – {booking.endTime}</span>
+          </div>
+          <div className="summary-row">
+            <span className="summary-label">Purpose</span>
+            <span className="summary-value">{booking.purpose}</span>
+          </div>
+          <div className="summary-row">
+            <span className="summary-label">Attendees</span>
+            <span className="summary-value">{booking.attendeeCount}</span>
+          </div>
+        </div>
+
+        <p className="summary-footer-note">
+          📩 A confirmation email has been sent to you.
+        </p>
+
+        <div className="modal-actions">
+          <button type="button" onClick={onClose} className="btn-primary">
+            Got it, Thanks!
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Edit Booking Modal ──────────────────────────────── */
+function EditBookingModal({ bookingForm, setBookingForm, facilities, dayBookings, loadingDay, onSave, onCancel, formLoading, actionMsg }) {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const selectedFacility = facilities.find(f => f.id === bookingForm.facilityId);
+
+  const handleFormChange = e => {
+    const { name, value } = e.target;
+    setBookingForm(prev => ({ ...prev, [name]: name === 'attendeeCount' ? Number(value) : value }));
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content" style={{ maxWidth: '600px', width: '90%' }}>
+        <h3>✏️ Edit Booking</h3>
+        {actionMsg.text && <div className={`profile-alert ${actionMsg.type}`}>{actionMsg.text}</div>}
+        
+        <form onSubmit={onSave} className="profile-form">
+          {selectedFacility && bookingForm.bookingDate && (
+            <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--border)' }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-main)' }}>✨ Available Time Slots for {bookingForm.bookingDate}</h4>
+              <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Click a free slot below to automatically select it.</p>
+              {loadingDay ? <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Calculating free slots...</p> :
+                (() => {
+                  const freeBlocks = getFreeBlocks(selectedFacility.availableFrom.slice(0, 5), selectedFacility.availableTo.slice(0, 5), dayBookings);
+                  if (freeBlocks.length > 0) return (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {freeBlocks.map((block, idx) => (
+                        <button
+                          key={idx} type="button"
+                          onClick={() => setBookingForm(prev => ({ ...prev, startTime: block.start, endTime: block.end }))}
+                          style={{
+                            background: '#16a34a', color: '#ffffff', border: 'none', padding: '6px 12px',
+                            borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold',
+                            boxShadow: '0 2px 6px rgba(22,163,74,0.35)'
+                          }}>
+                          {fmtTime(block.start)} – {fmtTime(block.end)}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                  return null;
+                })()
+              }
+            </div>
+          )}
+          <div className="profile-form-row">
+            <label>Facility *
+              <select name="facilityId" value={bookingForm.facilityId} onChange={handleFormChange} required disabled>
+                {facilities.map(f => <option key={f.id} value={f.id}>{f.name} — {f.location} (Cap: {f.capacity})</option>)}
+              </select>
+            </label>
+            <label>Date *
+              <input type="date" name="bookingDate" min={todayStr} value={bookingForm.bookingDate} onChange={handleFormChange} required />
+            </label>
+          </div>
+          <div className="profile-form-row">
+            <label>Start Time * <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '4px' }}>({selectedFacility ? fmtTime(selectedFacility.availableFrom.slice(0, 5)) : ''})</span>
+              <input type="time" name="startTime" value={bookingForm.startTime} onChange={handleFormChange} min={selectedFacility?.availableFrom} max={selectedFacility?.availableTo} required />
+            </label>
+            <label>End Time * <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '4px' }}>({selectedFacility ? fmtTime(selectedFacility.availableTo.slice(0, 5)) : ''})</span>
+              <input type="time" name="endTime" value={bookingForm.endTime} onChange={handleFormChange} min={bookingForm.startTime || selectedFacility?.availableFrom} required />
+            </label>
+          </div>
+          <div className="profile-form-row">
+            <label>Purpose *<input name="purpose" value={bookingForm.purpose} onChange={handleFormChange} placeholder="e.g. Guest Lecture" required /></label>
+            <label>
+              Attendee Count
+              {(() => {
+                const facility = facilities.find(f => f.id === bookingForm.facilityId);
+                if (!facility || !bookingForm.startTime || !bookingForm.endTime) return null;
+                const usedSeats = dayBookings
+                  .filter(b => (bookingForm.startTime < b.endTime.slice(0, 5) && bookingForm.endTime > b.startTime.slice(0, 5)))
+                  .reduce((sum, b) => sum + (b.attendeeCount || 1), 0);
+                const remaining = Math.max(0, facility.capacity - usedSeats);
+                return <span style={{ fontSize: '0.75rem', color: 'var(--brand-teal)', marginLeft: '4px' }}> ({remaining} available)</span>;
+              })()}
+              <input type="number" name="attendeeCount" min="1" value={bookingForm.attendeeCount} onChange={handleFormChange} />
+            </label>
+          </div>
+          <label>Notes
+            <textarea name="notes" value={bookingForm.notes} onChange={handleFormChange} placeholder="Additional notes for admin…" rows={2} />
+          </label>
+          <div className="modal-actions">
+            <button type="submit" className="btn-primary" disabled={formLoading}>
+              {formLoading ? 'Saving…' : 'Update Booking'}
+            </button>
+            <button type="button" className="btn-secondary" onClick={onCancel}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function MyBookings() {
   const userId = localStorage.getItem('smartcampus_user_id');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const statuses = ['', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED', 'CHECKED_IN'];
+
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -141,12 +308,36 @@ function MyBookings() {
   const [formLoading, setFormLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [qrBooking, setQrBooking] = useState(null);
+  const [successBooking, setSuccessBooking] = useState(null);
   const [bookingForm, setBookingForm] = useState({
     id: null, facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1,
   });
 
   const [dayBookings, setDayBookings] = useState([]);
   const [loadingDay, setLoadingDay] = useState(false);
+  const [waitlist, setWaitlist] = useState([]);
+  const [showWaitlistGuide, setShowWaitlistGuide] = useState(false);
+
+  const loadWaitlist = useCallback(() => {
+    if (!userId) return;
+    fetchUserWaitlist(userId)
+      .then(data => setWaitlist(data))
+      .catch(() => setWaitlist([]));
+  }, [userId]);
+
+  useEffect(() => { loadWaitlist(); }, [loadWaitlist]);
+
+  const handleCancelWaitlist = async (waitlistId) => {
+    if (!window.confirm('Cancel this waitlist entry?')) return;
+    setActionMsg({ type: '', text: '' });
+    try {
+      await cancelWaitlist(waitlistId, userId);
+      setActionMsg({ type: 'success', text: 'Waitlist entry cancelled.' });
+      loadWaitlist();
+    } catch (err) {
+      setActionMsg({ type: 'error', text: err.message || 'Failed to cancel waitlist' });
+    }
+  };
 
   useEffect(() => {
     if (!bookingForm.bookingDate || !bookingForm.facilityId) return;
@@ -238,10 +429,23 @@ function MyBookings() {
         await updateBooking(bookingForm.id, updateData);
         setActionMsg({ type: 'success', text: '✅ Booking updated successfully!' });
       } else {
-        await createBooking({ ...bookingForm, userId: userId });
-        setActionMsg({ type: 'success', text: '✅ Booking submitted! Awaiting admin approval.' });
+        const selectedFacility = facilities.find(f => f.id === bookingForm.facilityId);
+        const freeBlocks = selectedFacility ? getFreeBlocks(selectedFacility.availableFrom.slice(0, 5), selectedFacility.availableTo.slice(0, 5), dayBookings) : [];
+        
+        if (freeBlocks.length === 0 && selectedFacility) {
+          // Join waitlist if fully booked
+          await joinWaitlist({ ...bookingForm, userId: userId });
+          setActionMsg({ type: 'success', text: '⏳ Added to Waitlist! We will notify you if a slot opens up.' });
+          loadWaitlist();
+        } else {
+          const res = await createBooking({ ...bookingForm, userId: userId });
+          const facility = facilities.find(f => f.id === bookingForm.facilityId);
+          setSuccessBooking({ ...bookingForm, facilityName: facility?.name || 'Facility' });
+          setActionMsg({ type: 'success', text: '✅ Booking submitted! Awaiting admin approval.' });
+        }
       }
       setShowForm(false);
+      setShowWaitlistGuide(false);
       setBookingForm({ facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });
       loadBookings();
     } catch (err) {
@@ -249,99 +453,37 @@ function MyBookings() {
     } finally { setFormLoading(false); }
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const statuses = ['', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED', 'CHECKED_IN'];
+  const handleQuickRebook = async (b) => {
+    setActionMsg({ type: '', text: '' });
+    await loadFacilities();
+    setBookingForm({
+      id: null,
+      facilityId: b.facilityId,
+      bookingDate: todayStr,
+      startTime: b.startTime,
+      endTime: b.endTime,
+      purpose: b.purpose,
+      notes: b.notes || '',
+      attendeeCount: b.attendeeCount || 1,
+    });
+    setShowForm(true);
+    setShowWaitlistGuide(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const filtered = statusFilter ? bookings.filter(b => b.status === statusFilter) : bookings;
 
   return (
     <section className="profile-shell">
       <div className="profile-header">
         <h2>My Bookings</h2>
-        <p>Manage your facility reservations and check bookings status.</p>
+        <p>Manage your facility reservations and check booking status.</p>
       </div>
 
       {actionMsg.text && <div className={`profile-alert ${actionMsg.type}`}>{actionMsg.text}</div>}
 
       <div className="profile-card">
-        <h3>
-          <span className="card-icon">{bookingForm.id ? '✏️' : '➕'}</span>
-          {bookingForm.id ? 'Edit Booking' : 'New Booking'}
-          {!showForm && (
-            <button type="button" className="btn-edit-trigger" onClick={() => { loadFacilities(); setShowForm(true); setActionMsg({ type: '', text: '' }); }}>
-              Book a Facility
-            </button>
-          )}
-        </h3>
-        {showForm && (() => {
-          const selectedFacility = facilities.find(f => f.id === bookingForm.facilityId);
-          return (
-            <form onSubmit={handleCreateBooking} className="profile-form">
-              {selectedFacility && bookingForm.bookingDate && (
-                <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--border)' }}>
-                  <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-main)' }}>✨ Available Time Slots for {bookingForm.bookingDate}</h4>
-                  <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Click a free slot below to automatically select it.</p>
-                  {loadingDay ? <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Calculating free slots...</p> :
-                    (() => {
-                      const freeBlocks = getFreeBlocks(selectedFacility.availableFrom.slice(0, 5), selectedFacility.availableTo.slice(0, 5), dayBookings);
-                      if (freeBlocks.length === 0) return <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--brand-danger)' }}>🚫 Fully booked for the entire day.</p>;
-                      return (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                          {freeBlocks.map((block, idx) => (
-                            <button
-                              key={idx} type="button"
-                              onClick={() => setBookingForm(prev => ({ ...prev, startTime: block.start, endTime: block.end }))}
-                              style={{
-                                background: '#16a34a', color: '#ffffff', border: 'none', padding: '6px 12px',
-                                borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold',
-                                boxShadow: '0 2px 6px rgba(22,163,74,0.35)'
-                              }}>
-                              {fmtTime(block.start)} – {fmtTime(block.end)}
-                            </button>
-                          ))}
-                        </div>
-                      );
-                    })()
-                  }
-                </div>
-              )}
-              <div className="profile-form-row">
-                <label>Facility *
-                  <select name="facilityId" value={bookingForm.facilityId} onChange={handleFormChange} required>
-                    <option value="">Select a facility</option>
-                    {facilities.map(f => <option key={f.id} value={f.id}>{f.name} — {f.location} (Cap: {f.capacity})</option>)}
-                  </select>
-                </label>
-                <label>Date *
-                  <input type="date" name="bookingDate" min={todayStr} value={bookingForm.bookingDate} onChange={handleFormChange} required />
-                </label>
-              </div>
-              <div className="profile-form-row">
-                <label>Start Time *<input type="time" name="startTime" value={bookingForm.startTime} onChange={handleFormChange} required /></label>
-                <label>End Time *<input type="time" name="endTime" value={bookingForm.endTime} onChange={handleFormChange} required /></label>
-              </div>
-              <div className="profile-form-row">
-                <label>Purpose *<input name="purpose" value={bookingForm.purpose} onChange={handleFormChange} placeholder="e.g. Guest Lecture" required /></label>
-                <label>Attendee Count<input type="number" name="attendeeCount" min="1" value={bookingForm.attendeeCount} onChange={handleFormChange} /></label>
-              </div>
-              <label>Notes
-                <textarea name="notes" value={bookingForm.notes} onChange={handleFormChange} placeholder="Additional notes for admin…" rows={2} />
-              </label>
-              <div className="profile-form-actions">
-                <button type="submit" className="btn-profile primary" disabled={formLoading}>
-                  {formLoading ? 'Submitting…' : (bookingForm.id ? 'Update Booking' : 'Submit Booking')}
-                </button>
-                <button type="button" className="btn-profile secondary" onClick={() => {
-                  setShowForm(false);
-                  setBookingForm({ id: null, facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });
-                }}>Cancel</button>
-              </div>
-            </form>
-          );
-        })}
-      </div>
-
-      <div className="profile-card">
-        <h3><span className="card-icon">📅</span>Reservation History</h3>
+        <h3><span className="card-icon">📅</span>Manage Reservations</h3>
 
         <div className="filter-bar">
           {statuses.map(s => (
@@ -352,12 +494,16 @@ function MyBookings() {
           ))}
         </div>
 
-        {loading && <p className="state-text">Loading bookings…</p>}
+        {loading && (
+          <div className="bookings-list">
+            {[1, 2, 3].map(i => <BookingSkeleton key={i} />)}
+          </div>
+        )}
         {error && <p className="state-text error">{error}</p>}
         {!loading && !error && filtered.length === 0 && (
           <div className="empty-state">
             <p>📭</p>
-            <p>{statusFilter ? `No ${statusFilter} bookings found.` : 'No bookings yet. Click "Book a Facility" to get started!'}</p>
+            <p>{statusFilter ? `No ${statusFilter} bookings found.` : 'No bookings found.'}</p>
           </div>
         )}
 
@@ -385,7 +531,7 @@ function MyBookings() {
                   <p className="booking-note">📩 QR code also emailed to your registered email address.</p>
                 )}
                 <div className="booking-actions-row">
-                  {b.status === 'PENDING' && (
+                  {(b.status === 'PENDING' || b.status === 'REJECTED') && (
                     <>
                       <button type="button" className="btn-profile warning" onClick={async () => {
                         setActionMsg({ type: '', text: '' });
@@ -432,6 +578,11 @@ function MyBookings() {
                       </button>
                     </>
                   )}
+                  {(b.status === 'COMPLETED' || b.status === 'CANCELLED' || b.status === 'REJECTED') && (
+                    <button type="button" className="btn-profile secondary" onClick={() => handleQuickRebook(b)}>
+                      🔄 Quick Rebook
+                    </button>
+                  )}
                 </div>
                 <div className="booking-timestamp">
                   Created: {new Date(b.createdAt).toLocaleString()}
@@ -442,11 +593,66 @@ function MyBookings() {
         )}
       </div>
 
+      {waitlist.length > 0 && (
+        <div className="profile-card">
+          <h3><span className="card-icon">⏳</span>My Waitlist</h3>
+          <div className="bookings-list">
+            {waitlist.map(w => (
+              <div key={w.id} className="booking-card" style={{ borderLeft: '4px solid #f59e0b' }}>
+                <div className="booking-card-header">
+                  <h4>{w.facilityName || `Facility #${w.facilityId}`}</h4>
+                  <span className="badge badge-pending">{w.status}</span>
+                </div>
+                <div className="booking-meta">
+                  <span>📅 {w.bookingDate}</span>
+                  <span>🕐 {w.startTime} – {w.endTime}</span>
+                  {w.attendeeCount && <span>👥 {w.attendeeCount}</span>}
+                  {w.facilityLocation && <span>📍 {w.facilityLocation}</span>}
+                </div>
+                <p className="booking-purpose"><strong>Purpose:</strong> {w.purpose}</p>
+                <div className="booking-actions-row">
+                  <button type="button" className="btn-profile danger" onClick={() => handleCancelWaitlist(w.id)}>
+                    Cancel
+                  </button>
+                </div>
+                <div className="booking-timestamp">
+                  Joined: {w.createdAt ? new Date(w.createdAt).toLocaleString() : 'N/A'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {qrBooking && (
         <QRModal
           booking={qrBooking}
           onClose={() => setQrBooking(null)}
           onResendEmail={resendBookingEmail}
+        />
+      )}
+
+      {successBooking && (
+        <SuccessSummaryModal
+          booking={successBooking}
+          onClose={() => setSuccessBooking(null)}
+        />
+      )}
+
+      {showForm && (
+        <EditBookingModal
+          bookingForm={bookingForm}
+          setBookingForm={setBookingForm}
+          facilities={facilities}
+          dayBookings={dayBookings}
+          loadingDay={loadingDay}
+          onSave={handleCreateBooking}
+          onCancel={() => {
+            setShowForm(false);
+            setBookingForm({ id: null, facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });
+          }}
+          formLoading={formLoading}
+          actionMsg={actionMsg}
         />
       )}
     </section>

@@ -256,7 +256,17 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
         Booking saved = bookingRepository.save(booking);
-        if (waitlistService != null) waitlistService.processWaitlistForCancelledBooking(saved);
+        
+        // Notify waitlist when a booking is cancelled
+        if (waitlistService != null) {
+            waitlistService.processWaitlistForCancelledBooking(saved);
+            waitlistService.notifyWaitlistForCapacityIncrease(
+                booking.getFacility().getId(), 
+                booking.getBookingDate(), 
+                booking.getStartTime(), 
+                booking.getEndTime()
+            );
+        }
         return BookingResponse.from(saved);
     }
 
@@ -304,6 +314,8 @@ public class BookingService {
         }
 
         // Update fields
+        int oldAttendeeCount = booking.getAttendeeCount() != null ? booking.getAttendeeCount() : 1;
+        
         if (request.getBookingDate() != null) booking.setBookingDate(request.getBookingDate());
         if (request.getStartTime() != null) booking.setStartTime(request.getStartTime());
         if (request.getEndTime() != null) booking.setEndTime(request.getEndTime());
@@ -311,7 +323,15 @@ public class BookingService {
         if (request.getNotes() != null) booking.setNotes(request.getNotes());
         if (request.getAttendeeCount() != null) booking.setAttendeeCount(request.getAttendeeCount());
 
-        return BookingResponse.from(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+
+        // If attendee count was reduced, notify waitlisted users
+        int newAttendeeCount = saved.getAttendeeCount() != null ? saved.getAttendeeCount() : 1;
+        if (newAttendeeCount < oldAttendeeCount && waitlistService != null) {
+            waitlistService.notifyWaitlistForCapacityIncrease(facility.getId(), date, start, end);
+        }
+
+        return BookingResponse.from(saved);
     }
     public BookingResponse updateBookingStatus(String bookingId, BookingStatus newStatus, String adminRemarks) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -396,10 +416,20 @@ public class BookingService {
     }
 
     public void deleteBooking(String bookingId) {
-        if (!bookingRepository.existsById(bookingId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found");
-        }
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+        
         bookingRepository.deleteById(bookingId);
+        
+        // Notify waitlist when a booking is deleted
+        if (waitlistService != null) {
+            waitlistService.notifyWaitlistForCapacityIncrease(
+                booking.getFacility().getId(), 
+                booking.getBookingDate(), 
+                booking.getStartTime(), 
+                booking.getEndTime()
+            );
+        }
     }
 
     public int processUpcomingBookingReminders() {
