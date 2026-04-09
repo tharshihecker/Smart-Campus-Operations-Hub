@@ -1,0 +1,116 @@
+/* ── Notifications Shell ──────────────────────────────────── */
+.notif-root {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* ── Filter Bar ─────────────────────────────────────────── */
+.notif-filter-btn {
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    font-size: 0.9rem;
+    font-weight: 700;
+    border: 1px solid var(--border-medium);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.notif-filter-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.notif-filter-btn[style*="background: #2563eb"] {
+    background: var(--brand-teal) !important;
+    color: #fff !important;
+    border-color: var(--brand-teal) !important;
+}
+
+.notif-filter-btn[style*="background: #3b82f6"] {
+    background: var(--brand-blue) !important;
+    color: #fff !important;
+    border-color: var(--brand-blue) !important;
+}
+
+/* ── Notification Card ──────────────────────────────────── */
+.notif-card {
+    background: var(--bg-glass);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    transition: all var(--transition-bounce);
+    margin-bottom: 12px;
+}
+
+.notif-card:hover {
+    transform: translateX(4px);
+    box-shadow: var(--shadow-sm);
+    border-color: var(--border-focus);
+}
+
+.notif-card-unread {
+    border-left: 4px solid var(--brand-teal) !important;
+}
+
+.notif-del-btn {
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.notif-del-btn:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: var(--brand-danger) !important;
+}
+
+@keyframes notifPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes notifSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notif-slide {
+    animation: notifSlideIn 0.3s ease-out;
+}
+
+.notif-skeleton {
+    animation: notifPulse 1.8s infinite;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.notif-skeleton>div {
+    background: var(--border-medium);
+    border-radius: 4px;
+}

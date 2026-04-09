@@ -1,0 +1,9 @@
+﻿{
+  "short_name": "SmartCampus",
+  "name": "Smart Campus Frontend",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#ffffff"
+}
