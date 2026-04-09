@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { QRCodeCanvas } from 'qrcode.react';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification } from '../api';
 import './Notifications.css';
 
@@ -46,6 +47,7 @@ export default function Notifications({ isAdmin = false }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('UNREAD');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [qrModal, setQrModal] = useState(null); // { token, title, message }
   const navigate = useNavigate();
   const [now, setNow] = useState(new Date());
   const userRole = localStorage.getItem('smartcampus_user_role') || 'USER';
@@ -80,7 +82,14 @@ export default function Notifications({ isAdmin = false }) {
         window.dispatchEvent(new Event('updateNotifCount'));
       } catch { }
     }
-    if (n.referenceType === 'BOOKING') navigate(isAdmin ? '/admin/bookings' : '/my-bookings');
+    // If notification contains a QR token, open QR modal instead of navigating
+    // try direct token, otherwise attempt to extract UUID from message text
+    const token = n.qrToken || (n.message && (n.message.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/) || [null])[0]);
+    if (token) {
+      setQrModal({ token, title: n.title, message: n.message, referenceId: n.referenceId });
+      return;
+    }
+    if (n.referenceType === 'BOOKING' || n.referenceType === 'event_booking') navigate(isAdmin ? '/admin/bookings' : '/my-bookings');
     else if (n.referenceType === 'TICKET') {
       // Navigate to the exact ticket using referenceId for deep-link
       let base;
@@ -105,6 +114,15 @@ export default function Notifications({ isAdmin = false }) {
       setDeleteConfirm(null);
       window.dispatchEvent(new Event('updateNotifCount'));
     } catch { }
+  };
+
+  const downloadQr = (token) => {
+    const canvas = document.getElementById('qr-canvas');
+    if (!canvas) return;
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = 'booking-qr.png';
+    a.click();
   };
 
   const handleMarkAllRead = async () => {
@@ -297,6 +315,22 @@ export default function Notifications({ isAdmin = false }) {
               <button onClick={confirmDelete} style={{ flex: 1, padding: '10px 0', borderRadius: 8, border: 'none', background: '#dc2626', color: '#ffffff', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(220,38,38,0.25)' }}>
                 Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── QR Modal ── */}
+      {qrModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+          <div style={{ background: '#ffffff', borderRadius: 14, padding: '24px', maxWidth: 420, width: '92%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', textAlign: 'center' }}>
+            <h3 style={{ margin: '0 0 8px' }}>{qrModal.title}</h3>
+            <p style={{ margin: '0 0 12px', color: '#374151' }}>{qrModal.message}</p>
+            <div style={{ margin: '12px 0', display: 'flex', justifyContent: 'center' }}>
+              <QRCodeCanvas id="qr-canvas" value={`${window.location.origin}/admin/event-checkin?qr=${qrModal.token}`} size={260} />
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 12 }}>
+              <button onClick={() => downloadQr(qrModal.token)} style={{ padding: '10px 16px', background: '#2563eb', color: '#fff', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 800 }}>Download QR</button>
+              <button onClick={() => setQrModal(null)} style={{ padding: '10px 16px', background: '#f3f4f6', color: '#111827', borderRadius: 8, border: '1px solid #e5e7eb', cursor: 'pointer', fontWeight: 800 }}>Close</button>
             </div>
           </div>
         </div>

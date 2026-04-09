@@ -1,6 +1,10 @@
 package com.sliit.smartcampus.notification;
 
 import com.sliit.smartcampus.user.User;
+import com.sliit.smartcampus.booking.BookingRepository;
+import com.sliit.smartcampus.booking.Booking;
+import com.sliit.smartcampus.event.CampusEventRepository;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,9 +16,24 @@ import java.util.Map;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final com.sliit.smartcampus.event.EventBookingRepository eventBookingRepository;
+    private final CampusEventRepository campusEventRepository;
+    private final BookingRepository bookingRepository;
+    private final EmailService emailService;
+    private final Environment env;
 
-    public NotificationService(NotificationRepository notificationRepository) {
+    public NotificationService(NotificationRepository notificationRepository,
+                               com.sliit.smartcampus.event.EventBookingRepository eventBookingRepository,
+                               CampusEventRepository campusEventRepository,
+                               BookingRepository bookingRepository,
+                               EmailService emailService,
+                               Environment env) {
         this.notificationRepository = notificationRepository;
+        this.eventBookingRepository = eventBookingRepository;
+        this.campusEventRepository = campusEventRepository;
+        this.bookingRepository = bookingRepository;
+        this.emailService = emailService;
+        this.env = env;
     }
 
     public void createNotification(User user, String title, String message,
@@ -26,7 +45,74 @@ public class NotificationService {
         n.setType(type);
         n.setReferenceId(referenceId);
         n.setReferenceType(referenceType);
+        
+        // Extract QR token early for easier frontend access
+        String qrToken = null;
+        if (referenceType != null && referenceType.equalsIgnoreCase("BOOKING") && referenceId != null) {
+            try {
+                var bookingOpt = bookingRepository.findById(referenceId);
+                if (bookingOpt.isPresent()) {
+                    qrToken = bookingOpt.get().getQrToken();
+                }
+            } catch (Exception ignored) {}
+        } else if (referenceType != null && referenceType.equalsIgnoreCase("event_booking") && referenceId != null) {
+            try {
+                var ebOpt = eventBookingRepository.findById(referenceId);
+                if (ebOpt.isPresent()) {
+                    qrToken = ebOpt.get().getQrToken();
+                }
+            } catch (Exception ignored) {}
+        }
+        n.setQrToken(qrToken);
+        
         notificationRepository.save(n);
+        
+        // Send email for approved bookings only
+        boolean mailEnabled = Boolean.parseBoolean(env.getProperty("app.mail.enabled", "true"));
+        if (mailEnabled && type == NotificationType.BOOKING_APPROVED) {
+            try {
+                // Handle facility bookings
+                if (referenceType != null && referenceType.equalsIgnoreCase("BOOKING") && referenceId != null) {
+                    var bookingOpt = bookingRepository.findById(referenceId);
+                    if (bookingOpt.isPresent()) {
+                        var booking = bookingOpt.get();
+                        try {
+                            emailService.sendBookingConfirmation(user, booking);
+                        } catch (Exception e) {
+                            // log but do not fail notification creation
+                        }
+                    }
+                }
+                // Handle event bookings
+                else if (referenceType != null && referenceType.equalsIgnoreCase("event_booking") && referenceId != null) {
+                    var ebOpt = eventBookingRepository.findById(referenceId);
+                    if (ebOpt.isPresent()) {
+                        var eb = ebOpt.get();
+                        // Fetch the event details
+                        com.sliit.smartcampus.event.CampusEvent ev = null;
+                        try {
+                            if (eb.getEventId() != null) {
+                                var eventOpt = campusEventRepository.findById(eb.getEventId());
+                                if (eventOpt.isPresent()) {
+                                    ev = eventOpt.get();
+                                }
+                            }
+                        } catch (Exception ignored) {
+                        }
+                        try {
+                            // Get event or create minimal event object with title
+                            if (ev == null) {
+                                ev = new com.sliit.smartcampus.event.CampusEvent();
+                                ev.setTitle("Your Event");
+                            }
+                            emailService.sendBookingConfirmation(user, eb, ev);
+                        } catch (Exception e) {
+                            // log but do not fail notification creation
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
     }
 
     @Transactional(readOnly = true)
@@ -66,6 +152,17 @@ public class NotificationService {
     }
 
     private NotificationResponse toResponse(Notification n) {
+        // Use the stored qrToken directly from Notification
+        String qr = n.getQrToken();
+        
+        // Fallback: try to extract a UUID-looking token from the message text if not stored
+        if (qr == null && n.getMessage() != null) {
+            try {
+                java.util.regex.Pattern p = java.util.regex.Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
+                var m = p.matcher(n.getMessage());
+                if (m.find()) qr = m.group(0);
+            } catch (Exception ignored) {}
+        }
         return new NotificationResponse(
                 n.getId(),
                 n.getTitle(),
@@ -74,7 +171,8 @@ public class NotificationService {
                 n.isRead(),
                 n.getReferenceId(),
                 n.getReferenceType(),
-                n.getCreatedAt()
+                n.getCreatedAt(),
+                qr
         );
     }
 }
