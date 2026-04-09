@@ -262,14 +262,9 @@ public class BookingService {
 
     public BookingResponse updateBooking(String bookingId, BookingRequest request) {
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found."));
 
-        // Rule 1: If booking.status == "APPROVED", User is NOT allowed to cancel or update.
-        if (booking.getStatus() == BookingStatus.APPROVED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Approved bookings cannot be updated.");
-        }
-
-        // Rule 1: Only PENDING bookings can be updated.
+        // Only PENDING bookings can be updated
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only PENDING bookings can be updated. Current status: " + booking.getStatus());
         }

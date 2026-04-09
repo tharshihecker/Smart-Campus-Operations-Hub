@@ -6,10 +6,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 public class BookingRequest {
-    @NotNull
     private String facilityId;
 
-    @NotNull
     private String userId;
 
     @NotNull
