@@ -43,6 +43,10 @@ public class User {
 
     private boolean enabled = true;
 
+    private String otp;
+
+    private LocalDateTime otpExpiry;
+
     @CreatedDate
     private LocalDateTime createdAt;
 
@@ -83,5 +87,9 @@ public class User {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public String getOtp() { return otp; }
+    public void setOtp(String otp) { this.otp = otp; }
+    public LocalDateTime getOtpExpiry() { return otpExpiry; }
+    public void setOtpExpiry(LocalDateTime otpExpiry) { this.otpExpiry = otpExpiry; }
 }
 
