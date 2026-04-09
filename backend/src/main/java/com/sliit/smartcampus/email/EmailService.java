@@ -17,7 +17,7 @@ import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-@Service
+@Service("smtpEmailService")
 public class EmailService {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailService.class);
 

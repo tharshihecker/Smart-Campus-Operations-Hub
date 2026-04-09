@@ -4,8 +4,8 @@ import Signup from './Signup';
 import Login from './Login';
 import Home from './Home';
 import Landing from './Landing';
-import Explore from './Explore';
 import Facilities from './Facilities';
+import Events from './Events';
 import Profile from './Profile';
 import MyBookings from './MyBookings';
 import Incidents from './Incidents';
@@ -84,10 +84,10 @@ function UserTopNav({ isAuthenticated, onLogout, toggleTheme, theme }) {
             ) : (
               <>
                 <NavLink to="/home" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
+                <NavLink to="/events" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Events</NavLink>
                 <NavLink to="/facilities" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Facilities</NavLink>
                 <NavLink to="/my-bookings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>My Bookings</NavLink>
                 <NavLink to="/incidents" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Incidents</NavLink>
-                <NavLink to="/explore" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Explore</NavLink>
                 <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                   {displayName ? `👤 ${displayName}` : 'Profile'}
                 </NavLink>
@@ -181,7 +181,8 @@ function UserApp() {
           <Route path="/login" element={<Login onLoginSuccess={authApi.login} />} />
           <Route path="/home" element={protectedRoute(<Home />)} />
           <Route path="/technician-dashboard" element={protectedRoute(<TechnicianDashboard />)} />
-          <Route path="/explore" element={protectedRoute(<Explore />)} />
+          
+          <Route path="/events" element={protectedRoute(<Events />)} />
           <Route path="/facilities" element={protectedRoute(<Facilities />)} />
           <Route path="/profile" element={protectedRoute(<Profile />)} />
           <Route path="/my-bookings" element={protectedRoute(<MyBookings />)} />
