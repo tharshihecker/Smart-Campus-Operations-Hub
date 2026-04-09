@@ -142,7 +142,7 @@ function MyBookings() {
   const [statusFilter, setStatusFilter] = useState('');
   const [qrBooking, setQrBooking] = useState(null);
   const [bookingForm, setBookingForm] = useState({
-    facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1,
+    id: null, facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1,
   });
 
   const [dayBookings, setDayBookings] = useState([]);
@@ -234,7 +234,8 @@ function MyBookings() {
     setFormLoading(true); setActionMsg({ type: '', text: '' });
     try {
       if (bookingForm.id) {
-        await updateBooking(bookingForm.id, { ...bookingForm, userId: userId });
+        const { id, ...updateData } = bookingForm;
+        await updateBooking(bookingForm.id, updateData);
         setActionMsg({ type: 'success', text: '✅ Booking updated successfully!' });
       } else {
         await createBooking({ ...bookingForm, userId: userId });
@@ -331,7 +332,7 @@ function MyBookings() {
                 </button>
                 <button type="button" className="btn-profile secondary" onClick={() => {
                   setShowForm(false);
-                  setBookingForm({ facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });
+                  setBookingForm({ id: null, facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });
                 }}>Cancel</button>
               </div>
             </form>
@@ -386,7 +387,9 @@ function MyBookings() {
                 <div className="booking-actions-row">
                   {b.status === 'PENDING' && (
                     <>
-                      <button type="button" className="btn-profile warning" onClick={() => {
+                      <button type="button" className="btn-profile warning" onClick={async () => {
+                        setActionMsg({ type: '', text: '' });
+                        await loadFacilities();
                         setBookingForm({
                           id: b.id,
                           facilityId: b.facilityId,
@@ -397,7 +400,6 @@ function MyBookings() {
                           notes: b.notes || '',
                           attendeeCount: b.attendeeCount || 1,
                         });
-                        loadFacilities();
                         setShowForm(true);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}>
