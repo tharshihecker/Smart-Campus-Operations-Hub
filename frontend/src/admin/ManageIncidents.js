@@ -468,10 +468,10 @@ function TicketRow({ t, idx, onView, onStatus, onAssign }) {
   const isTerminal = TERMINAL.has(t.status);
   return (
     <tr className="adm-ticket-row" style={{ borderBottom: '1px solid #f3f4f6', background: idx % 2 === 0 ? '#ffffff' : '#fafbff' }}>
-      <td style={{ padding: '13px 14px', color: '#9ca3af', fontSize: 11, fontWeight: 700 }}>#{t.id}</td>
+      <td style={{ padding: '13px 14px', color: '#070707', fontSize: 11, fontWeight: 700 }}>#{t.id}</td>
       <td style={{ padding: '13px 14px', maxWidth: 220 }}>
         <p style={{ margin: 0, fontWeight: 800, color: '#111827', fontSize: 13 }}>{t.title}</p>
-        <p style={{ margin: '2px 0 0', color: '#6b7280', fontSize: 11, fontWeight: 600 }}>📍 {t.location}</p>
+        <p style={{ margin: '2px 0 0', color: '#0b0b0b', fontSize: 11, fontWeight: 600 }}>📍 {t.location}</p>
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
           {t.attachmentUrls?.length > 0 && (
             <span style={{ fontSize: 10, color: '#2563eb', fontWeight: 800, background: '#eff6ff', padding: '1px 7px', borderRadius: 999 }}>
@@ -481,16 +481,16 @@ function TicketRow({ t, idx, onView, onStatus, onAssign }) {
           <SLABadge createdAt={t.createdAt} status={t.status} />
         </div>
       </td>
-      <td style={{ padding: '13px 14px', color: '#374151', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t.category}</td>
+      <td style={{ padding: '13px 14px', color: '#040404', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t.category}</td>
       <td style={{ padding: '13px 14px' }}><PriorityBadge priority={t.priority} /></td>
       <td style={{ padding: '13px 14px' }}><StatusBadge status={t.status} /></td>
-      <td style={{ padding: '13px 14px', color: '#374151', fontSize: 12, fontWeight: 700 }}>{t.reporterName || '—'}</td>
+      <td style={{ padding: '13px 14px', color: '#0e0f0f', fontSize: 12, fontWeight: 700 }}>{t.reporterName || '—'}</td>
       <td style={{ padding: '13px 14px', fontSize: 12, fontWeight: 700 }}>
         {t.assigneeName
           ? <span style={{ color: '#059669', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4 }}>👷 {t.assigneeName}</span>
-          : <span style={{ color: '#d1d5db', fontWeight: 600, fontStyle: 'italic' }}>Unassigned</span>}
+          : <span style={{ color: '#f40dc6', fontWeight: 600, fontStyle: 'italic' }}>Unassigned</span>}
       </td>
-      <td style={{ padding: '13px 14px', color: '#6b7280', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{fmtDate(t.createdAt)}</td>
+      <td style={{ padding: '13px 14px', color: '#090909', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{fmtDate(t.createdAt)}</td>
       <td style={{ padding: '13px 14px' }}>
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           <button onClick={() => onView(t)} className="adm-inc-btn" style={{ padding: '5px 11px', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 7, color: '#1d4ed8', cursor: 'pointer', fontSize: 11, fontWeight: 800 }}>
