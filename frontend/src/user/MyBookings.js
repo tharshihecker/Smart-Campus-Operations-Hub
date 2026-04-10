@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { fetchUserBookings, cancelBooking, createBooking, updateBooking, fetchFacilities, fetchBookingQR, resendBookingEmail, checkinBooking, fetchFacilityBookingsByDate, acceptCounterProposal, rejectCounterProposal, fetchUserWaitlist, cancelWaitlist, joinWaitlist } from '../api';
 import './Profile.css';
 import './MyBookings.css';
+import './Facilities.css';
 
 function statusBadge(status) {
   const cls = `badge badge-${status?.toLowerCase()}`;
@@ -210,12 +211,33 @@ function EditBookingModal({ bookingForm, setBookingForm, facilities, dayBookings
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '600px', width: '90%' }}>
-        <h3>✏️ Edit Booking</h3>
-        {actionMsg.text && <div className={`profile-alert ${actionMsg.type}`}>{actionMsg.text}</div>}
-        
-        <form onSubmit={onSave} className="profile-form">
+    <div className="fac-modal-overlay" onClick={onCancel}>
+      <div className="fac-modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
+        <button className="fac-modal-close" onClick={onCancel}>✕</button>
+        <div className="fac-modal-header" style={{ marginBottom: 12 }}>
+          <div className="fac-modal-icon" style={{ fontSize: "1.8rem", padding: "8px" }}>🏢</div>
+          <div>
+            <h2 className="fac-modal-title">{bookingForm.id ? "Edit Booking" : "Quick Rebook"}</h2>
+            {selectedFacility && (
+              <p className="fac-modal-subtitle">{selectedFacility.location} · Cap: {selectedFacility.capacity}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="booking-panel" style={{ marginTop: 0, padding: 0, border: 'none', background: 'transparent', boxShadow: 'none' }}>
+          {selectedFacility && (
+            <div className="fac-open-hours-banner" style={{ marginBottom: '12px' }}>
+              <span className="fac-open-hours-icon">🕐</span>
+              <span>
+                Open: <strong>{fmtTime(selectedFacility.availableFrom.slice(0, 5))}</strong> – <strong>{fmtTime(selectedFacility.availableTo.slice(0, 5))}</strong>
+              </span>
+            </div>
+          )}
+
+          {actionMsg.text && (
+            <div className={`profile-alert compact ${actionMsg.type}`}>{actionMsg.text}</div>
+          )}
+
           {selectedFacility && bookingForm.bookingDate && (
             <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--border)' }}>
               <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-main)' }}>✨ Available Time Slots for {bookingForm.bookingDate}</h4>
@@ -225,20 +247,16 @@ function EditBookingModal({ bookingForm, setBookingForm, facilities, dayBookings
                   const freeBlocks = getFreeBlocks(selectedFacility.availableFrom.slice(0, 5), selectedFacility.availableTo.slice(0, 5), dayBookings);
                   if (freeBlocks.length === 0) return <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--brand-danger)' }}>🚫 Fully booked for the entire day.</p>;
                   return (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {freeBlocks.map((block, idx) => (
                         <button
                           key={idx} type="button"
                           onClick={() => setBookingForm(prev => ({ ...prev, startTime: block.start, endTime: block.end }))}
                           style={{
-                            background: 'rgba(20, 184, 166, 0.08)', color: 'var(--brand-teal)', border: '1px solid rgba(20, 184, 166, 0.25)', padding: '6px 4px',
-                            borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '600',
-                            textAlign: 'center', transition: 'all 0.2s', whiteSpace: 'nowrap',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-                          }}
-                          onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.2)'; e.currentTarget.style.borderColor = 'var(--brand-teal)'; }}
-                          onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.08)'; e.currentTarget.style.borderColor = 'rgba(20, 184, 166, 0.25)'; }}
-                        >
+                            background: '#16a34a', color: '#ffffff', border: 'none', padding: '6px 12px',
+                            borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold',
+                            boxShadow: '0 2px 6px rgba(22,163,74,0.35)'
+                          }}>
                           {fmtTime(block.start)} – {fmtTime(block.end)}
                         </button>
                       ))}
@@ -248,52 +266,98 @@ function EditBookingModal({ bookingForm, setBookingForm, facilities, dayBookings
               }
             </div>
           )}
-          <div className="profile-form-row">
-            <label>Facility *
-              <select name="facilityId" value={bookingForm.facilityId} onChange={handleFormChange} required disabled>
-                {facilities.map(f => <option key={f.id} value={f.id}>{f.name} — {f.location} (Cap: {f.capacity})</option>)}
+
+          <form onSubmit={onSave} className="booking-form">
+            <div className="form-group">
+              <label>Facility *</label>
+              <select name="facilityId" value={bookingForm.facilityId} onChange={handleFormChange} required disabled={!!bookingForm.id} style={{ padding: '10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-medium)', background: 'var(--bg-glass)', color: 'var(--text-primary)' }}>
+                <option value="">Select a facility</option>
+                {facilities.map(f => <option key={f.id} value={f.id}>{f.name} — {f.location}</option>)}
               </select>
-            </label>
-            <label>Date *
-              <input type="date" name="bookingDate" min={todayStr} value={bookingForm.bookingDate} onChange={handleFormChange} required />
-            </label>
-          </div>
-          <div className="profile-form-row">
-            <label>Start Time * <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '4px' }}>({selectedFacility ? fmtTime(selectedFacility.availableFrom.slice(0, 5)) : ''})</span>
-              <input type="time" name="startTime" value={bookingForm.startTime} onChange={handleFormChange} min={selectedFacility?.availableFrom} max={selectedFacility?.availableTo} required />
-            </label>
-            <label>End Time * <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '4px' }}>({selectedFacility ? fmtTime(selectedFacility.availableTo.slice(0, 5)) : ''})</span>
-              <input type="time" name="endTime" value={bookingForm.endTime} onChange={handleFormChange} min={bookingForm.startTime || selectedFacility?.availableFrom} required />
-            </label>
-          </div>
-          <div className="profile-form-row">
-            <label>Purpose *<input name="purpose" value={bookingForm.purpose} onChange={handleFormChange} placeholder="e.g. Guest Lecture" required /></label>
-            <label>
-              Attendee Count
-              {(() => {
-                const facility = facilities.find(f => f.id === bookingForm.facilityId);
-                if (!facility || !bookingForm.startTime || !bookingForm.endTime) return null;
-                const usedSeats = dayBookings
-                  .filter(b => (bookingForm.startTime < b.endTime.slice(0, 5) && bookingForm.endTime > b.startTime.slice(0, 5)))
-                  .reduce((sum, b) => sum + (b.attendeeCount || 1), 0);
-                const remaining = Math.max(0, facility.capacity - usedSeats);
-                return <span style={{ fontSize: '0.75rem', color: 'var(--brand-teal)', marginLeft: '4px' }}> ({remaining} available)</span>;
-              })()}
-              <input type="number" name="attendeeCount" min="1" value={bookingForm.attendeeCount} onChange={handleFormChange} />
-            </label>
-          </div>
-          <label>Notes
-            <textarea name="notes" value={bookingForm.notes} onChange={handleFormChange} placeholder="Additional notes for admin…" rows={2} />
-          </label>
-          <div className="modal-actions">
-            <button type="submit" className="btn-primary" disabled={formLoading}>
-              {formLoading ? 'Saving…' : 'Update Booking'}
-            </button>
-            <button type="button" className="btn-secondary" onClick={onCancel}>
-              Cancel
-            </button>
-          </div>
-        </form>
+            </div>
+
+            <div className="form-group">
+              <label>Date *</label>
+              <input
+                type="date"
+                name="bookingDate"
+                min={todayStr}
+                value={bookingForm.bookingDate}
+                onChange={handleFormChange}
+                required
+              />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Start Time * <span className="fac-time-hint">({selectedFacility ? fmtTime(selectedFacility.availableFrom.slice(0, 5)) : ''})</span></label>
+                <input
+                  type="time"
+                  name="startTime"
+                  min={selectedFacility?.availableFrom}
+                  max={selectedFacility?.availableTo}
+                  value={bookingForm.startTime}
+                  onChange={handleFormChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>End Time * <span className="fac-time-hint">({selectedFacility ? fmtTime(selectedFacility.availableTo.slice(0, 5)) : ''})</span></label>
+                <input
+                  type="time"
+                  name="endTime"
+                  min={bookingForm.startTime || selectedFacility?.availableFrom}
+                  value={bookingForm.endTime}
+                  onChange={handleFormChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group flex-2">
+                <label>Purpose *</label>
+                <input
+                  name="purpose"
+                  value={bookingForm.purpose}
+                  onChange={handleFormChange}
+                  placeholder="e.g. Guest Lecture"
+                  required
+                />
+              </div>
+              <div className="form-group flex-1">
+                <label>Attendees *</label>
+                <input
+                  type="number"
+                  name="attendeeCount"
+                  min="1"
+                  max={selectedFacility ? selectedFacility.capacity : undefined}
+                  value={bookingForm.attendeeCount}
+                  onChange={handleFormChange}
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Notes</label>
+              <input
+                name="notes"
+                value={bookingForm.notes}
+                onChange={handleFormChange}
+                placeholder="Optional notes"
+              />
+            </div>
+
+            <div className="booking-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'space-between', marginTop: '16px' }}>
+              <button type="button" className="btn-secondary" onClick={onCancel} disabled={formLoading}>
+                Cancel
+              </button>
+              <button type="submit" className="btn-primary" disabled={formLoading}>
+                {formLoading ? 'Saving…' : (bookingForm.id ? 'Update Booking' : '📅 Submit Booking')}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -483,93 +547,24 @@ function MyBookings() {
   return (
     <section className="profile-shell">
       <div className="profile-header">
-        <h2>My Bookings</h2>
-        <p>Manage your facility reservations and check booking status.</p>
+        <div className="profile-header-content">
+          <div className="profile-avatar">
+            <div className="avatar-inner" style={{ background: 'var(--bg-glass)' }}>📅</div>
+          </div>
+          <div className="profile-header-info">
+            <h2>My Bookings</h2>
+            <p className="profile-subtitle">Manage your facility reservations and check booking status.</p>
+          </div>
+        </div>
+        
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, position: 'relative', zIndex: 1 }}>
+          <button type="button" className="btn-profile primary" onClick={() => navigate('/facilities')}>
+            <span>🏢</span> Book a Facility
+          </button>
+        </div>
       </div>
 
       {actionMsg.text && <div className={`profile-alert ${actionMsg.type}`}>{actionMsg.text}</div>}
-
-      <div className="profile-card">
-        <h3>
-          <span className="card-icon">{bookingForm.id ? '✏️' : '➕'}</span>
-          {bookingForm.id ? 'Edit Booking' : 'New Booking'}
-          {!showForm && (
-            <button type="button" className="btn-edit-trigger btn-primary" style={{ padding: '8px 16px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => navigate('/facilities')}>
-              <span>🏢</span> Book a Facility
-            </button>
-          )}
-        </h3>
-        {showForm && (() => {
-          const selectedFacility = facilities.find(f => f.id === bookingForm.facilityId);
-          return (
-            <form onSubmit={handleCreateBooking} className="profile-form">
-              {selectedFacility && bookingForm.bookingDate && (
-                <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--border)' }}>
-                  <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-main)' }}>✨ Available Time Slots for {bookingForm.bookingDate}</h4>
-                  <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Click a free slot below to automatically select it.</p>
-                  {loadingDay ? <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Calculating free slots...</p> :
-                    (() => {
-                      const freeBlocks = getFreeBlocks(selectedFacility.availableFrom.slice(0, 5), selectedFacility.availableTo.slice(0, 5), dayBookings);
-                      if (freeBlocks.length === 0) return <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--brand-danger)' }}>🚫 Fully booked for the entire day.</p>;
-                      return (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                          {freeBlocks.map((block, idx) => (
-                            <button
-                              key={idx} type="button"
-                              onClick={() => setBookingForm(prev => ({ ...prev, startTime: block.start, endTime: block.end }))}
-                              style={{
-                                background: 'rgba(20, 184, 166, 0.08)', color: 'var(--brand-teal)', border: '1px solid rgba(20, 184, 166, 0.25)', padding: '6px 4px',
-                                borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '600',
-                                textAlign: 'center', transition: 'all 0.2s', whiteSpace: 'nowrap',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-                              }}
-                              onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.2)'; e.currentTarget.style.borderColor = 'var(--brand-teal)'; }}
-                              onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.08)'; e.currentTarget.style.borderColor = 'rgba(20, 184, 166, 0.25)'; }}
-                            >
-                              {fmtTime(block.start)} – {fmtTime(block.end)}
-                            </button>
-                          ))}
-                        </div>
-                      );
-                    })()
-                  }
-                </div>
-              )}
-              <div className="profile-form-row">
-                <label>Facility *
-                  <select name="facilityId" value={bookingForm.facilityId} onChange={handleFormChange} required>
-                    <option value="">Select a facility</option>
-                    {facilities.map(f => <option key={f.id} value={f.id}>{f.name} — {f.location} (Cap: {f.capacity})</option>)}
-                  </select>
-                </label>
-                <label>Date *
-                  <input type="date" name="bookingDate" min={todayStr} value={bookingForm.bookingDate} onChange={handleFormChange} required />
-                </label>
-              </div>
-              <div className="profile-form-row">
-                <label>Start Time *<input type="time" name="startTime" value={bookingForm.startTime} onChange={handleFormChange} required /></label>
-                <label>End Time *<input type="time" name="endTime" value={bookingForm.endTime} onChange={handleFormChange} required /></label>
-              </div>
-              <div className="profile-form-row">
-                <label>Purpose *<input name="purpose" value={bookingForm.purpose} onChange={handleFormChange} placeholder="e.g. Guest Lecture" required /></label>
-                <label>Attendee Count<input type="number" name="attendeeCount" min="1" value={bookingForm.attendeeCount} onChange={handleFormChange} /></label>
-              </div>
-              <label>Notes
-                <textarea name="notes" value={bookingForm.notes} onChange={handleFormChange} placeholder="Additional notes for admin…" rows={2} />
-              </label>
-              <div className="profile-form-actions">
-                <button type="submit" className="btn-profile primary" disabled={formLoading}>
-                  {formLoading ? 'Submitting…' : (bookingForm.id ? 'Update Booking' : 'Submit Booking')}
-                </button>
-                <button type="button" className="btn-profile secondary" onClick={() => {
-                  setShowForm(false);
-                  setBookingForm({ id: null, facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });
-                }}>Cancel</button>
-              </div>
-            </form>
-          );
-        })}
-      </div>
 
       <div className="profile-card">
         <h3><span className="card-icon">📅</span>Reservation History</h3>

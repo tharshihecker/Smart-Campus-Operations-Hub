@@ -6,6 +6,7 @@ import {
   counterProposeBooking
 } from "../api";
 import "./Admin.css";
+import "./ManageBookings.css";
 
 const STATUSES = ["PENDING", "APPROVED", "REJECTED", "CANCELLED", "COMPLETED"];
 
@@ -20,6 +21,9 @@ function ManageBookings() {
   const [counterId, setCounterId] = useState(null);
   const [counterForm, setCounterForm] = useState({ newDate: '', newStartTime: '', newEndTime: '', note: '' });
 
+  // Custom confirmation modal state
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
   const loadData = async (status) => {
     setLoading(true); setError("");
     try {
@@ -29,6 +33,14 @@ function ManageBookings() {
   };
 
   useEffect(() => { loadData(filterStatus); }, [filterStatus]);
+
+  // Auto-hide messages
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   const handleStatusChange = async (bookingId, newStatus) => {
     setBusy(true); setMessage(""); setError("");
@@ -40,15 +52,40 @@ function ManageBookings() {
     finally { setBusy(false); }
   };
 
+  const triggerStatusChange = (bookingId, newStatus) => {
+    setConfirmDialog({
+      title: 'Update Status',
+      msg: `Are you sure you want to change this booking's status to ${newStatus}?`,
+      btnClass: newStatus === 'REJECTED' ? 'mb-btn-danger' : 'mb-btn-primary',
+      btnText: `Yes, ${newStatus.toLowerCase()}`,
+      onConfirm: () => {
+        setConfirmDialog(null);
+        handleStatusChange(bookingId, newStatus);
+      }
+    });
+  };
+
   const handleDelete = async (bookingId) => {
-    if (!window.confirm("Delete this booking record permanently?")) return;
     setBusy(true); setMessage(""); setError("");
     try {
       await deleteBooking(bookingId);
-      setMessage("Booking deleted.");
+      setMessage("Booking deleted permanently.");
       await loadData(filterStatus);
     } catch (err) { setError(err.message || "Failed to delete booking"); }
     finally { setBusy(false); }
+  };
+
+  const triggerDelete = (bookingId) => {
+    setConfirmDialog({
+      title: 'Delete Booking',
+      msg: '⚠️ DESTRUCTIVE ACTION: Are you sure you want to permanently delete this booking record? This cannot be undone.',
+      btnClass: 'mb-btn-danger',
+      btnText: 'Delete Permanently',
+      onConfirm: () => {
+        setConfirmDialog(null);
+        handleDelete(bookingId);
+      }
+    });
   };
 
   const handleCounterSubmit = async (bookingId) => {
@@ -68,167 +105,180 @@ function ManageBookings() {
 
   const statusBadge = (status) => {
     const cls = {
-      PENDING: "badge-pending",
-      APPROVED: "badge-approved",
-      REJECTED: "badge-rejected",
-      CANCELLED: "badge-cancelled",
-      COMPLETED: "badge-completed",
-    }[status] || "badge-pending";
-    return <span className={`badge ${cls}`}>{status}</span>;
+      PENDING: "mb-badge-pending",
+      APPROVED: "mb-badge-approved",
+      REJECTED: "mb-badge-rejected",
+      CANCELLED: "mb-badge-cancelled",
+      COMPLETED: "mb-badge-completed",
+    }[status] || "mb-badge-pending";
+    return <span className={`mb-badge ${cls}`}>{status}</span>;
   };
 
   const pendingCount = bookings.filter(b => b.status === "PENDING").length;
 
   return (
-    <section className="admin-panel">
-      <h2>Manage Bookings</h2>
-      <p className="admin-subtitle">
-        Review, approve, reject, and manage all facility booking requests.
-        {pendingCount > 0 && <strong style={{ color: "#b45309" }}> ({pendingCount} pending)</strong>}
-      </p>
+    <section className="app-page mb-page">
+      <div className="mb-header">
+        <h2 className="mb-title">Manage Bookings</h2>
+        <p className="mb-subtitle">
+          Review, approve, reject, and manage all facility booking requests.
+          {pendingCount > 0 && <strong style={{ color: "#d97706" }}> ({pendingCount} pending)</strong>}
+        </p>
+      </div>
 
-      <div className="admin-search">
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="">All Statuses</option>
-          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
+      <div className="mb-toolbar">
+        <div className="mb-select-wrapper">
+          <select className="mb-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+            <option value="">All Statuses</option>
+            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
       </div>
 
       {message && <div className="alert alert-success">{message}</div>}
       {error && <div className="alert alert-error">{error}</div>}
+
       {loading && (
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Facility</th>
-                <th>User</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Purpose</th>
-                <th>Attendees</th>
-                <th>Status</th>
-                <th>Admin Remarks</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[1, 2, 3, 4, 5].map(i => (
-                <tr key={i}>
-                  <td><div className="skeleton-text" style={{ width: '120px' }}></div></td>
-                  <td><div className="skeleton-text" style={{ width: '80px' }}></div></td>
-                  <td><div className="skeleton-text" style={{ width: '100px' }}></div></td>
-                  <td><div className="skeleton-text" style={{ width: '100px' }}></div></td>
-                  <td><div className="skeleton-text" style={{ width: '150px' }}></div></td>
-                  <td><div className="skeleton-text" style={{ width: '40px' }}></div></td>
-                  <td><div className="skeleton-text" style={{ width: '80px', borderRadius: '12px' }}></div></td>
-                  <td><div className="skeleton-text" style={{ width: '100px' }}></div></td>
-                  <td><div className="skeleton-text" style={{ width: '150px' }}></div></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mb-table-container" style={{ padding: "20px" }}>
+           {[1, 2, 3, 4, 5].map(i => (
+             <div key={i} style={{ display: 'flex', gap: '20px', marginBottom: '20px', alignItems: 'center' }}>
+               <div className="sk-line" style={{ height: '30px', width: '20%' }}></div>
+               <div className="sk-line" style={{ height: '30px', width: '15%' }}></div>
+               <div className="sk-line" style={{ height: '30px', width: '20%' }}></div>
+               <div className="sk-line" style={{ height: '30px', width: '10%' }}></div>
+               <div className="sk-line" style={{ height: '30px', width: '15%' }}></div>
+             </div>
+           ))}
         </div>
       )}
 
-      {!loading && bookings.length === 0 && <div className="empty-state"><p>No bookings found.</p></div>}
+      {!loading && bookings.length === 0 && (
+        <div className="mb-table-container" style={{ textAlign: "center", padding: "60px 20px" }}>
+          <p style={{ color: "#64748b", margin: 0, fontSize: "1.1rem" }}>No bookings match your criteria.</p>
+        </div>
+      )}
 
       {!loading && bookings.length > 0 && (
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Facility</th>
-                <th>User</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Purpose</th>
-                <th>Attendees</th>
-                <th>Status</th>
-                <th>Admin Remarks</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bookings.map((b) => (
-                <tr key={b.id}>
-                  <td>
-                    <strong>{b.facilityName}</strong>
-                    <br />
-                    <span style={{ fontSize: "0.8rem", color: "#64748b" }}>{b.facilityLocation}</span>
-                  </td>
-                  <td>{b.userName}</td>
-                  <td>{b.bookingDate}</td>
-                  <td>{b.startTime} - {b.endTime}</td>
-                  <td style={{ maxWidth: "180px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.purpose}</td>
-                  <td>{b.attendeeCount || "—"}</td>
-                  <td>{statusBadge(b.status)}</td>
-                  <td>
-                    <input
-                      placeholder="Remarks..."
-                      value={remarksMap[b.id] || ""}
-                      onChange={(e) => setRemarksMap({ ...remarksMap, [b.id]: e.target.value })}
-                      style={{ width: "120px", padding: "4px 6px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "0.82rem" }}
-                      disabled={busy}
-                    />
-                  </td>
-                  <td className="actions">
-                    {b.status === "PENDING" && (
-                      <>
-                        <button className="btn-approve btn-sm" onClick={() => handleStatusChange(b.id, "APPROVED")} disabled={busy}>Approve</button>
-                        <button className="btn-reject btn-sm" onClick={() => handleStatusChange(b.id, "REJECTED")} disabled={busy}>Reject</button>
-                        <button className="btn-sm" style={{ background: '#f59e0b', color: '#fff', border: 'none' }} onClick={() => {
-                          setCounterId(b.id);
-                          setCounterForm({ newDate: b.bookingDate, newStartTime: b.startTime, newEndTime: b.endTime, note: '' });
-                        }} disabled={busy}>Propose</button>
-                      </>
-                    )}
-                    {b.status === "APPROVED" && (
-                      <button className="btn-sm btn-primary" onClick={() => handleStatusChange(b.id, "COMPLETED")} disabled={busy}>Complete</button>
-                    )}
-                    <button className="btn-sm btn-danger" onClick={() => handleDelete(b.id)} disabled={busy}>Delete</button>
-                  </td>
+        <>
+          <p style={{ margin: "0 0 16px 4px", color: "#64748b", fontSize: "0.9rem", fontWeight: "600" }}>
+            Showing {bookings.length} booking(s)
+          </p>
+          <div className="mb-table-container">
+            <table className="mb-table">
+              <thead>
+                <tr>
+                  <th>Facility</th>
+                  <th>Request Details</th>
+                  <th>Purpose</th>
+                  <th>Status & Remarks</th>
+                  <th style={{ textAlign: "right", minWidth: '150px' }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {bookings.map((b) => (
+                  <tr key={b.id}>
+                    <td>
+                      <div className="mb-entity-cell">
+                        <span className="mb-entity-title">{b.facilityName}</span>
+                        <span className="mb-entity-sub">📍 {b.facilityLocation}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="mb-entity-cell">
+                        <span className="mb-entity-title">📅 {b.bookingDate}</span>
+                        <span className="mb-entity-sub">⏰ {b.startTime} - {b.endTime}</span>
+                        <span className="mb-entity-sub" style={{ marginTop: '4px' }}>👤 By: {b.userName}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="mb-entity-cell">
+                        <span className="mb-entity-title" style={{ maxWidth: '200px', whiteSpace: 'normal' }}>{b.purpose}</span>
+                        <span className="mb-entity-sub">👥 Attendees: {b.attendeeCount || "—"}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="mb-entity-cell" style={{ gap: '8px', alignItems: 'stretch' }}>
+                        {statusBadge(b.status)}
+                        <input
+                          className="mb-inline-input"
+                          placeholder="Admin remarks..."
+                          value={remarksMap[b.id] || ""}
+                          onChange={(e) => setRemarksMap({ ...remarksMap, [b.id]: e.target.value })}
+                          disabled={busy}
+                        />
+                      </div>
+                    </td>
+                    <td>
+                      <div className="mb-actions" style={{ justifyContent: "flex-end" }}>
+                        {b.status === "PENDING" && (
+                          <>
+                            <button className="mb-icon-btn mb-btn-approve" title="Approve" onClick={() => triggerStatusChange(b.id, "APPROVED")} disabled={busy}>✅</button>
+                            <button className="mb-icon-btn mb-btn-reject" title="Reject" onClick={() => triggerStatusChange(b.id, "REJECTED")} disabled={busy}>❌</button>
+                            <button className="mb-icon-btn mb-btn-propose" title="Counter-Propose" onClick={() => {
+                              setCounterId(b.id);
+                              setCounterForm({ newDate: b.bookingDate, newStartTime: b.startTime, newEndTime: b.endTime, note: '' });
+                            }} disabled={busy}>🕒</button>
+                          </>
+                        )}
+                        {b.status === "APPROVED" && (
+                          <button className="mb-icon-btn mb-btn-complete" title="Mark as Completed" onClick={() => triggerStatusChange(b.id, "COMPLETED")} disabled={busy}>✓</button>
+                        )}
+                        <button className="mb-icon-btn mb-btn-delete" title="Delete record" onClick={() => triggerDelete(b.id)} disabled={busy}>🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
-
-      <p style={{ marginTop: "16px", color: "#94a3b8", fontSize: "0.85rem" }}>
-        Showing {bookings.length} booking(s)
-      </p>
 
       {/* Counter-Propose Modal Overlay */}
       {counterId && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
-          <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', minWidth: '340px', maxWidth: '440px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', color: '#1e293b' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '1.4rem', color: '#0f172a', fontWeight: 800 }}>Counter-Propose Time</h3>
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600, color: '#64748b' }}>New Date</label>
-              <input type="date" value={counterForm.newDate} onChange={e => setCounterForm(f => ({ ...f, newDate: e.target.value }))} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.95rem', color: '#0f172a', backgroundColor: '#ffffff' }} />
+        <div className="mb-modal-overlay">
+          <div className="mb-modal-card">
+            <h3 className="mb-modal-title">Counter-Propose Time</h3>
+            <div className="mb-modal-form-group">
+              <label>New Date</label>
+              <input type="date" className="mb-modal-input" value={counterForm.newDate} onChange={e => setCounterForm(f => ({ ...f, newDate: e.target.value }))} />
             </div>
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600, color: '#64748b' }}>Start Time</label>
-                <input type="time" value={counterForm.newStartTime} onChange={e => setCounterForm(f => ({ ...f, newStartTime: e.target.value }))} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.95rem', color: '#0f172a', backgroundColor: '#ffffff' }} />
+            <div className="mb-modal-row">
+              <div className="mb-modal-form-group" style={{ flex: 1 }}>
+                <label>Start Time</label>
+                <input type="time" className="mb-modal-input" value={counterForm.newStartTime} onChange={e => setCounterForm(f => ({ ...f, newStartTime: e.target.value }))} />
               </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600, color: '#64748b' }}>End Time</label>
-                <input type="time" value={counterForm.newEndTime} onChange={e => setCounterForm(f => ({ ...f, newEndTime: e.target.value }))} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.95rem', color: '#0f172a', backgroundColor: '#ffffff' }} />
+              <div className="mb-modal-form-group" style={{ flex: 1 }}>
+                <label>End Time</label>
+                <input type="time" className="mb-modal-input" value={counterForm.newEndTime} onChange={e => setCounterForm(f => ({ ...f, newEndTime: e.target.value }))} />
               </div>
             </div>
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600, color: '#64748b' }}>Reason / Note</label>
-              <input type="text" placeholder="e.g. Lab cleaning at 1PM" value={counterForm.note} onChange={e => setCounterForm(f => ({ ...f, note: e.target.value }))} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.95rem', color: '#0f172a', backgroundColor: '#ffffff' }} />
+            <div className="mb-modal-form-group">
+              <label>Reason / Note</label>
+              <input type="text" className="mb-modal-input" placeholder="e.g. Lab cleaning at 1PM" value={counterForm.note} onChange={e => setCounterForm(f => ({ ...f, note: e.target.value }))} />
             </div>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button className="btn-secondary" onClick={() => setCounterId(null)} disabled={busy} style={{ flex: 1 }}>Cancel</button>
-              <button className="btn-primary" onClick={() => handleCounterSubmit(counterId)} disabled={busy} style={{ flex: 1, background: 'var(--admin-gradient)' }}>Send Proposal</button>
+            <div className="mb-modal-actions">
+              <button className="mb-btn mb-btn-secondary" onClick={() => setCounterId(null)} disabled={busy}>Cancel</button>
+              <button className="mb-btn mb-btn-primary" onClick={() => handleCounterSubmit(counterId)} disabled={busy}>Send Proposal</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      {confirmDialog && (
+        <div className="mb-modal-overlay">
+          <div className="mb-modal-card" style={{ maxWidth: '400px' }}>
+            <h3 className="mb-modal-title">{confirmDialog.title}</h3>
+            <p style={{ color: '#475569', lineHeight: 1.5, marginBottom: '24px' }}>{confirmDialog.msg}</p>
+            <div className="mb-modal-actions">
+              <button className="mb-btn mb-btn-secondary" onClick={() => setConfirmDialog(null)} disabled={busy}>Cancel</button>
+              <button className={`mb-btn ${confirmDialog.btnClass}`} onClick={confirmDialog.onConfirm} disabled={busy}>{busy ? "Processing..." : confirmDialog.btnText}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </section>
   );
 }

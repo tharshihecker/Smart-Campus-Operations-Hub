@@ -69,7 +69,7 @@ const ADMIN_STYLE = `
   .adm-stat-num { font-variant-numeric: tabular-nums; }
 
   /* Header gradient */
-  .adm-page-header { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%) !important; }
+  .adm-page-header { background: linear-gradient(135deg, #1e1b4b, #312e81, #4f46e5) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
 
   /* Filter bar */
   .adm-filter-bar { backdrop-filter: blur(4px); }
@@ -671,17 +671,18 @@ export default function ManageIncidents() {
     <div className="adm-inc" style={{ padding: '0 0 40px' }}>
 
       {/* ── Premium Gradient Header ── */}
-      <div className="adm-page-header" style={{ borderRadius: 18, padding: '26px 30px', marginBottom: 22, boxShadow: '0 8px 32px rgba(37,99,235,0.28)', position: 'relative', overflow: 'hidden' }}>
+      <div className="adm-page-header" style={{ borderRadius: 20, padding: '48px', marginBottom: 32, boxShadow: '0 10px 30px -10px rgba(79, 70, 229, 0.3)', position: 'relative', overflow: 'hidden' }}>
         {/* Decorative circles */}
         <div style={{ position: 'absolute', top: -30, right: -20, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -40, right: 100, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, position: 'relative', zIndex: 2 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-              <span style={{ fontSize: 28 }}>🛡</span>
-              <h2 style={{ color: '#ffffff', margin: 0, fontWeight: 900, fontSize: '1.7rem', letterSpacing: -0.5 }}>Manage Incidents</h2>
+            <div className="fac-page-kicker" style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: 12 }}>MODULE B • SUPPORT & OPERATIONS</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+              <span style={{ fontSize: 40 }}>🛡️</span>
+              <h2 style={{ color: '#ffffff', margin: 0, fontWeight: 950, fontSize: '2.8rem', letterSpacing: '-0.04em', textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>Manage Incidents</h2>
             </div>
-            <p style={{ color: 'rgba(255,255,255,0.78)', margin: 0, fontSize: 14, fontWeight: 600, paddingLeft: 40 }}>Review, assign, and resolve maintenance tickets in real-time</p>
+            <p style={{ color: 'rgba(255,255,255,0.85)', margin: 0, fontSize: '1.1rem', fontWeight: 500, maxWidth: 600 }}>Review, assign, and resolve maintenance tickets in real-time across the campus ecosystem.</p>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {/* Live indicator */}
