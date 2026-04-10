@@ -610,38 +610,39 @@ function Facilities() {
         </div>
       </div>
 
-      {/* ── Filters ──────────────────────────────────────── */}
-      <div className="facilities-search">
-        <span className="search-icon">🔍</span>
-        <input
-          className="search-input"
-          name="q" value={filters.q} onChange={onFilterChange}
-          placeholder="Search facilities by name or description…"
-        />
-      </div>
+      <div className="facilities-search-and-filter">
+        <div className="facilities-search">
+          <span className="search-icon">🔍</span>
+          <input
+            className="search-input"
+            name="q" value={filters.q} onChange={onFilterChange}
+            placeholder="Search facilities by name or location…"
+          />
+        </div>
 
-      <div className="fac-filter-bar">
-        <select name="type" value={filters.type} onChange={onFilterChange} className="fac-select">
-          <option value="">All Types</option>
-          {facilityTypes.map(t => <option key={t} value={t}>{toLabel(t)}</option>)}
-        </select>
-        <input
-          className="fac-input" name="minCapacity" type="number" min="0"
-          value={filters.minCapacity} onChange={onFilterChange} placeholder="Min capacity"
-        />
-        <input
-          className="fac-input" name="location" value={filters.location}
-          onChange={onFilterChange} placeholder="Location"
-        />
-        <select name="status" value={filters.status} onChange={onFilterChange} className="fac-select">
-          <option value="">All Statuses</option>
-          {facilityStatuses.map(s => <option key={s} value={s}>{toLabel(s)}</option>)}
-        </select>
-        <select name="sortBy" value={filters.sortBy} onChange={onFilterChange} className="fac-select">
-          <option value="name">Sort: Name</option>
-          <option value="capacity">Sort: Capacity</option>
-          <option value="location">Sort: Location</option>
-        </select>
+        <div className="fac-filter-bar">
+          <select name="type" value={filters.type} onChange={onFilterChange} className="fac-select">
+            <option value="">All Types</option>
+            {facilityTypes.map(t => <option key={t} value={t}>{toLabel(t)}</option>)}
+          </select>
+          <input
+            className="fac-input" name="minCapacity" type="number" min="0"
+            value={filters.minCapacity} onChange={onFilterChange} placeholder="Min capacity"
+          />
+          <input
+            className="fac-input" name="location" value={filters.location}
+            onChange={onFilterChange} placeholder="Location"
+          />
+          <select name="status" value={filters.status} onChange={onFilterChange} className="fac-select">
+            <option value="">All Statuses</option>
+            {facilityStatuses.map(s => <option key={s} value={s}>{toLabel(s)}</option>)}
+          </select>
+          <select name="sortBy" value={filters.sortBy} onChange={onFilterChange} className="fac-select">
+            <option value="name">Sort: Name</option>
+            <option value="capacity">Sort: Capacity</option>
+            <option value="location">Sort: Location</option>
+          </select>
+        </div>
       </div>
 
       {/* ── States ───────────────────────────────────────── */}

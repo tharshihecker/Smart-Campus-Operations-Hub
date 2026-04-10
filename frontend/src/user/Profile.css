@@ -8,13 +8,13 @@
 
 /* ── Profile Header ─────────────────────────────────────── */
 .profile-header {
-  background: var(--gradient-hero);
-  border: 1px solid var(--border-medium);
+  background: linear-gradient(135deg, #0f172a, #1e1b4b, #4338ca);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-xl);
-  padding: 40px;
+  padding: 50px;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 20px 40px -10px rgba(67, 56, 202, 0.3);
   display: flex;
   align-items: center;
 }
@@ -23,8 +23,9 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, rgba(14, 165, 233, 0.1), transparent);
+  background: radial-gradient(circle at top right, rgba(255,255,255,0.1) 0%, transparent 70%);
   pointer-events: none;
+  z-index: 1;
 }
 
 .profile-header-content {
@@ -61,14 +62,15 @@
 .profile-header-info h2 {
   font-size: 2.2rem;
   font-weight: 900;
-  color: var(--text-primary);
+  color: #ffffff;
   margin-bottom: 8px;
+  letter-spacing: -0.03em;
 }
 
 .profile-subtitle {
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 1.05rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* ── Profile Cards ──────────────────────────────────────── */

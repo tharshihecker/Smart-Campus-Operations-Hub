@@ -8,47 +8,66 @@
 
 /* ── Hero Section ────────────────────────────────────────── */
 .facilities-hero {
-  background: var(--gradient-hero);
-  border: 1px solid var(--border-medium);
+  background: linear-gradient(135deg, #0f172a, #1e1b4b, #4338ca);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-xl);
-  padding: 48px;
+  padding: 60px;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 20px 40px -10px rgba(67, 56, 202, 0.3);
 }
 
 .facilities-hero-inner {
   position: relative;
+  z-index: 2;
+}
+
+.facilities-hero::after {
+  content: "🏢";
+  position: absolute;
+  right: -20px;
+  bottom: -40px;
+  font-size: 15rem;
+  opacity: 0.1;
+  transform: rotate(-15deg);
+  pointer-events: none;
   z-index: 1;
 }
 
 .facilities-kicker {
-  color: var(--brand-teal);
+  color: #818cf8;
   font-size: 0.85rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.2em;
   margin-bottom: 12px;
 }
 
 .facilities-title {
-  font-size: 2.5rem;
-  font-weight: 900;
-  color: var(--text-primary);
+  font-size: 3.2rem;
+  font-weight: 950;
+  color: #ffffff;
   margin-bottom: 16px;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
 }
 
 .facilities-hero p {
-  color: var(--text-secondary);
-  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.25rem;
   max-width: 600px;
   line-height: 1.6;
+  font-weight: 500;
 }
 
-/* ── Search Bar ──────────────────────────────────────────── */
+.facilities-search-and-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
 .facilities-search {
-  max-width: 600px;
+  width: 100%;
   position: relative;
 }
 
@@ -77,6 +96,37 @@
   transform: translateY(-50%);
   font-size: 1.2rem;
   color: var(--text-muted);
+}
+
+.fac-filter-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fac-filter-bar .fac-select,
+.fac-filter-bar .fac-input {
+  flex: 1;
+  min-width: 140px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border-medium);
+  background: var(--bg-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.fac-filter-bar .fac-select:focus,
+.fac-filter-bar .fac-input:focus {
+  border-color: var(--brand-teal);
+  background: var(--bg-surface);
+  box-shadow: 0 0 0 3px var(--border-focus);
+  outline: none;
 }
 
 /* ── Grid ────────────────────────────────────────────────── */

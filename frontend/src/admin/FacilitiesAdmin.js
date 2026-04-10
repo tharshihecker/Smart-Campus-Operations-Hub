@@ -389,23 +389,30 @@ function FacilitiesAdmin() {
       </div>
 
       {/* Toolbar */}
-      <div className="fac-toolbar">
-        <div className="fac-search-wrap">
-          <span className="fac-search-ic">🔍</span>
-          <input className="fac-search-input" placeholder="Search by name or location…" value={search} onChange={e => setSearch(e.target.value)} />
-          {search && <button className="fac-search-clear" onClick={() => setSearch("")}>✕</button>}
+      <div className="fac-toolbar-v2">
+        <div className="fac-search-row">
+          <div className="fac-search-wrap">
+            <span className="fac-search-ic">🔍</span>
+            <input className="fac-search-input" placeholder="Search by name or location…" value={search} onChange={e => setSearch(e.target.value)} />
+            {search && <button className="fac-search-clear" onClick={() => setSearch("")}>✕</button>}
+          </div>
         </div>
-        <select className="fac-filter-select" value={filterType} onChange={e => setFilterType(e.target.value)}>
-          <option value="">All Types</option>
-          {facilityTypes.map(t => <option key={t} value={t}>{toLabel(t)}</option>)}
-        </select>
-        <select className="fac-filter-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-          <option value="">All Statuses</option>
-          {facilityStatuses.map(s => <option key={s} value={s}>{toLabel(s)}</option>)}
-        </select>
-        <div className="fac-view-toggle">
-          <button className={viewMode === "grid" ? "active" : ""} onClick={() => setViewMode("grid")}>▦</button>
-          <button className={viewMode === "table" ? "active" : ""} onClick={() => setViewMode("table")}>☰</button>
+
+        <div className="fac-filter-row">
+          <div className="fac-filters-group">
+            <select className="fac-filter-select" value={filterType} onChange={e => setFilterType(e.target.value)}>
+              <option value="">All Types</option>
+              {facilityTypes.map(t => <option key={t} value={t}>{toLabel(t)}</option>)}
+            </select>
+            <select className="fac-filter-select" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+              <option value="">All Statuses</option>
+              {facilityStatuses.map(s => <option key={s} value={s}>{toLabel(s)}</option>)}
+            </select>
+          </div>
+          <div className="fac-view-toggle">
+            <button className={viewMode === "grid" ? "active" : ""} onClick={() => setViewMode("grid")}>▦</button>
+            <button className={viewMode === "table" ? "active" : ""} onClick={() => setViewMode("table")}>☰</button>
+          </div>
         </div>
       </div>
 
