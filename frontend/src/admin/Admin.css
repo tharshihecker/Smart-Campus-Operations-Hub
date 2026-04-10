@@ -2,12 +2,12 @@
 :root {
   --admin-brand: #4f46e5;
   --admin-brand-light: #818cf8;
-  --admin-bg: #f1f5f9; /* Lighter slate background for better contrast */
+  --admin-bg: #f8fafc; /* Ultra clean slate */
   --admin-card: #ffffff;
   --admin-border: #e2e8f0;
   --admin-text-primary: #0f172a;
   --admin-text-secondary: #334155;
-  --admin-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  --admin-gradient: linear-gradient(135deg, #1e1b4b, #312e81, #4f46e5);
 }
 
 .app-page:has(.top-nav .brand-kicker:contains("Smart Campus Platform")) {
