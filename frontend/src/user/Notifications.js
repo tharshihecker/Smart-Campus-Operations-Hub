@@ -90,6 +90,9 @@ export default function Notifications({ isAdmin = false }) {
       return;
     }
     if (n.referenceType === 'BOOKING' || n.referenceType === 'event_booking') navigate(isAdmin ? '/admin/bookings' : '/my-bookings');
+    else if (n.referenceType === 'WAITLIST_OPEN') {
+      navigate(`/facilities?highlight=${n.referenceId}&book=true`);
+    }
     else if (n.referenceType === 'TICKET') {
       // Navigate to the exact ticket using referenceId for deep-link
       let base;

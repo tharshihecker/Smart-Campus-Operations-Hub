@@ -96,7 +96,40 @@ function ManageBookings() {
 
       {message && <div className="alert alert-success">{message}</div>}
       {error && <div className="alert alert-error">{error}</div>}
-      {loading && <p className="state-text">Loading bookings...</p>}
+      {loading && (
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Facility</th>
+                <th>User</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Purpose</th>
+                <th>Attendees</th>
+                <th>Status</th>
+                <th>Admin Remarks</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3, 4, 5].map(i => (
+                <tr key={i}>
+                  <td><div className="skeleton-text" style={{ width: '120px' }}></div></td>
+                  <td><div className="skeleton-text" style={{ width: '80px' }}></div></td>
+                  <td><div className="skeleton-text" style={{ width: '100px' }}></div></td>
+                  <td><div className="skeleton-text" style={{ width: '100px' }}></div></td>
+                  <td><div className="skeleton-text" style={{ width: '150px' }}></div></td>
+                  <td><div className="skeleton-text" style={{ width: '40px' }}></div></td>
+                  <td><div className="skeleton-text" style={{ width: '80px', borderRadius: '12px' }}></div></td>
+                  <td><div className="skeleton-text" style={{ width: '100px' }}></div></td>
+                  <td><div className="skeleton-text" style={{ width: '150px' }}></div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {!loading && bookings.length === 0 && <div className="empty-state"><p>No bookings found.</p></div>}
 
@@ -147,7 +180,7 @@ function ManageBookings() {
                         <button className="btn-sm" style={{ background: '#f59e0b', color: '#fff', border: 'none' }} onClick={() => {
                           setCounterId(b.id);
                           setCounterForm({ newDate: b.bookingDate, newStartTime: b.startTime, newEndTime: b.endTime, note: '' });
-                        }} disabled={busy}>Propose Alternate Time</button>
+                        }} disabled={busy}>Propose</button>
                       </>
                     )}
                     {b.status === "APPROVED" && (
@@ -169,29 +202,29 @@ function ManageBookings() {
       {/* Counter-Propose Modal Overlay */}
       {counterId && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
-          <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', minWidth: '300px', maxWidth: '400px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '16px' }}>Counter-Propose Time</h3>
-            <div style={{ marginBottom: '10px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>New Date</label>
-              <input type="date" value={counterForm.newDate} onChange={e => setCounterForm(f => ({ ...f, newDate: e.target.value }))} className="form-control" />
+          <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', minWidth: '340px', maxWidth: '440px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', color: '#1e293b' }}>
+            <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '1.4rem', color: '#0f172a', fontWeight: 800 }}>Counter-Propose Time</h3>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600, color: '#64748b' }}>New Date</label>
+              <input type="date" value={counterForm.newDate} onChange={e => setCounterForm(f => ({ ...f, newDate: e.target.value }))} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.95rem', color: '#0f172a', backgroundColor: '#ffffff' }} />
             </div>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>Start Time</label>
-                <input type="time" value={counterForm.newStartTime} onChange={e => setCounterForm(f => ({ ...f, newStartTime: e.target.value }))} className="form-control" />
+                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600, color: '#64748b' }}>Start Time</label>
+                <input type="time" value={counterForm.newStartTime} onChange={e => setCounterForm(f => ({ ...f, newStartTime: e.target.value }))} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.95rem', color: '#0f172a', backgroundColor: '#ffffff' }} />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>End Time</label>
-                <input type="time" value={counterForm.newEndTime} onChange={e => setCounterForm(f => ({ ...f, newEndTime: e.target.value }))} className="form-control" />
+                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600, color: '#64748b' }}>End Time</label>
+                <input type="time" value={counterForm.newEndTime} onChange={e => setCounterForm(f => ({ ...f, newEndTime: e.target.value }))} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.95rem', color: '#0f172a', backgroundColor: '#ffffff' }} />
               </div>
             </div>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>Reason / Note</label>
-              <input type="text" placeholder="e.g. Lab cleaning at 1PM" value={counterForm.note} onChange={e => setCounterForm(f => ({ ...f, note: e.target.value }))} className="form-control" />
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px', fontWeight: 600, color: '#64748b' }}>Reason / Note</label>
+              <input type="text" placeholder="e.g. Lab cleaning at 1PM" value={counterForm.note} onChange={e => setCounterForm(f => ({ ...f, note: e.target.value }))} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.95rem', color: '#0f172a', backgroundColor: '#ffffff' }} />
             </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button className="btn-secondary" onClick={() => setCounterId(null)} disabled={busy}>Cancel</button>
-              <button className="btn-primary" onClick={() => handleCounterSubmit(counterId)} disabled={busy}>Send Proposal</button>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" onClick={() => setCounterId(null)} disabled={busy} style={{ flex: 1 }}>Cancel</button>
+              <button className="btn-primary" onClick={() => handleCounterSubmit(counterId)} disabled={busy} style={{ flex: 1, background: 'var(--admin-gradient)' }}>Send Proposal</button>
             </div>
           </div>
         </div>

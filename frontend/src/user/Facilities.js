@@ -189,6 +189,9 @@ function BookingPanel({ facility, userId, onClose }) {
 
   const [dayBookings, setDayBookings] = useState([]);
   const [loadingDay, setLoadingDay] = useState(false);
+  const [showWaitlistGuide, setShowWaitlistGuide] = useState(false);
+
+  const freeBlocks = useMemo(() => getFreeBlocks(openFrom, openTo, dayBookings), [openFrom, openTo, dayBookings]);
 
   useEffect(() => {
     if (!form.bookingDate) return;
@@ -380,34 +383,26 @@ function BookingPanel({ facility, userId, onClose }) {
             <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-main)' }}>✨ Available Time Slots for {form.bookingDate}</h4>
             <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Click a free slot below to automatically select it.</p>
             {loadingDay ? <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Calculating free slots...</p> :
-              (() => {
-                const freeBlocks = getFreeBlocks(openFrom, openTo, dayBookings);
-                if (freeBlocks.length === 0) {
-                  return <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--brand-danger)' }}>🚫 Fully booked for the entire day.</p>;
-                }
-                return (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                    {freeBlocks.map((block, idx) => (
-                      <button
-                        key={idx} type="button"
-                        onClick={() => {
-                          setForm(prev => ({ ...prev, startTime: block.start, endTime: block.end }));
-                        }}
-                        style={{
-                          background: 'rgba(20, 184, 166, 0.08)', color: 'var(--brand-teal)', border: '1px solid rgba(20, 184, 166, 0.25)', padding: '6px 4px',
-                          borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '600',
-                          textAlign: 'center', transition: 'all 0.2s', whiteSpace: 'nowrap',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-                        }}
-                        onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.2)'; e.currentTarget.style.borderColor = 'var(--brand-teal)'; }}
-                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.08)'; e.currentTarget.style.borderColor = 'rgba(20, 184, 166, 0.25)'; }}
-                      >
-                        {fmtTime(block.start)} – {fmtTime(block.end)}
-                      </button>
-                    ))}
-                  </div>
-                );
-              })()
+              (freeBlocks.length > 0 ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {freeBlocks.map((block, idx) => (
+                    <button
+                      key={idx} type="button"
+                      onClick={() => {
+                        setForm(prev => ({ ...prev, startTime: block.start, endTime: block.end }));
+                      }}
+                      style={{
+                        background: '#16a34a', color: '#ffffff', border: 'none', padding: '6px 12px',
+                        borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold',
+                        boxShadow: '0 2px 6px rgba(22,163,74,0.35)'
+                      }}>
+                      {fmtTime(block.start)} – {fmtTime(block.end)}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--brand-danger)' }}>🚫 Fully booked for the entire day.</p>
+              ))
             }
           </div>
 
@@ -420,8 +415,8 @@ function BookingPanel({ facility, userId, onClose }) {
               <div className="fac-cap-fill" style={{ width: `${usedPct}%` }} />
               <span className="fac-cap-label">
                 {isFull
-                  ? `🚫 FULLY BOOKED for this slot (${availability.totalCapacity}/${availability.totalCapacity})`
-                  : `👥 ${availability.usedSeats}/${availability.totalCapacity} seats taken · ✅ ${availability.remainingSeats} available`
+                  ? `🚫 FULLY BOOKED (${availability.totalCapacity}/${availability.totalCapacity})`
+                  : `✅ ${availability.remainingSeats} seats available`
                 }
               </span>
             </div>
@@ -456,7 +451,7 @@ function BookingPanel({ facility, userId, onClose }) {
             {/* Time row */}
             <div className="form-row">
               <div className="form-group">
-                <label>Start Time * <span className="fac-time-hint">({fmtTime(openFrom)} – {fmtTime(openTo)})</span></label>
+                <label>Start Time * <span className="fac-time-hint">({fmtTime(openFrom)})</span></label>
                 <input
                   type="time"
                   name="startTime"
@@ -469,12 +464,11 @@ function BookingPanel({ facility, userId, onClose }) {
                 />
               </div>
               <div className="form-group">
-                <label>End Time * <span className="fac-time-hint">(max {fmtTime(openTo)})</span></label>
+                <label>End Time * <span className="fac-time-hint">({fmtTime(openTo)})</span></label>
                 <input
                   type="time"
                   name="endTime"
                   min={minEndTime}
-                  max={openTo}
                   step="900"
                   value={form.endTime}
                   onChange={onChange}
@@ -497,10 +491,7 @@ function BookingPanel({ facility, userId, onClose }) {
               </div>
               <div className="form-group flex-1">
                 <label>
-                  Attendees
-                  {availability && (
-                    <span className="fac-seat-hint"> (max {availability.remainingSeats})</span>
-                  )}
+                  Attendees * <span className="fac-seat-hint">({availability ? `${availability.remainingSeats} available` : `${facility.capacity} available`})</span>
                 </label>
                 <input
                   type="number"
@@ -525,7 +516,7 @@ function BookingPanel({ facility, userId, onClose }) {
             </div>
 
             <div className="booking-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
-              <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>Cancel</button>
+              <button type="button" className="btn-secondary" onClick={() => { onClose(); setShowWaitlistGuide(false); }} disabled={loading}>Cancel</button>
               <div style={{ display: 'flex', gap: '10px' }}>
                 {(isFull || (availability && form.attendeeCount > availability.remainingSeats)) && (
                   <button type="button" className="btn-secondary" style={{ background: '#f59e0b', color: 'white' }} onClick={handleWaitlist} disabled={loading || hasErrors}>

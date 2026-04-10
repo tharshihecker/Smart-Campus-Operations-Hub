@@ -1,71 +1,234 @@
-/* ── Admin Shared Styles ────────────────────────────────── */
+/* ── Admin Specific Theme ────────────────────────────── */
+:root {
+  --admin-brand: #4f46e5;
+  --admin-brand-light: #818cf8;
+  --admin-bg: #f1f5f9; /* Lighter slate background for better contrast */
+  --admin-card: #ffffff;
+  --admin-border: #e2e8f0;
+  --admin-text-primary: #0f172a;
+  --admin-text-secondary: #334155;
+  --admin-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+}
+
+.app-page:has(.top-nav .brand-kicker:contains("Smart Campus Platform")) {
+  background-color: var(--admin-bg) !important;
+}
+
+/* ── Admin Top Nav Enhancement ───────────────────────── */
+.top-nav:has(.brand-kicker:contains("Smart Campus Platform")) {
+  border-bottom: 2px solid var(--admin-brand);
+  background: rgba(15, 23, 42, 0.8) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+.brand-kicker {
+  color: var(--admin-brand-light) !important;
+}
+
+.nav-link.active {
+  background: var(--admin-gradient) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+}
+
+/* ── Overlap Fixes & General UX ──────────────────────── */
+.page-body {
+  padding-bottom: 40px;
+  color: var(--admin-text-primary);
+}
+
+/* Fix for overlapping text on cards */
+.fac-card, .adm-inc-card, .admin-home-card, .admin-card, .stat-card, .quick-action-card {
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+  background: var(--admin-card) !important;
+  color: var(--admin-text-primary) !important;
+  border: 1px solid var(--admin-border) !important;
+}
+
+.card-title {
+  color: var(--admin-text-primary) !important;
+  font-weight: 800 !important;
+  margin-bottom: 16px;
+  font-size: 1.15rem;
+}
+
+/* Ensure background icons don't interfere with text */
+.fac-page-header::before, .admin-home-header::before, .stat-card::after, .quick-action-card::after {
+  z-index: 0 !important;
+  pointer-events: none;
+  opacity: 0.1 !important; /* Force low opacity for background icons */
+}
+
+/* Form and Search elements contrast */
+.admin-search select, .fac-filter-select, .admin-form input, .admin-form select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  font-weight: 500 !important;
+}
+
+.admin-search select option {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+}
+
+.fac-page-title, .admin-home-title {
+  position: relative;
+  z-index: 1;
+}
+
+/* Modern Admin Table */
+.admin-table-container {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  margin-top: 24px;
+  box-shadow: var(--shadow-md);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.admin-table th {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 16px 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-medium);
+}
+
+.admin-table td {
+  padding: 16px 20px;
+  font-size: 0.95rem;
+  color: #1e293b;
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+}
+
+/* ── Skeleton Loading ───────────────────────────────── */
+.skeleton-text {
+  height: 14px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-text::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.admin-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
 
 .admin-panel {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 18px;
-  padding: 28px;
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+  border: 1px solid var(--border-medium);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.05);
 }
 
 .admin-panel h2 {
-  margin: 0 0 4px;
+  margin: 0 0 8px;
   color: #0f172a;
-  font-size: 1.5rem;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .admin-subtitle {
-  margin: 0 0 20px;
-  color: #475569;
-  line-height: 1.5;
+  margin: 0 0 24px;
+  color: #64748b;
+  line-height: 1.6;
+  font-size: 1rem;
 }
 
 /* ── Dashboard Stats Grid ──────────────────────────────── */
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 14px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
 }
 
 .stat-card {
-  border-radius: 14px;
-  padding: 20px;
-  background: linear-gradient(145deg, #f0f9ff, #ffffff);
-  border: 1px solid #dbeafe;
+  border-radius: 20px;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
   text-align: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+  border-color: var(--admin-brand-light);
 }
 
 .stat-card.highlight {
-  background: linear-gradient(145deg, #f0fdfa, #ecfdf5);
-  border-color: #a7f3d0;
+  background: linear-gradient(145deg, #f5f3ff, #ffffff);
+  border-color: #ddd6fe;
 }
 
 .stat-card.warning {
-  background: linear-gradient(145deg, #fffbeb, #fefce8);
-  border-color: #fde68a;
+  background: linear-gradient(145deg, #fffbeb, #ffffff);
+  border-color: #fef3c7;
 }
 
 .stat-card.danger {
-  background: linear-gradient(145deg, #fef2f2, #fff1f2);
+  background: linear-gradient(145deg, #fef2f2, #ffffff);
   border-color: #fecaca;
 }
 
 .stat-number {
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: 2.5rem;
+  font-weight: 900;
   color: #0f172a;
   margin: 0;
+  line-height: 1;
+  font-family: 'Outfit', sans-serif;
 }
 
 .stat-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #64748b;
-  margin: 4px 0 0;
+  margin: 8px 0 0;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
+  letter-spacing: 0.1em;
+  font-weight: 800;
 }
 
 /* ── Admin Form ────────────────────────────────────────── */
@@ -313,13 +476,16 @@
 
 .quick-action-card h3 {
   margin: 0 0 6px;
-  font-size: 1rem;
+  font-size: 1.1rem;
+  color: #0f172a !important;
+  font-weight: 800 !important;
 }
 
 .quick-action-card p {
   margin: 0;
-  font-size: 0.88rem;
-  color: #64748b;
+  font-size: 0.9rem;
+  color: #334155 !important;
+  font-weight: 500;
 }
 
 .quick-action-icon {

@@ -71,12 +71,13 @@
     align-items: flex-end;
     gap: 24px;
     flex-wrap: wrap;
-    background: var(--gradient-hero);
-    border: 1px solid var(--border-medium);
+    background: var(--admin-gradient);
+    border: 1px solid var(--admin-brand);
     border-radius: var(--radius-xl);
     padding: 40px 48px;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.15);
 }
 
 .fac-page-header::before {
@@ -85,33 +86,42 @@
     right: 32px;
     bottom: -20px;
     font-size: 10rem;
-    opacity: 0.05;
+    opacity: 0.1;
     pointer-events: none;
+    z-index: 0;
 }
 
 .fac-page-kicker {
     font-size: 0.78rem;
     font-weight: 800;
     letter-spacing: 0.15em;
-    color: var(--brand-teal);
+    color: rgba(255, 255, 255, 0.8);
     text-transform: uppercase;
     margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
 }
 
 .fac-page-title h1 {
     font-family: 'Outfit', sans-serif;
-    font-size: 2.4rem;
+    font-size: 2.6rem;
     font-weight: 900;
-    color: var(--text-primary);
+    color: #ffffff;
     letter-spacing: -0.03em;
     margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .fac-page-title p {
-    color: var(--text-secondary);
-    font-size: 1rem;
-    max-width: 480px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.05rem;
+    max-width: 520px;
     line-height: 1.6;
+    position: relative;
+    z-index: 1;
+    font-weight: 500;
 }
 
 .fac-add-btn {
@@ -146,16 +156,14 @@
 }
 
 .fac-stat-card {
-    background: var(--bg-glass);
-    border: 1px solid var(--border-medium);
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0;
     border-radius: var(--radius-lg);
     padding: 24px;
     display: flex;
     align-items: center;
     gap: 20px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     transition: all var(--transition-bounce);
 }
 
@@ -180,13 +188,13 @@
     font-size: 2.2rem;
     font-weight: 900;
     line-height: 1;
-    color: var(--text-primary);
+    color: #0f172a !important;
 }
 
 .fac-stat-label {
     font-size: 0.85rem;
     font-weight: 700;
-    color: var(--text-secondary);
+    color: #475569 !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-top: 4px;
@@ -374,18 +382,17 @@
 
 /* ── Facility Card ───────────────────────────────────────────────────── */
 .fac-card {
-    background: var(--bg-glass);
-    border: 1px solid var(--border-medium);
+    background: #ffffff !important; /* Force solid white background */
+    border: 1px solid #e2e8f0;
     border-radius: var(--radius-xl);
     padding: 28px;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     transition: all var(--transition-bounce);
     position: relative;
     overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .fac-card::before {
@@ -450,14 +457,14 @@
     font-family: 'Outfit', sans-serif;
     font-size: 1.3rem;
     font-weight: 800;
-    color: var(--text-primary);
+    color: #0f172a !important; /* Force dark color for visibility */
     margin: 0;
     line-height: 1.2;
 }
 
 .fac-card-desc {
     font-size: 0.92rem;
-    color: var(--text-secondary);
+    color: #334155 !important; /* Force dark color for visibility */
     line-height: 1.55;
     margin: 0;
     display: -webkit-box;
@@ -478,13 +485,13 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-subtle);
+    background: #f1f5f9; /* Solid light background */
+    border: 1px solid #e2e8f0;
     border-radius: var(--radius-pill);
     padding: 4px 12px;
     font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-weight: 700;
+    color: #334155 !important; /* Force dark text */
 }
 
 .fac-card-actions {

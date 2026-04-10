@@ -10,16 +10,12 @@ public class BookingRequest {
 
     private String userId;
 
-    @NotNull
     private LocalDate bookingDate;
 
-    @NotNull
     private LocalTime startTime;
 
-    @NotNull
     private LocalTime endTime;
 
-    @NotBlank
     private String purpose;
 
     private String notes;

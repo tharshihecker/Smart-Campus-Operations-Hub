@@ -6,23 +6,23 @@ import './Admin.css';
 /* ── Mini bar chart using inline SVG ──────────────────── */
 function BarChart({ data, colorFn }) {
   const entries = Object.entries(data || {}).filter(([, v]) => v > 0);
-  if (!entries.length) return <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No data yet</p>;
+  if (!entries.length) return <p style={{ color: '#1e293b', fontSize: '0.85rem' }}>No data yet</p>;
   const max = Math.max(...entries.map(([, v]) => v));
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {entries.map(([label, value]) => (
-        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ width: 110, fontSize: '0.75rem', color: 'var(--text-secondary)', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
-          <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 99, height: 12, overflow: 'hidden' }}>
+        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ width: 140, fontSize: '0.75rem', color: '#1e293b', flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label}</span>
+          <div style={{ flex: 1, background: 'rgba(0,0,0,0.1)', borderRadius: 99, height: 10, overflow: 'hidden' }}>
             <div style={{
               height: '100%',
               width: `${(value / max) * 100}%`,
-              background: colorFn ? colorFn(label) : 'var(--gradient-brand)',
+              background: colorFn ? colorFn(label) : 'var(--admin-gradient)',
               borderRadius: 99,
               transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
             }} />
           </div>
-          <span style={{ width: 28, fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 700, textAlign: 'right' }}>{value}</span>
+          <span style={{ width: 32, fontSize: '0.85rem', color: '#0f172a', fontWeight: 900, textAlign: 'right' }}>{value}</span>
         </div>
       ))}
     </div>
@@ -33,37 +33,42 @@ function BarChart({ data, colorFn }) {
 function DonutChart({ data, colors }) {
   const entries = Object.entries(data || {}).filter(([, v]) => v > 0);
   const total = entries.reduce((s, [, v]) => s + v, 0);
-  if (!total) return <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No data yet</p>;
+  if (!total) return <p style={{ color: '#1e293b', fontSize: '0.85rem' }}>No data yet</p>;
   let offset = 0;
   const r = 40, cx = 55, cy = 55, circum = 2 * Math.PI * r;
   return (
-    <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-      <svg width="110" height="110" viewBox="0 0 110 110">
-        {entries.map(([label, value], i) => {
-          const pct = value / total;
-          const segment = (
-            <circle key={label}
-              cx={cx} cy={cy} r={r}
-              fill="none"
-              stroke={colors[i % colors.length]}
-              strokeWidth={18}
-              strokeDasharray={`${pct * circum} ${circum}`}
-              strokeDashoffset={-offset * circum}
-              transform={`rotate(-90 ${cx} ${cy})`}
-              style={{ transition: 'stroke-dasharray 0.8s ease' }}
-            />
-          );
-          offset += pct;
-          return segment;
-        })}
-        <text x={cx} y={cy + 5} textAnchor="middle" fill="var(--text-primary)" fontSize="14" fontWeight="700">{total}</text>
-      </svg>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div style={{ position: 'relative', width: 110, height: 110 }}>
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          {entries.map(([label, value], i) => {
+            const pct = value / total;
+            const segment = (
+              <circle key={label}
+                cx={cx} cy={cy} r={r}
+                fill="none"
+                stroke={colors[i % colors.length]}
+                strokeWidth={16}
+                strokeDasharray={`${pct * circum} ${circum}`}
+                strokeDashoffset={-offset * circum}
+                transform={`rotate(-90 ${cx} ${cy})`}
+                style={{ transition: 'stroke-dasharray 0.8s ease' }}
+              />
+            );
+            offset += pct;
+            return segment;
+          })}
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: '1.3rem', fontWeight: 950, color: '#0f172a', lineHeight: 1 }}>{total}</span>
+          <span style={{ fontSize: '0.65rem', color: '#1e293b', textTransform: 'uppercase', fontWeight: 800 }}>Total</span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: '140px', flex: 1 }}>
         {entries.map(([label, value], i) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: colors[i % colors.length], flexShrink: 0 }} />
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginLeft: 'auto' }}>{value}</span>
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 10, height: 10, borderRadius: '3px', background: colors[i % colors.length], flexShrink: 0 }} />
+            <span style={{ fontSize: '0.75rem', color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 800 }}>{label}</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 900, color: '#0f172a', marginLeft: 'auto' }}>{value}</span>
           </div>
         ))}
       </div>
@@ -89,9 +94,45 @@ function AdminHome() {
 
   return (
     <section className="admin-panel">
-      <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.8rem', marginBottom: 6 }}>Admin Dashboard</h2>
-        <p className="admin-subtitle">Real-time overview of Smart Campus platform metrics.</p>
+      <div className="admin-home-header" style={{ 
+        marginBottom: 32, 
+        padding: '48px', 
+        background: '#4f46e5', // Solid indigo background
+        backgroundImage: 'var(--admin-gradient)',
+        borderRadius: 'var(--radius-xl)',
+        border: '1px solid #4338ca',
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: '0 10px 30px rgba(79, 70, 229, 0.2)'
+      }}>
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <h2 style={{ 
+            fontFamily: "'Outfit', sans-serif", 
+            fontSize: '2.8rem', 
+            fontWeight: 900,
+            marginBottom: 12,
+            color: '#ffffff',
+            letterSpacing: '-0.03em',
+            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}>Admin Dashboard</h2>
+          <p className="admin-subtitle" style={{ 
+            fontSize: '1.15rem', 
+            color: 'rgba(255, 255, 255, 0.9)',
+            maxWidth: '600px',
+            fontWeight: 500,
+            lineHeight: 1.6
+          }}>Real-time overview of Smart Campus platform metrics.</p>
+        </div>
+        <div style={{ 
+          position: 'absolute', 
+          right: '48px', 
+          bottom: '-20px', 
+          fontSize: '12rem', 
+          opacity: 0.15, 
+          zIndex: 1,
+          pointerEvents: 'none',
+          filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.2))'
+        }}>📊</div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -112,10 +153,19 @@ function AdminHome() {
               { label: 'Avg Resolution', value: analytics?.avgResolutionHours != null ? `${analytics.avgResolutionHours}h` : '—', icon: '⏱️', cls: '' },
               { label: 'Campus Events', value: summary.totalEvents, icon: '🎉', cls: '' },
             ].map(m => (
-              <div key={m.label} className={`stat-card ${m.cls}`}>
-                <p style={{ fontSize: '1.4rem', marginBottom: 4 }}>{m.icon}</p>
-                <p className="stat-number">{m.value}</p>
-                <p className="stat-label">{m.label}</p>
+              <div key={m.label} className={`stat-card ${m.cls}`} style={{ position: 'relative', overflow: 'hidden' }}>
+                <div style={{ fontSize: '2.2rem', marginBottom: 8, opacity: 0.9, position: 'relative', zIndex: 2 }}>{m.icon}</div>
+                <p className="stat-number" style={{ position: 'relative', zIndex: 2 }}>{m.value}</p>
+                <p className="stat-label" style={{ position: 'relative', zIndex: 2 }}>{m.label}</p>
+                <div style={{ 
+                  position: 'absolute', 
+                  top: '10px', 
+                  right: '10px', 
+                  fontSize: '3rem', 
+                  opacity: 0.03, 
+                  zIndex: 1,
+                  pointerEvents: 'none'
+                }}>{m.icon}</div>
               </div>
             ))}
           </div>
@@ -153,7 +203,7 @@ function AdminHome() {
                     return (
                       <div key={h} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                         <div style={{ width: '100%', height: `${heightPct}%`, minHeight: count > 0 ? 4 : 0, background: 'var(--gradient-brand)', borderRadius: '3px 3px 0 0', transition: 'height 0.8s ease' }} title={`${h}:00 — ${count} bookings`} />
-                        {h % 4 === 0 && <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>{h}h</span>}
+                        {h % 4 === 0 && <span style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: 600 }}>{h}h</span>}
                       </div>
                     );
                   })}
@@ -163,20 +213,19 @@ function AdminHome() {
               {/* Top Facilities */}
               <div className="admin-card">
                 <h3 className="card-title">🏆 Top Booked Facilities</h3>
-                {(analytics.topFacilities || []).length === 0
-                  ? <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No bookings yet</p>
-                  : (analytics.topFacilities || []).map((f, i) => (
-                    <div key={f.facilityId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.87rem' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>
-                        <span style={{ color: ['#fbbf24', '#94a3b8', '#f97316'][i] ?? 'var(--text-muted)', marginRight: 6 }}>
-                          {['🥇', '🥈', '🥉'][i] ?? `#${i + 1}`}
-                        </span>
-                        {f.facilityName}
-                      </span>
-                      <span style={{ fontWeight: 700, color: 'var(--text-accent)' }}>{f.bookingCount}</span>
-                    </div>
-                  ))
-                }
+                {(analytics.topFacilities || []).length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No bookings yet</p>
+                ) : (
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {analytics.topFacilities.map((f, i) => (
+                      <li key={f.facilityId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < analytics.topFacilities.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none' }}>
+                        <span style={{ fontSize: '1.1rem', width: 24, textAlign: 'center' }}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+                        <span style={{ flex: 1, fontSize: '0.9rem', fontWeight: 700, color: '#1e293b' }}>{f.facilityName}</span>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#4f46e5' }}>{f.bookingCount}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {/* Ticket Status */}
@@ -202,10 +251,31 @@ function AdminHome() {
           { to: '/admin/incidents', icon: '🔧', title: 'Incidents', desc: 'Assign techs and manage ticket flow.' },
           { to: '/admin/events', icon: '🎯', title: 'Events', desc: 'Manage campus events and activities.' },
         ].map(a => (
-          <Link key={a.to} to={a.to} className="quick-action-card">
-            <div className="quick-action-icon">{a.icon}</div>
-            <h3>{a.title}</h3>
-            <p>{a.desc}</p>
+          <Link key={a.to} to={a.to} className="quick-action-card" style={{ 
+            background: '#ffffff', 
+            border: '1px solid var(--admin-border)',
+            position: 'relative',
+            overflow: 'hidden',
+            padding: '24px',
+            borderRadius: '16px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            textDecoration: 'none'
+          }}>
+            <div style={{ fontSize: '1.8rem', position: 'relative', zIndex: 2 }}>{a.icon}</div>
+            <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#0f172a', fontWeight: 800, position: 'relative', zIndex: 2 }}>{a.title}</h3>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#334155', fontWeight: 500, position: 'relative', zIndex: 2 }}>{a.desc}</p>
+            <div style={{ 
+              position: 'absolute', 
+              top: '10px', 
+              right: '10px', 
+              fontSize: '3rem', 
+              opacity: 0.05, 
+              zIndex: 1,
+              pointerEvents: 'none'
+            }}>{a.icon}</div>
           </Link>
         ))}
       </div>
