@@ -62,6 +62,19 @@ function UserTopNav({ isAuthenticated, onLogout, toggleTheme, theme }) {
     role: localStorage.getItem('smartcampus_user_role')
   });
 
+  // Keep userInfo in sync with localStorage when authentication state changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      setUserInfo({
+        username: localStorage.getItem('smartcampus_username'),
+        fullName: localStorage.getItem('smartcampus_user_fullname'),
+        role: localStorage.getItem('smartcampus_user_role')
+      });
+    } else {
+      setUserInfo({ username: null, fullName: null, role: null });
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     const handleProfileUpdate = (e) => {
       const updated = e.detail;
@@ -95,16 +108,16 @@ function UserTopNav({ isAuthenticated, onLogout, toggleTheme, theme }) {
           <>
             {isTech ? (
               <>
-                <NavLink to="/technician-dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>My Dashboard</NavLink>
+                <NavLink to="/technician-dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Home</NavLink>
                 <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                  {displayName ? `👤 ${displayName} (Tech)` : 'Profile'}
+                  {displayName ? `👤 ${displayName}` : 'Profile'}
                 </NavLink>
                 <NotificationBell isAuthenticated={isAuthenticated} userId={userId} />
                 <button type="button" className="nav-button" onClick={onLogout}>Logout</button>
               </>
             ) : (
               <>
-                <NavLink to="/home" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
+                <NavLink to="/home" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Home</NavLink>
                 <NavLink to="/events" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Events</NavLink>
                 <NavLink to="/facilities" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>Facilities</NavLink>
                 <NavLink to="/my-bookings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>My Bookings</NavLink>
