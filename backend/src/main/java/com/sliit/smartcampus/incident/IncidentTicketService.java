@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Transactional
@@ -56,22 +57,30 @@ public class IncidentTicketService {
 
         IncidentTicket saved = ticketRepository.save(ticket);
 
-        // Handle file attachments (max 3)
-        if (files != null) {
+        // Handle file attachments (max 3) - process in parallel for faster uploads
+        if (files != null && !files.isEmpty()) {
             int count = Math.min(files.size(), 3);
-            for (int i = 0; i < count; i++) {
-                MultipartFile file = files.get(i);
-                if (!file.isEmpty()) {
-                    try {
-                        TicketAttachment att = saveAttachment(file, saved);
-                        att = attachmentRepository.save(att);
-                        saved.getAttachments().add(att);
-                    } catch (IOException e) {
-                        // log and continue
-                    }
-                }
+            List<MultipartFile> filesToProcess = files.stream().limit(count).filter(f -> !f.isEmpty()).toList();
+            
+            // Process file uploads in parallel
+            List<TicketAttachment> attachments = filesToProcess.parallelStream()
+                    .map(file -> {
+                        try {
+                            TicketAttachment att = saveAttachment(file, saved);
+                            return attachmentRepository.save(att);
+                        } catch (IOException e) {
+                            // log and continue
+                            return null;
+                        }
+                    })
+                    .filter(att -> att != null)
+                    .toList();
+            
+            // Add all attachments to ticket
+            if (!attachments.isEmpty()) {
+                saved.getAttachments().addAll(attachments);
+                ticketRepository.save(saved);
             }
-            ticketRepository.save(saved);
         }
 
         return toResponse(saved);
