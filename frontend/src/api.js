@@ -141,8 +141,8 @@ export function logout() {
   clearToken();
   localStorage.removeItem('smartcampus_user_id');
   localStorage.removeItem('smartcampus_username');
-  localStorage.removeItem('smartcampus_role');
-  localStorage.removeItem('smartcampus_full_name');
+  localStorage.removeItem('smartcampus_user_role');
+  localStorage.removeItem('smartcampus_user_fullname');
 }
 
 export function isLoggedIn() {
