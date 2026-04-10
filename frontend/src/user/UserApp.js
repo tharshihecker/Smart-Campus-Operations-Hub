@@ -56,12 +56,29 @@ function NotificationBell({ userId, isAuthenticated }) {
 }
 
 function UserTopNav({ isAuthenticated, onLogout, toggleTheme, theme }) {
-  const username = localStorage.getItem('smartcampus_username');
-  const fullName = localStorage.getItem('smartcampus_user_fullname');
-  const displayName = fullName || username || '';
+  const [userInfo, setUserInfo] = useState({
+    username: localStorage.getItem('smartcampus_username'),
+    fullName: localStorage.getItem('smartcampus_user_fullname'),
+    role: localStorage.getItem('smartcampus_user_role')
+  });
+
+  useEffect(() => {
+    const handleProfileUpdate = (e) => {
+      const updated = e.detail;
+      setUserInfo({
+        username: updated.username || localStorage.getItem('smartcampus_username'),
+        fullName: updated.fullName,
+        role: updated.role || localStorage.getItem('smartcampus_user_role')
+      });
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    return () => window.removeEventListener('profileUpdated', handleProfileUpdate);
+  }, []);
+
+  const displayName = userInfo.fullName || userInfo.username || '';
   const userId = localStorage.getItem('smartcampus_user_id');
-  const userRole = localStorage.getItem('smartcampus_user_role');
-  const isTech = userRole === 'TECHNICIAN';
+  const isTech = userInfo.role === 'TECHNICIAN';
 
   return (
     <header className="top-nav">

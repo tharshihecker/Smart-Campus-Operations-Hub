@@ -1,5 +1,11 @@
 package com.sliit.smartcampus.event;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+
 import com.sliit.smartcampus.notification.NotificationService;
 import com.sliit.smartcampus.notification.NotificationType;
 import com.sliit.smartcampus.user.User;
@@ -8,6 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -246,5 +256,48 @@ public class EventBookingService {
         }
 
         return b;
+    }
+
+    public byte[] generateQrCodeImage(String text) throws WriterException, IOException {
+        String qrData = "http://localhost:3000/admin/event-checkin?qr=" + text;
+        QRCodeWriter qrWriter = new QRCodeWriter();
+        BitMatrix matrix = qrWriter.encode(qrData, BarcodeFormat.QR_CODE, 400, 400);
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            MatrixToImageWriter.writeToStream(matrix, "PNG", baos);
+            return baos.toByteArray();
+        }
+    }
+
+    public Map<String, Object> getBookingSummaryByToken(String token) {
+        EventBooking b = bookingRepository.findByQrToken(token);
+        if (b == null) throw new ResponseStatusException(NOT_FOUND, "Booking not found");
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("bookingId", b.getId());
+        result.put("bookingNumber", b.getBookingNumber());
+        result.put("status", b.getStatus().name());
+        result.put("seatNumber", b.getSeatNumber());
+        result.put("checkedInAt", b.getCheckedInAt() != null ? b.getCheckedInAt().toString() : null);
+        result.put("createdAt", b.getCreatedAt() != null ? b.getCreatedAt().toString() : null);
+
+        if (b.getUser() != null) {
+            result.put("attendeeName", b.getUser().getFullName());
+            result.put("attendeeEmail", b.getUser().getEmail());
+        } else {
+            result.put("attendeeName", b.getGuestName());
+            result.put("attendeeEmail", b.getGuestEmail());
+        }
+        result.put("studentNumber", b.getStudentNumber());
+        result.put("nic", b.getNic());
+
+        eventRepository.findById(b.getEventId()).ifPresent(ev -> {
+            result.put("eventTitle", ev.getTitle());
+            result.put("eventDate", ev.getEventDate());
+            result.put("eventLocation", ev.getLocation());
+            result.put("eventStartTime", ev.getStartTime());
+            result.put("eventEndTime", ev.getEndTime());
+        });
+
+        return result;
     }
 }

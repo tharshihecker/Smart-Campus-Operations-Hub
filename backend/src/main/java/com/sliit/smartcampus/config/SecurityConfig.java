@@ -47,7 +47,7 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints (no token required)
-                .requestMatchers("/api/user/signup", "/api/user/login", "/api/auth/google").permitAll()
+                .requestMatchers("/api/user/signup", "/api/user/login", "/api/auth/google", "/api/user/forgot-password-request", "/api/user/forgot-password-reset").permitAll()
                 // Public read-only endpoints (GET requests)
                 .requestMatchers(HttpMethod.GET, "/api/facilities").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/facilities/**").permitAll()

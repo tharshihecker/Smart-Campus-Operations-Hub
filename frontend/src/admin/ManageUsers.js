@@ -35,9 +35,13 @@ function ManageUsers() {
     }
   };
 
+  // Debounced Search and Initial Load
   useEffect(() => {
-    loadData();
-  }, []);
+    const timer = setTimeout(() => {
+      loadData(searchQuery);
+    }, 400); // 400ms debounce
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Auto-hide messages
   useEffect(() => {
@@ -47,10 +51,6 @@ function ManageUsers() {
     }
   }, [message]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    loadData(searchQuery);
-  };
 
   const [confirmDialog, setConfirmDialog] = useState(null);
 
@@ -126,20 +126,18 @@ function ManageUsers() {
       </div>
 
       <div className="mu-toolbar">
-        <form className="mu-search-wrapper" onSubmit={handleSearch}>
+        <div className="mu-search-wrapper">
           <span className="mu-search-icon">🔍</span>
           <input
             className="mu-search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by username, email, or name..."
+            autoComplete="off"
           />
-        </form>
-        <button type="button" className="mu-btn mu-btn-primary" onClick={handleSearch} disabled={busy}>
-          Search
-        </button>
-        <button type="button" className="mu-btn mu-btn-clear" onClick={() => { setSearchQuery(""); loadData(); }} disabled={busy}>
-          Clear
+        </div>
+        <button type="button" className="mu-btn mu-btn-clear" onClick={() => setSearchQuery("")} disabled={busy || loading}>
+          Reset Filter
         </button>
       </div>
 

@@ -65,7 +65,9 @@ public class UserController {
             return ResponseEntity.badRequest().body("Missing username or password");
         }
 
-        return userRepository.findByUsernameIgnoreCase(username.trim())
+        String identifier = username.trim();
+        return userRepository.findByUsernameIgnoreCase(identifier)
+                .or(() -> userRepository.findByEmailIgnoreCase(identifier))
                 .filter(u -> u.isEnabled() && passwordMatches(rawPassword, u))
                 .map(u -> {
                     String token = jwtUtil.generateToken(u.getUsername(), u.getRole().name(), u.getId());
@@ -77,45 +79,44 @@ public class UserController {
     @GetMapping("/profile/{userId}")
     public ResponseEntity<?> getProfile(@PathVariable String userId) {
         return userRepository.findById(userId)
-                .map(u -> {
-                    Map<String, Object> map = new java.util.HashMap<>();
-                    map.put("id", u.getId());
-                    map.put("username", u.getUsername());
-                    map.put("email", u.getEmail());
-                    map.put("fullName", u.getFullName() != null ? u.getFullName() : "");
-                    map.put("phone", u.getPhone() != null ? u.getPhone() : "");
-                    map.put("department", u.getDepartment() != null ? u.getDepartment() : "");
-                    map.put("bio", u.getBio() != null ? u.getBio() : "");
-                    map.put("role", u.getRole().name());
-                    map.put("createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : "");
-                    map.put("oauthProvider", u.getOauthProvider() != null ? u.getOauthProvider() : "");
-                    map.put("notifBookingUpdates", u.isNotifBookingUpdates());
-                    map.put("notifTicketUpdates", u.isNotifTicketUpdates());
-                    map.put("notifComments", u.isNotifComments());
-                    return ResponseEntity.ok((Object) map);
-                })
+                .map(u -> ResponseEntity.ok((Object) buildProfileMap(u)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/profile/{userId}")
-    public ResponseEntity<?> updateProfile(@PathVariable String userId, @RequestBody Map<String, String> updates) {
+    public ResponseEntity<?> updateProfile(@PathVariable String userId, @RequestBody Map<String, Object> updates) {
         return userRepository.findById(userId)
                 .map(u -> {
-                    if (updates.containsKey("fullName")) u.setFullName(updates.get("fullName"));
-                    if (updates.containsKey("phone")) u.setPhone(updates.get("phone"));
-                    if (updates.containsKey("department")) u.setDepartment(updates.get("department"));
-                    if (updates.containsKey("bio")) u.setBio(updates.get("bio"));
-                    if (updates.containsKey("email")) {
-                        String newEmail = updates.get("email").trim();
-                        var existing = userRepository.findByEmailIgnoreCase(newEmail);
-                        String existingId = existing.map(User::getId).orElse(null);
-                        if (existingId != null && !existingId.equals(userId)) {
-                            return ResponseEntity.badRequest().body((Object) "Email already in use");
-                        }
-                        u.setEmail(newEmail);
+                    if (updates.containsKey("fullName")) {
+                        Object val = updates.get("fullName");
+                        u.setFullName(val != null ? val.toString() : "");
                     }
-                    userRepository.save(u);
-                    return ResponseEntity.ok((Object) "Profile updated successfully");
+                    if (updates.containsKey("phone")) {
+                        Object val = updates.get("phone");
+                        u.setPhone(val != null ? val.toString() : "");
+                    }
+                    if (updates.containsKey("department")) {
+                        Object val = updates.get("department");
+                        u.setDepartment(val != null ? val.toString() : "");
+                    }
+                    if (updates.containsKey("bio")) {
+                        Object val = updates.get("bio");
+                        u.setBio(val != null ? val.toString() : "");
+                    }
+                    if (updates.containsKey("email")) {
+                        Object val = updates.get("email");
+                        if (val != null) {
+                            String newEmail = val.toString().trim();
+                            var existing = userRepository.findByEmailIgnoreCase(newEmail);
+                            String existingId = existing.map(User::getId).orElse(null);
+                            if (existingId != null && !existingId.equals(userId)) {
+                                return ResponseEntity.badRequest().body((Object) "Email already in use");
+                            }
+                            u.setEmail(newEmail);
+                        }
+                    }
+                    User saved = userRepository.save(u);
+                    return ResponseEntity.ok((Object) buildProfileMap(saved));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -152,7 +153,7 @@ public class UserController {
                 
                 emailService.sendPasswordResetOtp(u, otp);
                 
-                return ResponseEntity.ok((Object) "OTP sent to email");
+                return ResponseEntity.ok((Object) Map.of("message", "OTP sent to email"));
             })
             .orElse(ResponseEntity.notFound().build());
     }
@@ -162,7 +163,9 @@ public class UserController {
         String otp = payload.get("otp");
         String newPassword = payload.get("newPassword");
         
-        if (otp == null || newPassword == null || newPassword.length() < 6) return ResponseEntity.badRequest().body("Invalid input");
+        if (otp == null || newPassword == null || newPassword.length() < 6) {
+            return ResponseEntity.badRequest().body("Invalid input (OTP + min 6 char password required)");
+        }
 
         return userRepository.findById(userId)
             .map(u -> {
@@ -175,7 +178,51 @@ public class UserController {
                 u.setOtpExpiry(null);
                 userRepository.save(u);
                 
-                return ResponseEntity.ok((Object) "Password changed successfully");
+                return ResponseEntity.ok((Object) Map.of("message", "Password changed successfully"));
+            })
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/forgot-password-request")
+    public ResponseEntity<?> forgotPasswordRequest(@RequestBody Map<String, String> payload) {
+        String identifier = payload.get("email"); // Can be email or username
+        if (identifier == null || identifier.isBlank()) return ResponseEntity.badRequest().body("Email or Username is required");
+
+        return userRepository.findByEmailIgnoreCase(identifier.trim())
+            .or(() -> userRepository.findByUsernameIgnoreCase(identifier.trim()))
+            .map(u -> {
+                String otp = String.format("%06d", new SecureRandom().nextInt(999999));
+                u.setOtp(otp);
+                u.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
+                userRepository.save(u);
+                
+                emailService.sendPasswordResetOtp(u, otp);
+                return ResponseEntity.ok((Object) Map.of("message", "OTP sent to email", "userId", u.getId()));
+            })
+            .orElse(ResponseEntity.status(404).body((Object) "No user found with this identifier"));
+    }
+
+    @PostMapping("/forgot-password-reset")
+    public ResponseEntity<?> forgotPasswordReset(@RequestBody Map<String, String> payload) {
+        String userId = payload.get("userId");
+        String otp = payload.get("otp");
+        String newPassword = payload.get("newPassword");
+
+        if (userId == null || otp == null || newPassword == null || newPassword.length() < 6) {
+            return ResponseEntity.badRequest().body("Invalid input data");
+        }
+
+        return userRepository.findById(userId)
+            .map(u -> {
+                if (u.getOtp() == null || u.getOtpExpiry() == null) return ResponseEntity.badRequest().body((Object) "No OTP requested");
+                if (LocalDateTime.now().isAfter(u.getOtpExpiry())) return ResponseEntity.badRequest().body((Object) "OTP expired");
+                if (!u.getOtp().equals(otp)) return ResponseEntity.badRequest().body((Object) "Invalid OTP");
+
+                u.setPassword(passwordEncoder.encode(newPassword));
+                u.setOtp(null);
+                u.setOtpExpiry(null);
+                userRepository.save(u);
+                return ResponseEntity.ok((Object) "Password reset successfully");
             })
             .orElse(ResponseEntity.notFound().build());
     }
@@ -188,10 +235,30 @@ public class UserController {
                     if (prefs.containsKey("notifBookingUpdates")) u.setNotifBookingUpdates(prefs.get("notifBookingUpdates"));
                     if (prefs.containsKey("notifTicketUpdates")) u.setNotifTicketUpdates(prefs.get("notifTicketUpdates"));
                     if (prefs.containsKey("notifComments")) u.setNotifComments(prefs.get("notifComments"));
-                    userRepository.save(u);
-                    return ResponseEntity.ok((Object) "Notification preferences updated");
+                    User saved = userRepository.save(u);
+                    return ResponseEntity.ok((Object) buildProfileMap(saved));
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    private Map<String, Object> buildProfileMap(User u) {
+        Map<String, Object> map = new java.util.HashMap<>();
+        map.put("id", u.getId());
+        map.put("username", u.getUsername());
+        map.put("email", u.getEmail());
+        map.put("fullName", u.getFullName() != null ? u.getFullName() : "");
+        map.put("phone", u.getPhone() != null ? u.getPhone() : "");
+        map.put("department", u.getDepartment() != null ? u.getDepartment() : "");
+        map.put("bio", u.getBio() != null ? u.getBio() : "");
+        map.put("role", u.getRole().name());
+        map.put("createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : "");
+        map.put("oauthProvider", u.getOauthProvider() != null ? u.getOauthProvider() : "");
+        map.put("notifBookingUpdates", u.isNotifBookingUpdates());
+        map.put("notifTicketUpdates", u.isNotifTicketUpdates());
+        map.put("notifComments", u.isNotifComments());
+        map.put("updatedAt", u.getUpdatedAt() != null ? u.getUpdatedAt().toString() : "");
+        map.put("enabled", u.isEnabled());
+        return map;
     }
 
     private Map<String, Object> buildAuthResponse(User u, String token) {
@@ -208,10 +275,16 @@ public class UserController {
 
     private boolean passwordMatches(String rawPassword, User user) {
         String stored = user.getPassword();
-        if (stored != null && stored.startsWith("$2")) {
+        if (stored == null || stored.isBlank()) return false;
+
+        // BCrypt check - BCrypt hashes usually start with $2a$, $2b$ or $2y$
+        if (stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$")) {
             return passwordEncoder.matches(rawPassword, stored);
         }
+
+        // Plain text fallback (legacy)
         if (rawPassword.equals(stored)) {
+            // Auto-upgrade this user account to BCrypt
             user.setPassword(passwordEncoder.encode(rawPassword));
             userRepository.save(user);
             return true;
