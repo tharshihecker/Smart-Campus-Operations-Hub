@@ -55,6 +55,8 @@ public class EventBookingService {
 
         EventBooking b = new EventBooking();
         b.setEventId(eventId);
+        b.setStudentNumber(studentNumber);
+        b.setNic(nic);
 
         if (userId != null && !userId.isBlank()) {
             User user = userRepository.findById(userId)
@@ -67,8 +69,6 @@ public class EventBookingService {
         } else {
             // Guest booking — attach provided guest details
             b.setGuestName(guestName);
-            b.setStudentNumber(studentNumber);
-            b.setNic(nic);
             b.setGuestEmail(guestEmail);
         }
 

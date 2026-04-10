@@ -10,13 +10,13 @@
 
 /* ── Hero Section ────────────────────────────────────────── */
 .events-hero {
-  background: var(--gradient-hero);
-  border: 1px solid var(--border-medium);
+  background: linear-gradient(135deg, #0f172a, #1e1b4b, #4338ca);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-xl);
-  padding: 50px;
+  padding: 60px;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 20px 40px -10px rgba(67, 56, 202, 0.3);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -29,37 +29,41 @@
   right: -20px;
   top: -20px;
   font-size: 15rem;
-  opacity: 0.05;
+  opacity: 0.1;
   transform: rotate(-15deg);
   pointer-events: none;
+  z-index: 1;
 }
 
 .events-kicker {
-  color: var(--brand-teal);
-  font-size: 0.9rem;
+  color: #818cf8;
+  font-size: 0.85rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.2em;
   margin-bottom: 12px;
+  z-index: 2;
+  position: relative;
 }
 
 .events-title {
-  font-size: 3rem;
-  font-weight: 900;
-  color: var(--text-primary);
+  font-size: 3.2rem;
+  font-weight: 950;
+  color: #ffffff;
   margin-bottom: 16px;
-  letter-spacing: -0.03em;
-  background: var(--gradient-brand);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.04em;
+  z-index: 2;
+  position: relative;
 }
 
 .events-hero p {
-  color: var(--text-secondary);
-  font-size: 1.15rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.25rem;
   max-width: 600px;
   line-height: 1.6;
+  font-weight: 500;
+  z-index: 2;
+  position: relative;
 }
 
 /* ── Grid ────────────────────────────────────────────────── */
