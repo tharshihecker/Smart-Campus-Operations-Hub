@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { login, googleLogin } from '../api';
+import ForgotPasswordModal from './ForgotPasswordModal';
 import './Login.css';
 
 /* ── Google G logo ── */
@@ -22,6 +23,7 @@ function Login({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
 
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -188,6 +190,15 @@ function Login({ onLoginSuccess }) {
                 </button>
               </div>
               {formErrors.password && <span className="lp-field-err" role="alert">{formErrors.password}</span>}
+              <div style={{ textAlign: 'right', marginTop: '6px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowForgot(true)}
+                  style={{ background: 'none', border: 'none', color: 'var(--brand-teal)', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                >
+                  Forgot password?
+                </button>
+              </div>
             </div>
 
             {/* Submit */}
@@ -243,6 +254,7 @@ function Login({ onLoginSuccess }) {
 
         </div>
       </div>
+      {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
     </div>
   );
 }

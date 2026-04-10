@@ -155,6 +155,8 @@ export async function updateProfile(userId, data) { return sendJson("PUT", `/use
 export async function changePassword(userId, data) { return sendJson("PUT", `/user/change-password/${userId}`, data); }
 export async function requestPasswordResetOtp(userId) { return sendJson("POST", `/user/generate-otp/${userId}`); }
 export async function resetPasswordWithOtp(userId, data) { return sendJson("POST", `/user/reset-password-otp/${userId}`, data); }
+export async function forgotPasswordRequest(email) { return request("/user/forgot-password-request", { email }); }
+export async function forgotPasswordReset(data) { return request("/user/forgot-password-reset", data); }
 export async function updateNotificationPrefs(userId, prefs) {
   return sendJson("PUT", `/user/notification-prefs/${userId}`, prefs);
 }
@@ -256,19 +258,26 @@ export async function fetchUserStats() { return fetchJson("/admin/users/stats");
 /* ── Admin: Analytics ─────────────────────────────────── */
 export async function fetchAnalytics() { return fetchJson("/admin/analytics"); }
 
-/* ── Admin: Events ────────────────────────────────────── */
+/* Admin Events */
 export async function fetchAdminEvents() { return fetchJson("/admin/events"); }
 export async function createEvent(data) { return sendJson("POST", "/admin/events", data); }
 export async function updateEvent(id, data) { return sendJson("PUT", `/admin/events/${id}`, data); }
 export async function deleteEvent(id) { return sendJson("DELETE", `/admin/events/${id}`); }
 
-export async function createEventBooking(eventId, data) { return sendJson("POST", `/events/${eventId}/book`, data); }
-export async function fetchUserEventBookings(userId) { return fetchJson(`/events/bookings/user/${userId}`); }
-export async function cancelEventBooking(bookingId, userId) { return sendJson("PUT", `/events/bookings/${bookingId}/cancel?userId=${userId}`); }
-export async function scanEventBookingByToken(token) { return fetchJson(`/events/bookings/scan/${encodeURIComponent(token)}`); }
+/* Event Bookings */
+export async function createEventBooking(eventId, data) { 
+  return sendJson("POST", "/event-bookings", { ...data, eventId }); 
+}
+export async function fetchUserEventBookings(userId) { return fetchJson(`/event-bookings/user/${userId}`); }
+export async function cancelEventBooking(bookingId, userId) { 
+  return sendJson("PUT", `/event-bookings/${bookingId}/cancel?userId=${userId}`); 
+}
+export async function scanEventBookingByToken(token) { 
+  return fetchJson(`/event-bookings/by-token/${encodeURIComponent(token)}`); 
+}
 export async function confirmEventCheckin(token) { 
   const adminId = getCurrentUserId(); 
-  return sendJson("POST", "/events/bookings/scan", { token, adminId }); 
+  return sendJson("POST", "/event-bookings/check-in", { token, adminId }); 
 }
 
 export async function fetchEventAvailability(eventId) { return fetchJson(`/events/${eventId}/availability`); }
