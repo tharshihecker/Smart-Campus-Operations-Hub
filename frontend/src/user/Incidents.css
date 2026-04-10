@@ -285,7 +285,9 @@
 
 /* View Button */
 .inc-action-btn {
-  padding: 5px 11px;
+  padding: 5px 8px;
+  width: fit-content;
+  min-width: unset;
   background: #eff6ff;
   border: 1.5px solid #bfdbfe;
   border-radius: 7px;
