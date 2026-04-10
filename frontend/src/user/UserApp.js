@@ -12,6 +12,7 @@ import Incidents from './Incidents';
 import TechnicianDashboard from './TechnicianDashboard';
 import Notifications from './Notifications';
 import { fetchUnreadCount, isTechnician } from '../api';
+import { useNotificationSound } from '../utils/useNotificationSound';
 import '../App.css';
 
 const USER_AUTH_KEY = 'smartcampus_user_auth';
@@ -23,6 +24,9 @@ function ProtectedRoute({ isAuthenticated, children }) {
 
 function NotificationBell({ userId, isAuthenticated }) {
   const [count, setCount] = useState(0);
+
+  // 🔔 Play bell sound whenever new notifications arrive
+  useNotificationSound(count);
 
   const loadCount = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -151,6 +155,8 @@ function UserApp() {
       setIsAuthenticated(true);
 
       if (data?.role === 'ADMIN') {
+        // ✅ Also set admin auth so AdminApp recognises the session (no second login needed)
+        localStorage.setItem('smartcampus_admin_auth', 'true');
         navigate('/admin/home', { replace: true });
       } else if (data?.role === 'TECHNICIAN') {
         navigate('/technician-dashboard', { replace: true });

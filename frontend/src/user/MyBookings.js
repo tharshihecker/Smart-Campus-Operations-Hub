@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fetchUserBookings, cancelBooking, createBooking, updateBooking, fetchFacilities, fetchBookingQR, resendBookingEmail, checkinBooking, fetchFacilityBookingsByDate, acceptCounterProposal, rejectCounterProposal, fetchUserWaitlist, cancelWaitlist, joinWaitlist } from '../api';
 import './Profile.css';
 import './MyBookings.css';
@@ -222,23 +223,27 @@ function EditBookingModal({ bookingForm, setBookingForm, facilities, dayBookings
               {loadingDay ? <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Calculating free slots...</p> :
                 (() => {
                   const freeBlocks = getFreeBlocks(selectedFacility.availableFrom.slice(0, 5), selectedFacility.availableTo.slice(0, 5), dayBookings);
-                  if (freeBlocks.length > 0) return (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  if (freeBlocks.length === 0) return <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--brand-danger)' }}>🚫 Fully booked for the entire day.</p>;
+                  return (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
                       {freeBlocks.map((block, idx) => (
                         <button
                           key={idx} type="button"
                           onClick={() => setBookingForm(prev => ({ ...prev, startTime: block.start, endTime: block.end }))}
                           style={{
-                            background: '#16a34a', color: '#ffffff', border: 'none', padding: '6px 12px',
-                            borderRadius: '20px', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold',
-                            boxShadow: '0 2px 6px rgba(22,163,74,0.35)'
-                          }}>
+                            background: 'rgba(20, 184, 166, 0.08)', color: 'var(--brand-teal)', border: '1px solid rgba(20, 184, 166, 0.25)', padding: '6px 4px',
+                            borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '600',
+                            textAlign: 'center', transition: 'all 0.2s', whiteSpace: 'nowrap',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                          }}
+                          onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.2)'; e.currentTarget.style.borderColor = 'var(--brand-teal)'; }}
+                          onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.08)'; e.currentTarget.style.borderColor = 'rgba(20, 184, 166, 0.25)'; }}
+                        >
                           {fmtTime(block.start)} – {fmtTime(block.end)}
                         </button>
                       ))}
                     </div>
                   );
-                  return null;
                 })()
               }
             </div>
@@ -295,6 +300,7 @@ function EditBookingModal({ bookingForm, setBookingForm, facilities, dayBookings
 }
 
 function MyBookings() {
+  const navigate = useNavigate();
   const userId = localStorage.getItem('smartcampus_user_id');
   const todayStr = new Date().toISOString().split('T')[0];
   const statuses = ['', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED', 'CHECKED_IN'];
@@ -365,6 +371,7 @@ function MyBookings() {
       return () => clearTimeout(timer);
     }
   }, [actionMsg.text]);
+  
   const loadFacilities = useCallback(async () => {
     try {
       const data = await fetchFacilities({ status: 'ACTIVE' });
@@ -483,7 +490,89 @@ function MyBookings() {
       {actionMsg.text && <div className={`profile-alert ${actionMsg.type}`}>{actionMsg.text}</div>}
 
       <div className="profile-card">
-        <h3><span className="card-icon">📅</span>Manage Reservations</h3>
+        <h3>
+          <span className="card-icon">{bookingForm.id ? '✏️' : '➕'}</span>
+          {bookingForm.id ? 'Edit Booking' : 'New Booking'}
+          {!showForm && (
+            <button type="button" className="btn-edit-trigger btn-primary" style={{ padding: '8px 16px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => navigate('/facilities')}>
+              <span>🏢</span> Book a Facility
+            </button>
+          )}
+        </h3>
+        {showForm && (() => {
+          const selectedFacility = facilities.find(f => f.id === bookingForm.facilityId);
+          return (
+            <form onSubmit={handleCreateBooking} className="profile-form">
+              {selectedFacility && bookingForm.bookingDate && (
+                <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--border)' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-main)' }}>✨ Available Time Slots for {bookingForm.bookingDate}</h4>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Click a free slot below to automatically select it.</p>
+                  {loadingDay ? <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Calculating free slots...</p> :
+                    (() => {
+                      const freeBlocks = getFreeBlocks(selectedFacility.availableFrom.slice(0, 5), selectedFacility.availableTo.slice(0, 5), dayBookings);
+                      if (freeBlocks.length === 0) return <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--brand-danger)' }}>🚫 Fully booked for the entire day.</p>;
+                      return (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                          {freeBlocks.map((block, idx) => (
+                            <button
+                              key={idx} type="button"
+                              onClick={() => setBookingForm(prev => ({ ...prev, startTime: block.start, endTime: block.end }))}
+                              style={{
+                                background: 'rgba(20, 184, 166, 0.08)', color: 'var(--brand-teal)', border: '1px solid rgba(20, 184, 166, 0.25)', padding: '6px 4px',
+                                borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '600',
+                                textAlign: 'center', transition: 'all 0.2s', whiteSpace: 'nowrap',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                              }}
+                              onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.2)'; e.currentTarget.style.borderColor = 'var(--brand-teal)'; }}
+                              onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(20, 184, 166, 0.08)'; e.currentTarget.style.borderColor = 'rgba(20, 184, 166, 0.25)'; }}
+                            >
+                              {fmtTime(block.start)} – {fmtTime(block.end)}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()
+                  }
+                </div>
+              )}
+              <div className="profile-form-row">
+                <label>Facility *
+                  <select name="facilityId" value={bookingForm.facilityId} onChange={handleFormChange} required>
+                    <option value="">Select a facility</option>
+                    {facilities.map(f => <option key={f.id} value={f.id}>{f.name} — {f.location} (Cap: {f.capacity})</option>)}
+                  </select>
+                </label>
+                <label>Date *
+                  <input type="date" name="bookingDate" min={todayStr} value={bookingForm.bookingDate} onChange={handleFormChange} required />
+                </label>
+              </div>
+              <div className="profile-form-row">
+                <label>Start Time *<input type="time" name="startTime" value={bookingForm.startTime} onChange={handleFormChange} required /></label>
+                <label>End Time *<input type="time" name="endTime" value={bookingForm.endTime} onChange={handleFormChange} required /></label>
+              </div>
+              <div className="profile-form-row">
+                <label>Purpose *<input name="purpose" value={bookingForm.purpose} onChange={handleFormChange} placeholder="e.g. Guest Lecture" required /></label>
+                <label>Attendee Count<input type="number" name="attendeeCount" min="1" value={bookingForm.attendeeCount} onChange={handleFormChange} /></label>
+              </div>
+              <label>Notes
+                <textarea name="notes" value={bookingForm.notes} onChange={handleFormChange} placeholder="Additional notes for admin…" rows={2} />
+              </label>
+              <div className="profile-form-actions">
+                <button type="submit" className="btn-profile primary" disabled={formLoading}>
+                  {formLoading ? 'Submitting…' : (bookingForm.id ? 'Update Booking' : 'Submit Booking')}
+                </button>
+                <button type="button" className="btn-profile secondary" onClick={() => {
+                  setShowForm(false);
+                  setBookingForm({ id: null, facilityId: '', bookingDate: '', startTime: '', endTime: '', purpose: '', notes: '', attendeeCount: 1 });
+                }}>Cancel</button>
+              </div>
+            </form>
+          );
+        })}
+      </div>
+
+      <div className="profile-card">
+        <h3><span className="card-icon">📅</span>Reservation History</h3>
 
         <div className="filter-bar">
           {statuses.map(s => (

@@ -138,26 +138,30 @@
 }
 
 .bookings-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
 }
 
 .booking-card {
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-xl);
+    padding: 28px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
     transition: all var(--transition-bounce);
+    position: relative;
+    overflow: hidden;
 }
 
 .booking-card:hover {
-    border-color: var(--border-focus);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    border-color: var(--brand-teal);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+    transform: translateY(-5px);
 }
 
 .booking-card-header {

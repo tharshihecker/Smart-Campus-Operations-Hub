@@ -98,20 +98,31 @@ const IS_BASE = {
 
 /* ─── Badges ─── */
 function StatusBadge({ status }) {
-  const map = { OPEN: 'var(--brand-teal)', IN_PROGRESS: 'var(--brand-warning)', RESOLVED: 'var(--brand-accent)', CLOSED: 'var(--text-muted)', REJECTED: 'var(--brand-danger)' };
+  const statusMap = {
+    OPEN: 'status-open',
+    IN_PROGRESS: 'status-in_progress',
+    RESOLVED: 'status-resolved',
+    CLOSED: 'status-closed',
+    REJECTED: 'status-rejected'
+  };
   const labels = { OPEN: 'Open', IN_PROGRESS: 'In Progress', RESOLVED: 'Resolved', CLOSED: 'Closed', REJECTED: 'Rejected' };
   return (
-    <span style={{ background: map[status] || 'var(--text-muted)', color: '#fff', padding: '3px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700, display: 'inline-block', whiteSpace: 'nowrap' }}>
+    <span className={`inc-badge ${statusMap[status] || 'status-open'}`}>
       {labels[status] || status}
     </span>
   );
 }
 
 function PriorityBadge({ priority }) {
-  const map = { LOW: 'var(--text-muted)', MEDIUM: 'var(--brand-teal)', HIGH: 'var(--brand-warning)', CRITICAL: 'var(--brand-danger)' };
+  const priorityMap = {
+    LOW: 'priority-low',
+    MEDIUM: 'priority-medium',
+    HIGH: 'priority-high',
+    CRITICAL: 'priority-critical'
+  };
   const icons = { LOW: '▼', MEDIUM: '■', HIGH: '▲', CRITICAL: '🔥' };
   return (
-    <span className={priority === 'CRITICAL' ? 'inc-priority-pulse' : ''} style={{ background: map[priority] || 'var(--text-muted)', color: '#fff', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 800, display: 'inline-block' }}>
+    <span className={`inc-badge ${priorityMap[priority] || 'priority-medium'}`}>
       {icons[priority]} {priority}
     </span>
   );
@@ -213,7 +224,7 @@ function ActivityFeed({ tickets }) {
     }))
     .filter(e => e.date && !isNaN(e.date))
     .sort((a, b) => b.date - a.date)
-    .slice(0, 6);
+    .slice(0, 3);
 
   const iconMap = { OPEN: '🔓', IN_PROGRESS: '⚙️', RESOLVED: '✅', CLOSED: '🔒', REJECTED: '❌' };
   const colorMap = { OPEN: '#2563eb', IN_PROGRESS: '#d97706', RESOLVED: '#059669', CLOSED: '#4b5563', REJECTED: '#dc2626' };
@@ -221,21 +232,21 @@ function ActivityFeed({ tickets }) {
   if (!events.length) return null;
 
   return (
-    <div className="profile-card" style={{ marginBottom: 20 }}>
-      <p style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: 14, margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+    <div className="profile-card" style={{ marginBottom: 20, background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 14, padding: '16px 18px' }}>
+      <p style={{ color: '#111827', fontWeight: 900, fontSize: 14, margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
         📡 Recent Activity
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
         {events.map((e, i) => (
-          <div key={e.id} className="inc-feed-item" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, paddingBottom: i < events.length - 1 ? 12 : 0, marginBottom: i < events.length - 1 ? 12 : 0, borderBottom: i < events.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
-            <div style={{ width: 34, height: 34, borderRadius: '50%', background: `${colorMap[e.status]}18`, border: `2px solid ${colorMap[e.status]}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>
+          <div key={e.id} className="inc-feed-item-wrapper">
+            <div className="inc-feed-icon" style={{ background: `${colorMap[e.status]}18`, borderColor: `${colorMap[e.status]}40` }}>
               {iconMap[e.status]}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontWeight: 800, color: 'var(--text-primary)', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
-                <span style={{ background: colorMap[e.status], color: '#fff', fontSize: 10, fontWeight: 700, padding: '1px 8px', borderRadius: 999 }}>{e.status.replace('_', ' ')}</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{fmtDate(e.date)}</span>
+              <p className="inc-feed-title">{e.title}</p>
+              <div className="inc-feed-meta">
+                <span className="inc-feed-status-badge" style={{ background: colorMap[e.status] }}>{e.status.replace('_', ' ')}</span>
+                <span className="inc-feed-date">{fmtDate(e.date)}</span>
               </div>
             </div>
           </div>
@@ -287,32 +298,35 @@ function EscalateButton({ ticket, onEscalated }) {
 
 /* ─── Ticket Card ─── */
 function TicketCard({ ticket, onSelect }) {
-  const borderCol = ticket.priority === 'CRITICAL' ? 'var(--brand-danger)' : ticket.priority === 'HIGH' ? 'var(--brand-warning)' : 'var(--border-subtle)';
+  const borderCol = ticket.priority === 'CRITICAL' ? '#dc2626' : '#e5e7eb';
+  const cardClass = ticket.priority === 'CRITICAL' ? 'inc-ticket-card critical' : 'inc-ticket-card';
+  
   return (
-    <div onClick={() => onSelect(ticket)} className="profile-card" style={{ padding: '18px 22px', cursor: 'pointer', border: `1.5px solid ${borderCol}` }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>#{ticket.id}</span>
-            <p style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: 15, lineHeight: 1.3 }}>{ticket.title}</p>
-          </div>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8, fontWeight: 600 }}>
-            📁 {ticket.category} &nbsp;•&nbsp; 📍 {ticket.location}
-          </p>
+    <div onClick={() => onSelect(ticket)} className={cardClass} style={{ borderColor: borderCol }}>
+      <div className="inc-ticket-header">
+        <div className="inc-ticket-id-title">
+          <span className="inc-ticket-id">#{ticket.id}</span>
+          <p className="inc-ticket-title">{ticket.title}</p>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+        <div className="inc-ticket-badges">
           <PriorityBadge priority={ticket.priority} />
           <StatusBadge status={ticket.status} />
         </div>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-        <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, fontWeight: 600 }}>
+      <p className="inc-ticket-category">
+        📁 {ticket.category}
+      </p>
+      <p className="inc-ticket-location">
+        📍 {ticket.location}
+      </p>
+      <div className="inc-ticket-meta">
+        <p className="inc-ticket-assignee">
           {ticket.assigneeName ? `👷 ${ticket.assigneeName}` : '👤 Unassigned'}
         </p>
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>🕐 {fmtDate(ticket.createdAt)}</p>
+        <p className="inc-ticket-time">🕐 {fmtDate(ticket.createdAt)}</p>
       </div>
       {ticket.attachmentUrls?.length > 0 && (
-        <span style={{ marginTop: 8, display: 'inline-block', fontSize: 11, color: 'var(--brand-teal)', fontWeight: 700, background: 'var(--bg-surface)', padding: '2px 8px', borderRadius: 6 }}>
+        <span className="inc-ticket-attachments">
           📎 {ticket.attachmentUrls.length} photo{ticket.attachmentUrls.length > 1 ? 's' : ''}
         </span>
       )}
@@ -602,6 +616,67 @@ function DeleteConfirmModal({ ticket, onConfirm, onCancel, loading }) {
   );
 }
 
+/* ─── Ticket Row Component ─── */
+function TicketRow({ t, onView }) {
+  return (
+    <tr className="inc-ticket-row" onClick={() => onView(t)} style={{ cursor: 'pointer' }}>
+      <td className="inc-table-cell inc-cell-id">#{t.id}</td>
+      <td className="inc-table-cell inc-cell-title" title={t.title}>{t.title}</td>
+      <td className="inc-table-cell inc-cell-category">{t.category}</td>
+      <td className="inc-table-cell inc-cell-priority">
+        <PriorityBadge priority={t.priority} />
+      </td>
+      <td className="inc-table-cell inc-cell-status">
+        <StatusBadge status={t.status} />
+      </td>
+      <td className="inc-table-cell inc-cell-assignee">{t.assigneeName || 'Unassigned'}</td>
+      <td className="inc-table-cell inc-cell-date">{fmtDate(t.createdAt)}</td>
+      <td className="inc-table-cell inc-cell-actions">
+        <button onClick={(e) => { e.stopPropagation(); onView(t); }} className="inc-action-btn">
+          👁 View
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+/* ─── Tickets Table Component ─── */
+function TicketsTable({ displayed, onView, emptyMsg }) {
+  if (displayed.length === 0) {
+    return (
+      <div className="inc-empty-state">
+        <p className="inc-empty-state-icon">📭</p>
+        <p className="inc-empty-state-text">{emptyMsg}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="inc-tickets-table-wrapper">
+      <div style={{ overflowX: 'auto' }}>
+        <table className="inc-tickets-table">
+          <thead>
+            <tr>
+              <th style={{ width: '60px' }}>#</th>
+              <th>Title</th>
+              <th style={{ width: '130px' }}>Category</th>
+              <th style={{ width: '100px' }}>Priority</th>
+              <th style={{ width: '110px' }}>Status</th>
+              <th style={{ width: '130px' }}>Assignee</th>
+              <th style={{ width: '150px' }}>Created</th>
+              <th style={{ width: '80px' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayed.map(t => (
+              <TicketRow key={t.id} t={t} onView={onView} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Page ─── */
 export default function Incidents() {
   useInjectStyle();
@@ -712,12 +787,12 @@ export default function Incidents() {
       </div>
 
       {/* Stats */}
-      <div className="profile-info-grid" style={{ marginBottom: 24 }}>
+      <div className="inc-stats-grid">
         {stats.map(s => (
-          <div key={s.label} className="profile-card" style={{ padding: '20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <p style={{ fontSize: '2rem', margin: '0 0 10px' }}>{s.icon}</p>
-            <p style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--brand-teal)', margin: '0 0 4px', lineHeight: 1 }}>{s.val}</p>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</p>
+          <div key={s.label} className={`inc-stat-card ${s.label.toLowerCase().replace(' ', '-')}`}>
+            <div className="inc-stat-icon">{s.icon}</div>
+            <p className="inc-stat-num">{s.val}</p>
+            <p className="inc-stat-label">{s.label}</p>
           </div>
         ))}
       </div>
@@ -767,148 +842,36 @@ export default function Incidents() {
           {/* Active Tickets Section */}
           {activeTickets.length > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, position: 'sticky', top: 0, zIndex: 10 }}>
-                <span style={{ fontSize: 13, fontWeight: 900, background: '#111827', color: '#ffffff', padding: '6px 12px', borderRadius: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  📂 Active Tickets
-                </span>
-                <span style={{ background: '#2563eb', color: '#fff', fontSize: 11, fontWeight: 800, padding: '3px 12px', borderRadius: 999 }}>
-                  {activeTickets.length}
-                </span>
-                <div style={{ flex: 1, height: 2, background: 'linear-gradient(90deg, transparent, #2563eb, transparent)' }} />
+              <div className="inc-section-header-row">
+                <span className="inc-section-badge">📂 Active Tickets</span>
+                <span className="inc-section-count">{activeTickets.length}</span>
+                <div className="inc-section-divider" />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {activeTickets.map(t => {
-                  const canDelete = t.status === 'OPEN';
-                  const isProcessing = t.status !== 'OPEN';
-                  return (
-                    <div key={t.id}>
-                      {/* Card wrapper — clicking anywhere except the delete button opens detail */}
-                      <div onClick={() => { clearTicketParam(); setSelected(t); }}
-                        className="profile-card inc-card"
-                        style={{
-                          padding: '24px', cursor: 'pointer',
-                          border: `1px solid var(--border-subtle)`,
-                          borderRadius: 14, overflow: 'hidden', backgroundColor: 'var(--bg-card)',
-                          display: 'flex', flexDirection: 'column', gap: 12
-                        }}>
-                        {/* Top row: ID + title + badges */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                              <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>#{t.id}</span>
-                              <p style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem', lineHeight: 1.3 }}>{t.title}</p>
-                            </div>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>
-                              📁 {t.category} &nbsp;•&nbsp; 📍 {t.location}
-                            </p>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                            <PriorityBadge priority={t.priority} />
-                            <StatusBadge status={t.status} />
-                          </div>
-                        </div>
-                        {/* Middle row: assignee + date */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>
-                            {t.assigneeName ? `👷 ${t.assigneeName}` : '👤 Unassigned'}
-                          </p>
-                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>🕐 {fmtDate(t.createdAt)}</p>
-                        </div>
-                        {t.attachmentUrls?.length > 0 && (
-                          <span style={{ display: 'inline-block', fontSize: '0.85rem', color: 'var(--brand-teal)', fontWeight: 700, background: 'rgba(14, 165, 233, 0.1)', padding: '6px 12px', borderRadius: 6, border: '1px solid rgba(14, 165, 233, 0.2)', width: 'fit-content' }}>
-                            📎 {t.attachmentUrls.length} photo{t.attachmentUrls.length > 1 ? 's' : ''}
-                          </span>
-                        )}
-                        {/* Footer action bar */}
-                        <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 'auto', paddingTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}
-                          onClick={e => e.stopPropagation()}>
-                          {canDelete ? (
-                            <button
-                              onClick={() => setDeleteTarget(t)}
-                              style={{ padding: '8px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700, color: '#dc2626', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.18s' }}
-                              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; }}
-                            >
-                              🗑 Delete
-                            </button>
-                          ) : isProcessing ? (
-                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#92400e', background: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 8, padding: '8px 12px' }}
-                              title="Cannot delete this ticket">
-                              🔒 {t.status === 'IN_PROGRESS' || t.status === 'RESOLVED' ? 'In Process' : t.status.charAt(0) + t.status.slice(1).toLowerCase()} — Cannot Delete
-                            </span>
-                          ) : (
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Click card to view details →</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <TicketsTable displayed={activeTickets} onView={(t) => { clearTicketParam(); setSelected(t); }} emptyMsg="No active tickets" />
             </div>
           )}
 
           {/* History Section */}
           {historyTickets.length > 0 && (
             <div style={{ marginTop: 28 }}>
-              <button
-                onClick={() => setHistoryOpen(h => !h)}
-                className="inc-history-toggle">
-                <span style={{ fontSize: 13, fontWeight: 900, background: '#111827', color: '#ffffff', padding: '6px 12px', borderRadius: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                  {historyOpen ? '▼' : '▶'} 📜 Closed &amp; Rejected History
+              <div className="inc-section-header-row" style={{ marginBottom: 14 }}>
+                <span className="inc-section-badge" style={{ background: '#4b5563', cursor: 'pointer' }} onClick={() => setHistoryOpen(h => !h)}>
+                  {historyOpen ? '▼' : '▶'} 📜 Closed &amp; Rejected
                 </span>
-                <span style={{ background: historyTickets.length > 0 ? '#136eeeff' : '#d1d5db', color: '#fff', fontSize: 11, fontWeight: 800, padding: '2px 10px', borderRadius: 999 }}>
-                  {historyTickets.length}
-                </span>
-                <div style={{ flex: 1, height: 2, background: 'linear-gradient(90deg, transparent, #6b7280, transparent)' }} />
-                <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 700 }}>
-                  {historyOpen ? 'Click to collapse' : 'Click to expand'}
-                </span>
-              </button>
+                <span className="inc-section-count" style={{ background: '#4b5563' }}>{historyTickets.length}</span>
+                <div className="inc-section-divider" style={{ background: 'linear-gradient(90deg, transparent, #4b5563, transparent)' }} />
+              </div>
 
               {historyOpen && (
-                <div style={{ marginTop: 16 }}>
-                  {/* Info banner */}
-                  <div style={{ background: 'transparent', border: '2px dashed var(--border-medium)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <>
+                  <div style={{ background: '#ffffff', border: '1.5px dashed #d1d5db', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 20 }}>🔒</span>
-                    <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#4b5563' }}>
                       These tickets are finalized. You can view details but no further actions are available.
                     </p>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    {historyTickets.map(t => (
-                      <div key={t.id}>
-                        <div onClick={() => { clearTicketParam(); setSelected(t); }}
-                          className="profile-card inc-card"
-                          style={{
-                            padding: '24px', cursor: 'pointer', opacity: 0.85,
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: 14, overflow: 'hidden',
-                            display: 'flex', flexDirection: 'column', gap: 12
-                          }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>#{t.id}</span>
-                                <p style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem', lineHeight: 1.3 }}>{t.title}</p>
-                              </div>
-                              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>
-                                📁 {t.category} &nbsp;•&nbsp; 📍 {t.location}
-                              </p>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                              <PriorityBadge priority={t.priority} />
-                              <StatusBadge status={t.status} />
-                            </div>
-                          </div>
-                          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>
-                            🕐 {fmtDate(t.createdAt)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                  <TicketsTable displayed={historyTickets} onView={(t) => { clearTicketParam(); setSelected(t); }} emptyMsg="No closed or rejected tickets" />
+                </>
               )}
             </div>
           )}
