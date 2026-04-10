@@ -68,59 +68,59 @@
 .fac-page-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center; /* Changed from flex-end */
     gap: 24px;
     flex-wrap: wrap;
-    background: var(--admin-gradient);
-    border: 1px solid var(--admin-brand);
+    background: linear-gradient(135deg, #1e1b4b, #312e81, #4f46e5); /* Updated from var(--admin-gradient) */
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-xl);
-    padding: 40px 48px;
+    padding: 48px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.3);
 }
 
 .fac-page-header::before {
     content: '🏛️';
     position: absolute;
-    right: 32px;
+    right: 48px;
     bottom: -20px;
     font-size: 10rem;
-    opacity: 0.1;
+    opacity: 0.15;
     pointer-events: none;
-    z-index: 0;
+    z-index: 1;
 }
 
 .fac-page-kicker {
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     font-weight: 800;
     letter-spacing: 0.15em;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.7);
     text-transform: uppercase;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     position: relative;
-    z-index: 1;
+    z-index: 2;
 }
 
 .fac-page-title h1 {
     font-family: 'Outfit', sans-serif;
-    font-size: 2.6rem;
-    font-weight: 900;
+    font-size: 2.8rem;
+    font-weight: 950;
     color: #ffffff;
-    letter-spacing: -0.03em;
-    margin-bottom: 8px;
+    letter-spacing: -0.04em;
+    margin-bottom: 12px;
     position: relative;
-    z-index: 1;
+    z-index: 2;
     text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .fac-page-title p {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 1.05rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1.1rem;
     max-width: 520px;
     line-height: 1.6;
     position: relative;
-    z-index: 1;
+    z-index: 2;
     font-weight: 500;
 }
 
@@ -137,10 +137,12 @@
     font-weight: 700;
     border: none;
     cursor: pointer;
-    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.35);
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.3);
     transition: all var(--transition-bounce);
     white-space: nowrap;
     flex-shrink: 0;
+    position: relative;
+    z-index: 2;
 }
 
 .fac-add-btn:hover {
@@ -240,16 +242,33 @@
 }
 
 /* ── Toolbar ─────────────────────────────────────────────────────────── */
-.fac-toolbar {
+.fac-toolbar-v2 {
     display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.fac-search-row {
+    width: 100%;
+}
+
+.fac-filter-row {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
-.fac-search-wrap {
+.fac-filters-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
     flex: 1;
-    min-width: 240px;
+}
+
+.fac-search-wrap {
+    width: 100%;
     position: relative;
 }
 
@@ -312,7 +331,7 @@
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    min-width: 160px;
+    min-width: 130px;
     transition: all var(--transition-smooth);
 }
 
