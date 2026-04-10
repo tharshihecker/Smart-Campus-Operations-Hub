@@ -36,6 +36,10 @@ function Profile() {
     fetchProfile(userId)
       .then(data => {
         setProfile(data);
+        /* Keep localStorage in sync whenever profile is loaded */
+        localStorage.setItem('smartcampus_user_fullname', data.fullName || '');
+        localStorage.setItem('smartcampus_user_email', data.email || '');
+        localStorage.setItem('smartcampus_user_department', data.department || '');
         setLoading(false);
       })
       .catch(err => {
@@ -76,13 +80,17 @@ function Profile() {
     setSaveMsg({ type: '', text: '' });
     try {
       const updated = await updateProfile(userId, editForm);
-      setProfile(updated);
-      /* Keep localStorage in sync */
-      localStorage.setItem('smartcampus_user_fullname', updated.fullName || '');
-      localStorage.setItem('smartcampus_user_email', updated.email || '');
-      localStorage.setItem('smartcampus_user_department', updated.department || '');
+      if (updated && typeof updated === 'object') {
+        setProfile(updated);
+        /* Dispatch custom event to notify other components (like TopNav) */
+        window.dispatchEvent(new CustomEvent('profileUpdated', { detail: updated }));
+      }
+      
       setSaveMsg({ type: 'success', text: 'Profile updated successfully!' });
       setEditing(false);
+      
+      // Force a full re-fetch to ensure everything is in sync
+      loadProfile();
     } catch (err) {
       setSaveMsg({ type: 'error', text: err.message || 'Failed to save profile' });
     } finally {
@@ -148,8 +156,10 @@ function Profile() {
   const handlePrefToggle = async (key, currentValue) => {
     setPrefsSaving(true);
     try {
-      await updateNotificationPrefs(userId, { [key]: !currentValue });
-      setProfile(prev => ({ ...prev, [key]: !currentValue }));
+      const updated = await updateNotificationPrefs(userId, { [key]: !currentValue });
+      setProfile(updated);
+      // Notify other components if needed (though nav usually doesn't care about prefs)
+      window.dispatchEvent(new CustomEvent('profileUpdated', { detail: updated }));
     } catch (err) {
       setPrefMsg({ type: 'error', text: err.message || 'Failed to update preference.' });
       setTimeout(() => setPrefMsg({ type: '', text: '' }), 4000);

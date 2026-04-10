@@ -14,7 +14,7 @@ public class FacilityController {
     }
 
     @GetMapping
-    public List<FacilityResponse> search(
+    public org.springframework.http.ResponseEntity<List<FacilityResponse>> search(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) ResourceType type,
             @RequestParam(required = false) Integer minCapacity,
@@ -25,21 +25,21 @@ public class FacilityController {
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
         FacilityFilter filter = new FacilityFilter(q, type, minCapacity, maxCapacity, location, status);
-        return facilityService.search(filter, sortBy, sortDir);
+        return org.springframework.http.ResponseEntity.ok(facilityService.search(filter, sortBy, sortDir));
     }
 
     @GetMapping("/{id}")
-    public FacilityResponse getById(@PathVariable String id) {
-        return facilityService.getById(id);
+    public org.springframework.http.ResponseEntity<FacilityResponse> getById(@PathVariable String id) {
+        return org.springframework.http.ResponseEntity.ok(facilityService.getById(id));
     }
 
     @GetMapping("/metadata/types")
-    public ResourceType[] getTypes() {
-        return ResourceType.values();
+    public org.springframework.http.ResponseEntity<ResourceType[]> getTypes() {
+        return org.springframework.http.ResponseEntity.ok(ResourceType.values());
     }
 
     @GetMapping("/metadata/statuses")
-    public ResourceStatus[] getStatuses() {
-        return ResourceStatus.values();
+    public org.springframework.http.ResponseEntity<ResourceStatus[]> getStatuses() {
+        return org.springframework.http.ResponseEntity.ok(ResourceStatus.values());
     }
 }
