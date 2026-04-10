@@ -187,7 +187,9 @@ function StatusTimeline({ status }) {
         {isRejected ? '❌ Ticket Rejected' : '📋 Progress'}
       </p>
       {isRejected ? (
-        <p style={{ color: 'var(--brand-danger)', fontWeight: 700, fontSize: 13, margin: 0 }}>This ticket has been rejected by admin.</p>
+        <div style={{ background: '#ffffff', border: '2px solid #dc2626', borderRadius: 8, padding: '12px 14px' }}>
+          <p style={{ color: '#991b1b', fontWeight: 700, fontSize: 13, margin: 0 }}>This ticket has been rejected by admin.</p>
+        </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {steps.map((s, i) => {
@@ -307,6 +309,11 @@ function TicketCard({ ticket, onSelect }) {
         <div className="inc-ticket-id-title">
           <span className="inc-ticket-id">#{ticket.id}</span>
           <p className="inc-ticket-title">{ticket.title}</p>
+          {ticket.attachmentUrls?.length > 0 && (
+            <span className="inc-ticket-attachments" style={{ marginTop: 6, display: 'block' }}>
+              📎 {ticket.attachmentUrls.length} photo{ticket.attachmentUrls.length > 1 ? 's' : ''}
+            </span>
+          )}
         </div>
         <div className="inc-ticket-badges">
           <PriorityBadge priority={ticket.priority} />
@@ -325,11 +332,6 @@ function TicketCard({ ticket, onSelect }) {
         </p>
         <p className="inc-ticket-time">🕐 {fmtDate(ticket.createdAt)}</p>
       </div>
-      {ticket.attachmentUrls?.length > 0 && (
-        <span className="inc-ticket-attachments">
-          📎 {ticket.attachmentUrls.length} photo{ticket.attachmentUrls.length > 1 ? 's' : ''}
-        </span>
-      )}
     </div>
   );
 }
@@ -384,14 +386,14 @@ function CreateTicketModal({ onClose, onCreated }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <LB>Category</LB>
-                <select className="inc-input" style={{ ...IS_BASE, backgroundColor: 'transparent' }} value={form.category} onChange={handle('category')}>
-                  {CATEGORIES.map(c => <option key={c} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{c}</option>)}
+                <select className="inc-input" style={{ ...IS_BASE, backgroundColor: '#ffffff' }} value={form.category} onChange={handle('category')}>
+                  {CATEGORIES.map(c => <option key={c} style={{ background: '#ffffff', color: '#111827' }}>{c}</option>)}
                 </select>
               </div>
               <div>
                 <LB>Priority</LB>
-                <select className="inc-input" style={{ ...IS_BASE, backgroundColor: 'transparent' }} value={form.priority} onChange={handle('priority')}>
-                  {PRIORITIES.map(p => <option key={p} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{p}</option>)}
+                <select className="inc-input" style={{ ...IS_BASE, backgroundColor: '#ffffff' }} value={form.priority} onChange={handle('priority')}>
+                  {PRIORITIES.map(p => <option key={p} style={{ background: '#ffffff', color: '#111827' }}>{p}</option>)}
                 </select>
               </div>
             </div>
@@ -467,7 +469,7 @@ function TicketDetailPanel({ ticket, onClose }) {
         </div>
 
         {/* Title */}
-        <p style={{ fontWeight: 900, fontSize: 18, color: 'var(--text-primary)', marginBottom: 12, lineHeight: 1.4 }}>{ticket.title}</p>
+        <p style={{ fontWeight: 900, fontSize: 18, color: 'var(--text-primary)', marginBottom: 12, lineHeight: 1.4, maxWidth: '100%', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal' }}>{ticket.title}</p>
         
         {/* Badges */}
         <div className="inc-badge-row" style={{ marginBottom: 18 }}>
@@ -482,7 +484,7 @@ function TicketDetailPanel({ ticket, onClose }) {
         {/* Description */}
         <div className="inc-light-surface" style={{ background: 'linear-gradient(135deg, rgba(255,237,213,0.8) 0%, rgba(254,215,170,0.8) 100%)', borderRadius: 14, padding: '16px 18px', marginBottom: 18, border: '2px solid #fb923c' }}>
           <p style={{ color: '#92400e', fontSize: 11, fontWeight: 900, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: 0.4 }}>📝 Description</p>
-          <p style={{ color: '#7c2d12', fontSize: 13, margin: 0, fontWeight: 700, lineHeight: 1.8 }}>{ticket.description}</p>
+          <p style={{ color: '#7c2d12', fontSize: 13, margin: 0, fontWeight: 700, lineHeight: 1.8, maxWidth: '100%', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal' }}>{ticket.description}</p>
         </div>
 
         {/* Meta grid */}
@@ -507,15 +509,15 @@ function TicketDetailPanel({ ticket, onClose }) {
 
         {/* Resolutions */}
         {ticket.resolutionNotes && (
-          <div className="inc-light-surface" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0.04) 100%)', border: '2px solid #10b981', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
+          <div className="inc-light-surface" style={{ background: '#ffffff', border: '2px solid #10b981', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
             <p style={{ color: '#059669', fontSize: 11, fontWeight: 900, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4 }}>✅ Resolution Notes</p>
-            <p style={{ color: 'inherit', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.6 }}>{ticket.resolutionNotes}</p>
+            <p style={{ color: '#059669', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.6 }}>{ticket.resolutionNotes}</p>
           </div>
         )}
         {ticket.rejectionReason && (
-          <div className="inc-light-surface" style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.04) 100%)', border: '2px solid #dc2626', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
+          <div className="inc-light-surface" style={{ background: '#ffffff', border: '2px solid #dc2626', borderRadius: 14, padding: '14px 16px', marginBottom: 16 }}>
             <p style={{ color: '#dc2626', fontSize: 11, fontWeight: 900, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4 }}>❌ Rejection Reason</p>
-            <p style={{ color: 'inherit', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.6 }}>{ticket.rejectionReason}</p>
+            <p style={{ color: '#991b1b', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.6 }}>{ticket.rejectionReason}</p>
           </div>
         )}
 
@@ -617,31 +619,52 @@ function DeleteConfirmModal({ ticket, onConfirm, onCancel, loading }) {
 }
 
 /* ─── Ticket Row Component ─── */
-function TicketRow({ t, onView }) {
+function TicketRow({ t, onView, onDelete }) {
+  const canDelete = t.status === 'OPEN';
   return (
     <tr className="inc-ticket-row" onClick={() => onView(t)} style={{ cursor: 'pointer' }}>
-      <td className="inc-table-cell inc-cell-id">#{t.id}</td>
-      <td className="inc-table-cell inc-cell-title" title={t.title}>{t.title}</td>
-      <td className="inc-table-cell inc-cell-category">{t.category}</td>
-      <td className="inc-table-cell inc-cell-priority">
+      <td className="inc-table-cell inc-cell-id" style={{ wordBreak: 'break-word', maxWidth: '60px' }}>#{t.id}</td>
+      <td className="inc-table-cell inc-cell-title" title={t.title} style={{ wordBreak: 'break-word', maxWidth: '220px', overflowWrap: 'break-word', whiteSpace: 'normal' }}>{t.title}{t.attachmentUrls?.length > 0 && <div style={{ fontSize: '12px', color: '#059669', fontWeight: 600, marginTop: 4 }}>📎 {t.attachmentUrls.length}</div>}</td>
+      <td className="inc-table-cell inc-cell-category" style={{ wordBreak: 'break-word', maxWidth: '130px', overflowWrap: 'break-word', whiteSpace: 'normal' }}>{t.category}</td>
+      <td className="inc-table-cell inc-cell-location" title={t.location} style={{ wordBreak: 'break-word', maxWidth: '120px', overflowWrap: 'break-word', whiteSpace: 'normal' }}>{t.location}</td>
+      <td className="inc-table-cell inc-cell-priority" style={{ wordBreak: 'break-word', maxWidth: '100px' }}>
         <PriorityBadge priority={t.priority} />
       </td>
-      <td className="inc-table-cell inc-cell-status">
+      <td className="inc-table-cell inc-cell-status" style={{ wordBreak: 'break-word', maxWidth: '110px' }}>
         <StatusBadge status={t.status} />
       </td>
-      <td className="inc-table-cell inc-cell-assignee">{t.assigneeName || 'Unassigned'}</td>
-      <td className="inc-table-cell inc-cell-date">{fmtDate(t.createdAt)}</td>
-      <td className="inc-table-cell inc-cell-actions">
+      <td className="inc-table-cell inc-cell-assignee" style={{ wordBreak: 'break-word', maxWidth: '130px', overflowWrap: 'break-word', whiteSpace: 'normal' }}>{t.assigneeName || 'Unassigned'}</td>
+      <td className="inc-table-cell inc-cell-date" style={{ wordBreak: 'break-word', maxWidth: '150px', overflowWrap: 'break-word', whiteSpace: 'normal' }}>{fmtDate(t.createdAt)}</td>
+      <td className="inc-table-cell inc-cell-actions" style={{ wordBreak: 'break-word', maxWidth: '160px', display: 'flex', gap: 6, flexDirection: 'column' }}>
         <button onClick={(e) => { e.stopPropagation(); onView(t); }} className="inc-action-btn">
           👁 View
         </button>
+       <button
+  onClick={(e) => {
+    e.stopPropagation();
+    onDelete(t);
+  }}
+  className="inc-action-btn"
+  disabled={!canDelete}
+  title={canDelete ? 'Delete this ticket' : 'Cannot delete - ticket is not OPEN'}
+  style={{
+    background: canDelete ? '#dc2626' : '#7f1d1d', // dark red when disabled
+    color: canDelete ? '#ffffff' : '#fecaca',     // soft red text
+    cursor: canDelete ? 'pointer' : 'not-allowed',
+    opacity: canDelete ? 1 : 0.85,
+    fontSize: '12px',
+    border: `1px solid ${canDelete ? '#dc2626' : '#991b1b'}`
+  }}
+>
+  {canDelete ? '🗑 Delete' : '🔒 Can\'t Delete'}
+</button>
       </td>
     </tr>
   );
 }
 
 /* ─── Tickets Table Component ─── */
-function TicketsTable({ displayed, onView, emptyMsg }) {
+function TicketsTable({ displayed, onView, onDelete, emptyMsg }) {
   if (displayed.length === 0) {
     return (
       <div className="inc-empty-state">
@@ -656,19 +679,20 @@ function TicketsTable({ displayed, onView, emptyMsg }) {
         <table className="inc-tickets-table">
           <thead>
             <tr>
-              <th style={{ width: '60px' }}>#</th>
-              <th>Title</th>
-              <th style={{ width: '130px' }}>Category</th>
-              <th style={{ width: '100px' }}>Priority</th>
-              <th style={{ width: '110px' }}>Status</th>
-              <th style={{ width: '130px' }}>Assignee</th>
-              <th style={{ width: '150px' }}>Created</th>
-              <th style={{ width: '80px' }}>Actions</th>
+              <th style={{ width: '60px', maxWidth: '60px' }}>#</th>
+              <th style={{ maxWidth: '220px' }}>Title</th>
+              <th style={{ width: '130px', maxWidth: '130px' }}>Category</th>
+              <th style={{ width: '120px', maxWidth: '120px' }}>Location</th>
+              <th style={{ width: '100px', maxWidth: '100px' }}>Priority</th>
+              <th style={{ width: '110px', maxWidth: '110px' }}>Status</th>
+              <th style={{ width: '130px', maxWidth: '130px' }}>Assignee</th>
+              <th style={{ width: '150px', maxWidth: '150px' }}>Created</th>
+              <th style={{ width: '160px', maxWidth: '160px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {displayed.map(t => (
-              <TicketRow key={t.id} t={t} onView={onView} />
+              <TicketRow key={t.id} t={t} onView={onView} onDelete={onDelete} />
             ))}
           </tbody>
         </table>
@@ -847,7 +871,7 @@ export default function Incidents() {
                 <span className="inc-section-count">{activeTickets.length}</span>
                 <div className="inc-section-divider" />
               </div>
-              <TicketsTable displayed={activeTickets} onView={(t) => { clearTicketParam(); setSelected(t); }} emptyMsg="No active tickets" />
+              <TicketsTable displayed={activeTickets} onView={(t) => { clearTicketParam(); setSelected(t); }} onDelete={(t) => setDeleteTarget(t)} emptyMsg="No active tickets" />
             </div>
           )}
 
@@ -870,7 +894,7 @@ export default function Incidents() {
                       These tickets are finalized. You can view details but no further actions are available.
                     </p>
                   </div>
-                  <TicketsTable displayed={historyTickets} onView={(t) => { clearTicketParam(); setSelected(t); }} emptyMsg="No closed or rejected tickets" />
+                  <TicketsTable displayed={historyTickets} onView={(t) => { clearTicketParam(); setSelected(t); }} onDelete={(t) => setDeleteTarget(t)} emptyMsg="No closed or rejected tickets" />
                 </>
               )}
             </div>
