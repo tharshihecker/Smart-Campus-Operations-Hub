@@ -350,7 +350,7 @@ function TicketDetailPanel({ ticket, onClose }) {
         )}
 
         {/* Title */}
-        <p style={{ fontWeight: 900, fontSize: 18, color: '#111827', marginBottom: 12, lineHeight: 1.4 }}>{ticket.title}</p>
+        <p style={{ fontWeight: 900, fontSize: 18, color: '#111827', marginBottom: 12, lineHeight: 1.4, maxWidth: '100%', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal' }}>{ticket.title}</p>
         
         {/* Badges */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18, alignItems: 'center' }}>
@@ -362,7 +362,7 @@ function TicketDetailPanel({ ticket, onClose }) {
         {/* Description */}
         <div style={{ background: 'linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%)', borderRadius: 14, padding: '16px 18px', marginBottom: 18, border: '2px solid #dbeafe' }}>
           <p style={{ color: '#1e3a8a', fontSize: 11, fontWeight: 900, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: 0.4 }}>📝 Description</p>
-          <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.8 }}>{ticket.description}</p>
+          <p style={{ color: '#111827', fontSize: 13, margin: 0, fontWeight: 600, lineHeight: 1.8, maxWidth: '100%', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal' }}>{ticket.description}</p>
         </div>
 
         {/* Meta grid */}
@@ -469,9 +469,9 @@ function TicketRow({ t, idx, onView, onStatus, onAssign }) {
   return (
     <tr className="adm-ticket-row" style={{ borderBottom: '1px solid #f3f4f6', background: idx % 2 === 0 ? '#ffffff' : '#fafbff' }}>
       <td style={{ padding: '13px 14px', color: '#070707', fontSize: 11, fontWeight: 700 }}>#{t.id}</td>
-      <td style={{ padding: '13px 14px', maxWidth: 220 }}>
-        <p style={{ margin: 0, fontWeight: 800, color: '#111827', fontSize: 13 }}>{t.title}</p>
-        <p style={{ margin: '2px 0 0', color: '#0b0b0b', fontSize: 11, fontWeight: 600 }}>📍 {t.location}</p>
+      <td style={{ padding: '13px 14px', maxWidth: 220, wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal' }}>
+        <p style={{ margin: 0, fontWeight: 800, color: '#111827', fontSize: 13, wordBreak: 'break-word' }}>{t.title}</p>
+        <p style={{ margin: '2px 0 0', color: '#0b0b0b', fontSize: 11, fontWeight: 600, wordBreak: 'break-word' }}>📍 {t.location}</p>
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
           {t.attachmentUrls?.length > 0 && (
             <span style={{ fontSize: 10, color: '#2563eb', fontWeight: 800, background: '#eff6ff', padding: '1px 7px', borderRadius: 999 }}>
