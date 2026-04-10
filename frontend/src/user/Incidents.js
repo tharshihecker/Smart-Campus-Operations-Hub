@@ -280,8 +280,11 @@ function EscalateButton({ ticket, onEscalated }) {
     try {
       await addIncidentComment(ticket.id, '⚠️ ESCALATION REQUEST: User has flagged this issue as critically urgent and requires immediate attention.');
       setDone(true);
-      onEscalated && onEscalated();
-    } catch { }
+      // Immediately notify parent to refresh comments AND main ticket list
+      onEscalated && onEscalated(true);
+    } catch (err) {
+      console.error('Escalation failed:', err);
+    }
     finally { setLoading(false); }
   };
 
@@ -421,7 +424,7 @@ function CreateTicketModal({ onClose, onCreated }) {
 }
 
 /* ─── Ticket Detail Panel ─── */
-function TicketDetailPanel({ ticket, onClose }) {
+function TicketDetailPanel({ ticket, onClose, onTicketUpdated }) {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [editingId, setEditingId] = useState(null);
@@ -475,7 +478,12 @@ function TicketDetailPanel({ ticket, onClose }) {
         <div className="inc-badge-row" style={{ marginBottom: 18 }}>
           <PriorityBadge priority={ticket.priority} />
           <StatusBadge status={ticket.status} />
-          <EscalateButton ticket={ticket} onEscalated={() => { loadComments(); }} />
+          <EscalateButton ticket={ticket} onEscalated={(wasEscalated) => { 
+            if (wasEscalated) { 
+              loadComments();
+              onTicketUpdated && onTicketUpdated();
+            }
+          }} />
         </div>
 
         {/* Status Timeline */}
@@ -902,8 +910,16 @@ export default function Incidents() {
         </>
       )}
 
-      {showCreate && <CreateTicketModal onClose={() => setShowCreate(false)} onCreated={t => { setTickets(prev => [t, ...prev]); }} />}
-      {selected && <TicketDetailPanel ticket={selected} onClose={() => { setSelected(null); clearTicketParam(); }} />}
+      {showCreate && <CreateTicketModal onClose={() => setShowCreate(false)} onCreated={t => { 
+        setTickets(prev => [t, ...prev]);
+        // Silently refresh in background to sync any server-side computed fields (timestamps, etc)
+        setTimeout(() => loadTickets(true), 500);
+      }} />}
+      {selected && <TicketDetailPanel 
+        ticket={selected} 
+        onClose={() => { setSelected(null); clearTicketParam(); }}
+        onTicketUpdated={() => { loadTickets(true); }}
+      />}
 
       {deleteTarget && (
         <DeleteConfirmModal
