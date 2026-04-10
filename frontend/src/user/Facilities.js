@@ -379,11 +379,11 @@ function BookingPanel({ facility, userId, onClose }) {
             </span>
           </div>
 
-              <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--border)' }}>
+          <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '8px', marginBottom: '16px', border: '1px solid var(--border)' }}>
             <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-main)' }}>✨ Available Time Slots for {form.bookingDate}</h4>
             <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Click a free slot below to automatically select it.</p>
             {loadingDay ? <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>Calculating free slots...</p> :
-              (freeBlocks.length > 0 && (
+              (freeBlocks.length > 0 ? (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                   {freeBlocks.map((block, idx) => (
                     <button
@@ -400,6 +400,8 @@ function BookingPanel({ facility, userId, onClose }) {
                     </button>
                   ))}
                 </div>
+              ) : (
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--brand-danger)' }}>🚫 Fully booked for the entire day.</p>
               ))
             }
           </div>
@@ -699,33 +701,36 @@ function Facilities() {
                   </div>
                 )}
 
-                <div className="facility-actions">
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: "16px" }}>
-                    <button
-                      type="button" className="btn-secondary"
-                      onClick={() => setQrFacility(facility)}
-                      title="View QR & Share options"
-                      style={{ flex: 1 }}
-                    >
-                      📱 Share & QR
-                    </button>
-                  </div>
+                <div className="facility-actions" style={{ display: "flex", gap: "10px", alignItems: "stretch" }}>
+                  <button
+                    type="button" className="btn-secondary"
+                    onClick={() => setQrFacility(facility)}
+                    title="View QR & Share options"
+                    style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", padding: "12px 8px" }}
+                  >
+                    📱 Share & QR
+                  </button>
 
                   {facility.status === "ACTIVE" && userId ? (
                     <button
                       type="button" className="btn-primary"
                       onClick={() => { setBookingFacility(facility); setQrFacility(null); }}
+                      style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", padding: "12px 8px" }}
                     >
-                      📅 Book This Facility
+                      📅 Book
                     </button>
                   ) : facility.status !== "ACTIVE" ? (
-                    <p style={{ color: "var(--brand-danger)", fontWeight: 700, margin: 0, fontSize: "0.9rem" }}>
-                      🚫 Not available for booking
-                    </p>
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(239, 68, 68, 0.05)", borderRadius: "var(--radius-md)" }}>
+                      <p style={{ color: "var(--brand-danger)", fontWeight: 700, margin: 0, fontSize: "0.9rem" }}>
+                        🚫 Unavailable
+                      </p>
+                    </div>
                   ) : (
-                    <p style={{ color: "var(--text-muted)", fontWeight: 600, margin: 0, fontSize: "0.9rem" }}>
-                      Log in to book
-                    </p>
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(100, 116, 139, 0.05)", borderRadius: "var(--radius-md)" }}>
+                      <p style={{ color: "var(--text-muted)", fontWeight: 600, margin: 0, fontSize: "0.9rem" }}>
+                        Log in to book
+                      </p>
+                    </div>
                   )}
                 </div>
               </article>

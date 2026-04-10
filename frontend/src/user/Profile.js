@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { fetchProfile, updateProfile, changePassword, updateNotificationPrefs } from '../api';
+import { fetchProfile, updateProfile, changePassword, updateNotificationPrefs, requestPasswordResetOtp, resetPasswordWithOtp } from '../api';
 import './Profile.css';
 
 function Profile() {
@@ -21,7 +21,8 @@ function Profile() {
 
   /* Password change */
   const [showPwdForm, setShowPwdForm] = useState(false);
-  const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [isOtpMode, setIsOtpMode] = useState(false);
+  const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '', otp: '' });
   const [pwdMsg, setPwdMsg] = useState({ type: '', text: '' });
   const [pwdSaving, setPwdSaving] = useState(false);
 
@@ -94,6 +95,20 @@ function Profile() {
     setPwdForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleForgotPassword = async () => {
+    setPwdSaving(true);
+    setPwdMsg({ type: '', text: '' });
+    try {
+      await requestPasswordResetOtp(userId);
+      setPwdMsg({ type: 'success', text: 'OTP sent to your email address. It will expire in 10 minutes.' });
+      setIsOtpMode(true);
+    } catch (err) {
+      setPwdMsg({ type: 'error', text: err.message || 'Failed to send OTP.' });
+    } finally {
+      setPwdSaving(false);
+    }
+  };
+
   const handlePasswordSubmit = async e => {
     e.preventDefault();
     if (pwdForm.newPassword !== pwdForm.confirmPassword) {
@@ -107,13 +122,21 @@ function Profile() {
     setPwdSaving(true);
     setPwdMsg({ type: '', text: '' });
     try {
-      await changePassword(userId, {
-        currentPassword: pwdForm.currentPassword,
-        newPassword: pwdForm.newPassword,
-      });
+      if (isOtpMode) {
+        await resetPasswordWithOtp(userId, {
+          otp: pwdForm.otp,
+          newPassword: pwdForm.newPassword,
+        });
+      } else {
+        await changePassword(userId, {
+          currentPassword: pwdForm.currentPassword,
+          newPassword: pwdForm.newPassword,
+        });
+      }
       setPwdMsg({ type: 'success', text: 'Password changed successfully!' });
-      setPwdForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setPwdForm({ currentPassword: '', newPassword: '', confirmPassword: '', otp: '' });
       setShowPwdForm(false);
+      setIsOtpMode(false);
     } catch (err) {
       setPwdMsg({ type: 'error', text: err.message || 'Failed to change password' });
     } finally {
@@ -233,8 +256,8 @@ function Profile() {
                 <input name="fullName" value={editForm.fullName} onChange={handleEditChange} placeholder="Enter your full name" />
               </div>
               <div className="form-group">
-                <label>Email</label>
-                <input name="email" type="email" value={editForm.email} onChange={handleEditChange} placeholder="your@email.com" />
+                <label>Email (Read Only)</label>
+                <input name="email" type="email" value={editForm.email} readOnly className="readonly-input" style={{ background: "var(--bg-surface)", color: "var(--text-muted)", cursor: "not-allowed" }} title="Email address cannot be changed" />
               </div>
             </div>
             <div className="profile-form-row">
@@ -343,10 +366,22 @@ function Profile() {
           </div>
         ) : (
           <form onSubmit={handlePasswordSubmit} className="profile-form password-section">
-            <div className="form-group">
-              <label>Current Password</label>
-              <input name="currentPassword" type="password" value={pwdForm.currentPassword} onChange={handlePwdChange} required autoComplete="current-password" />
-            </div>
+            {isOtpMode ? (
+              <div className="form-group">
+                <label>Email OTP (6 Digits)</label>
+                <input name="otp" type="text" value={pwdForm.otp} onChange={handlePwdChange} required placeholder="Enter OTP received via email" />
+              </div>
+            ) : (
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
+                  <label style={{ margin: 0 }}>Current Password</label>
+                  <button type="button" onClick={handleForgotPassword} style={{ background: 'none', border: 'none', color: 'var(--brand-teal)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+                    Forgot Password?
+                  </button>
+                </div>
+                <input name="currentPassword" type="password" value={pwdForm.currentPassword} onChange={handlePwdChange} required autoComplete="current-password" />
+              </div>
+            )}
             <div className="profile-form-row">
               <div className="form-group">
                 <label>New Password</label>
@@ -369,7 +404,7 @@ function Profile() {
                   'Update Password'
                 )}
               </button>
-              <button type="button" className="btn-profile secondary" onClick={() => { setShowPwdForm(false); setPwdMsg({ type: '', text: '' }); }}>
+              <button type="button" className="btn-profile secondary" onClick={() => { setShowPwdForm(false); setIsOtpMode(false); setPwdMsg({ type: '', text: '' }); }}>
                 Cancel
               </button>
             </div>
