@@ -62,11 +62,17 @@
   padding: 12px 16px 12px 44px;
   border-radius: 12px;
   border: 1px solid #cbd5e1;
-  background: #ffffff;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
   font-size: 0.95rem;
-  color: #0f172a;
+  font-weight: 500;
   box-shadow: 0 2px 4px rgba(0,0,0,0.02);
   transition: all 0.3s ease;
+}
+
+.mu-search-input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
 }
 
 .mu-search-input:focus {

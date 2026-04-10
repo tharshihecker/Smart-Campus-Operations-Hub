@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { signup, googleLogin } from '../api';
+import ForgotPasswordModal from './ForgotPasswordModal';
 import './Signup.css';
 
 /* Google G logo SVG */
@@ -21,6 +22,7 @@ function Signup({ onSignupSuccess }) {
   const [isError, setIsError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = e => {
@@ -132,7 +134,10 @@ function Signup({ onSignupSuccess }) {
       </button>
 
       {message && <p className={`auth-message ${isError ? 'error' : 'success'}`}>{message}</p>}
-      <p className="auth-switch">Already have an account? <Link to="/login">Sign in</Link></p>
+      <p className="auth-switch">
+        Already have an account? <Link to="/login">Sign in</Link> | <button type="button" onClick={() => setShowForgot(true)} style={{ background: 'none', border: 'none', color: 'var(--brand-teal)', fontWeight: 700, cursor: 'pointer', padding: 0 }}>Forgot password?</button>
+      </p>
+      {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
     </section>
   );
 }

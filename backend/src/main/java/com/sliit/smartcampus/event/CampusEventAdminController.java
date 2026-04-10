@@ -16,50 +16,34 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/events")
 public class CampusEventAdminController {
-    private final CampusEventRepository eventRepository;
+    private final CampusEventService eventService;
     private final CloudinaryService cloudinaryService;
 
-    public CampusEventAdminController(CampusEventRepository eventRepository, CloudinaryService cloudinaryService) {
-        this.eventRepository = eventRepository;
+    public CampusEventAdminController(CampusEventService eventService, CloudinaryService cloudinaryService) {
+        this.eventService = eventService;
         this.cloudinaryService = cloudinaryService;
     }
 
     @GetMapping
     public List<CampusEvent> getAll() {
-        return eventRepository.findAll();
+        return eventService.getAllEvents();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CampusEvent create(@RequestBody CampusEvent event) {
-        validateEventDatesAndCapacity(event);
-        return eventRepository.save(event);
+        return eventService.createEvent(event);
     }
 
     @PutMapping("/{id}")
     public CampusEvent update(@PathVariable String id, @RequestBody CampusEvent event) {
-        CampusEvent existing = eventRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
-        existing.setTitle(event.getTitle());
-        existing.setDescription(event.getDescription());
-        existing.setEventDate(event.getEventDate());
-        existing.setBookingCloseDate(event.getBookingCloseDate());
-        existing.setStartTime(event.getStartTime());
-        existing.setEndTime(event.getEndTime());
-        existing.setCapacity(event.getCapacity());
-        existing.setImageUrl(event.getImageUrl());
-        existing.setLocation(event.getLocation());
-        validateEventDatesAndCapacity(existing);
-        return eventRepository.save(existing);
+        return eventService.updateEvent(id, event);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String id) {
-        if (!eventRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found");
-        }
-        eventRepository.deleteById(id);
+        eventService.deleteEvent(id);
     }
 
     @PostMapping(path = "/upload-image", consumes = {"multipart/form-data"})
@@ -75,21 +59,4 @@ public class CampusEventAdminController {
         }
     }
 
-    private void validateEventDatesAndCapacity(CampusEvent event) {
-        if (event.getEventDate() != null && event.getBookingCloseDate() != null
-                && !event.getBookingCloseDate().isBlank() && !event.getEventDate().isBlank()) {
-            try {
-                LocalDate ev = LocalDate.parse(event.getEventDate());
-                LocalDate close = LocalDate.parse(event.getBookingCloseDate());
-                if (!close.isBefore(ev)) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking close date must be before event start date");
-                }
-            } catch (DateTimeParseException ex) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid date format (expected YYYY-MM-DD)");
-            }
-        }
-        if (event.getCapacity() != null && event.getCapacity() < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Capacity cannot be negative");
-        }
-    }
 }
