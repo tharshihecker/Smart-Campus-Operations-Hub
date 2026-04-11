@@ -16,10 +16,10 @@ public interface WaitlistRepository extends MongoRepository<Waitlist, String> {
     List<Waitlist> findWaitingByFacilityAndSlot(String facilityId, LocalDate date, LocalTime start, LocalTime end);
 
     @Query("{ 'facility.id': ?0, 'user.id': ?1, 'bookingDate': ?2, 'startTime': ?3, 'endTime': ?4, 'status': { $in: ?5 } }")
-    boolean existsByFacilityIdAndUserIdAndBookingDateAndStartTimeAndEndTimeAndStatusIn(
+    Boolean existsByFacilityIdAndUserIdAndBookingDateAndStartTimeAndEndTimeAndStatusIn(
         String facilityId, String userId, LocalDate bookingDate, LocalTime startTime, LocalTime endTime, List<WaitlistStatus> statuses);
 
-    @Query("{ 'user.id': ?0, 'status': { $nin: ['CANCELLED', 'EXPIRED'] } }")
+    @Query("{ 'user.id': ?0, 'status': { $nin: ['CANCELLED', 'EXPIRED', 'CONVERTED'] } }")
     List<Waitlist> findActiveUserWaitlist(String userId);
 }
 
