@@ -10,3 +10,4 @@ class SmartCampusApplicationTests {
     void contextLoads() {
     }
 }
+
