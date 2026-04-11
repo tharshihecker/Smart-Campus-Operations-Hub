@@ -41,6 +41,27 @@ function Home() {
     if (userId) loadDashboard();
   }, [userId]);
 
+  // 💬 Tawk.to Integration (Home Page Only)
+  useEffect(() => {
+    var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+    const s1 = document.createElement("script");
+    const s0 = document.getElementsByTagName("script")[0];
+    s1.async = true;
+    s1.src = 'https://embed.tawk.to/69d9d0753ad18f1c36acef65/1jltdcjaa';
+    s1.charset = 'UTF-8';
+    s1.setAttribute('crossorigin', '*');
+    s0.parentNode.insertBefore(s1, s0);
+
+    return () => {
+      // Hide the widget when leaving the home page
+      if (window.Tawk_API && typeof window.Tawk_API.hideWidget === 'function') {
+        window.Tawk_API.hideWidget();
+      }
+      // Remove the script tag
+      s1.remove();
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="home-page" style={{ padding: '40px', textAlign: 'center' }}>
