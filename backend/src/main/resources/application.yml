@@ -4,8 +4,7 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb+srv://herozeroyaaro_db_user:7LpLSMO1hepDes7r@cluster0.i7rsr1d.mongodb.net/smartcampus?appName=Cluster0
-
+      uri: ######################################
   servlet:
     multipart:
       enabled: true
@@ -15,8 +14,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: vkaura1010@gmail.com
-    password: xzcl lsfj ddqb lfjx
+    username:#########################
+    password: ################
     properties:
       mail:
         smtp:
@@ -34,13 +33,13 @@ app:
     expiration-ms: 86400000
 
   google:
-    client-id: 525229368487-uae4vna5146dmah7lmshjna5rm985cr1.apps.googleusercontent.com
+    client-id: ###########################
 
   mail:
     enabled: true          # from main (feature-safe toggle)
-    from: vkaura1010@gmail.com   # merged from both
+    from: v###################   # merged from both
 
 cloudinary:
-  cloud-name: dxpmhs4r8
-  api-key: "738223427257681"
-  api-secret: "rHRazNvXXKIN18ZlA8Dd8VYkfz4"
+  cloud-name:##########
+  api-key: #################
+  api-secret: ##########################
