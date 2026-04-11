@@ -9,3 +9,6 @@ public class ResourceNotFoundException extends RuntimeException {
         super(resource + " not found with id: " + id);
     }
 }
+
+
+
