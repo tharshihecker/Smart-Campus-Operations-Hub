@@ -1,22 +1,42 @@
 ﻿# Node
+
 node_modules/
+
 frontend/node_modules/
 
+
+
 # Java
+
 backend/target/
 
+
+
 # IDE
-.vscode/
+
+
 .idea/
+
 *.iml
 
+
+
 # OS
+
 .DS_Store
+
 Thumbs.db
 
+
+
 # Environment
-.env
+
+
 
 # Frontend build
+
 frontend/build/
 
+
+
+config.bat
