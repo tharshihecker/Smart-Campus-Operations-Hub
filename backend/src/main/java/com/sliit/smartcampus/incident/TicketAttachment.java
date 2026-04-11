@@ -21,6 +21,9 @@ public class TicketAttachment {
 
     private Long fileSize;
 
+    // INNOVATION: Photo annotations (JSON string storing drawing data)
+    private String annotationData; // JSON with drawing objects, text labels, circles, rectangles, etc.
+
     // Getters and Setters
     public String getId() { return id; }
     public IncidentTicket getTicket() { return ticket; }
@@ -33,4 +36,6 @@ public class TicketAttachment {
     public void setContentType(String contentType) { this.contentType = contentType; }
     public Long getFileSize() { return fileSize; }
     public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
+    public String getAnnotationData() { return annotationData; }
+    public void setAnnotationData(String annotationData) { this.annotationData = annotationData; }
 }
