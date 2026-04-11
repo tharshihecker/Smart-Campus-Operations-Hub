@@ -1,0 +1,31 @@
+/* Annotation Editor Styles */
+.annotation-editor {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.annotation-tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.annotation-tool-btn:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.annotation-tool-btn:active {
+  transform: scale(0.98);
+}
+
+/* Canvas styling */
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Make sure Fabric.js canvas text is readable */
+.fabric-canvas {
+  border-radius: 10px;
+}

@@ -119,4 +119,29 @@ public class IncidentTicketController {
         incidentTicketService.deleteTicket(id, userId);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * INNOVATION: PUT /api/incidents/attachments/{attachmentId}/annotations
+     * Save annotation data (markings, circles, text) on an evidence photo
+     * Allows users to mark problem areas on images
+     */
+    @PutMapping("/attachments/{attachmentId}/annotations")
+    public ResponseEntity<TicketAttachmentResponse> saveAnnotation(
+            @PathVariable String attachmentId,
+            @RequestBody Map<String, String> body) {
+        String annotationData = body.get("annotationData");
+        if (annotationData == null || annotationData.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(incidentTicketService.saveAnnotation(attachmentId, annotationData));
+    }
+
+    /**
+     * INNOVATION: GET /api/incidents/attachments/{attachmentId}/annotations
+     * Retrieve annotation data for an attachment
+     */
+    @GetMapping("/attachments/{attachmentId}/annotations")
+    public ResponseEntity<TicketAttachmentResponse> getAnnotations(@PathVariable String attachmentId) {
+        return ResponseEntity.ok(incidentTicketService.getAttachmentWithAnnotations(attachmentId));
+    }
 }
