@@ -5,11 +5,9 @@ import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.Map;
-
 @Service
 public class CloudinaryService {
 
@@ -39,3 +37,6 @@ public class CloudinaryService {
         return uploadResult.get("secure_url").toString();
     }
 }
+
+
+
