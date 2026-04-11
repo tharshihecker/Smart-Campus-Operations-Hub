@@ -1,0 +1,311 @@
+/* ── User Home Premium UI ───────────────────────────── */
+
+.home-page {
+  animation: fade-in-up 0.5s ease-out;
+  padding-bottom: 60px;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Hero ──────────────────────────────────── */
+
+.home-hero {
+  background: linear-gradient(135deg, #0f172a, #1e1b4b, #4338ca);
+  border-radius: 24px;
+  padding: 60px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 40px -10px rgba(67, 56, 202, 0.3);
+}
+
+.home-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 700px;
+}
+
+.home-kicker {
+  color: #818cf8;
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.home-title {
+  font-size: 3.2rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 16px;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.home-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.25rem;
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.home-hero-bg {
+  position: absolute;
+  right: -20px;
+  bottom: -40px;
+  font-size: 20rem;
+  opacity: 0.1;
+  z-index: 1;
+  transform: rotate(-15deg);
+  pointer-events: none;
+}
+
+/* ── Main Viewport Grid ──────────────────────── */
+
+.home-viewport {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 1024px) {
+  .home-viewport { grid-template-columns: 1fr; }
+}
+
+/* ── Unique Campus Overview (Visual Bento) ────── */
+
+.home-overview {
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 40px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.home-section-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home-bento {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 20px;
+  flex: 1;
+}
+
+.bento-item {
+  border-radius: 24px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  min-height: 180px;
+}
+
+.bento-item::before {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: radial-gradient(circle at top right, rgba(255,255,255,0.3) 0%, transparent 70%);
+  z-index: 1;
+}
+
+.bento-item:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.2);
+}
+
+.bento-item.blue { background: #3b82f6; color: #ffffff; }
+.bento-item.green { background: #10b981; color: #ffffff; }
+.bento-item.purple { background: #8b5cf6; color: #ffffff; }
+.bento-item.orange { background: #f59e0b; color: #ffffff; }
+
+.bento-content {
+  position: relative;
+  z-index: 2;
+}
+
+.bento-icon { 
+  font-size: 3rem; 
+  margin-bottom: 12px; 
+  display: block; 
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1));
+}
+
+.bento-val { 
+  font-size: 3.5rem; 
+  font-weight: 900; 
+  line-height: 1; 
+  display: block;
+}
+
+.bento-label { 
+  font-size: 0.9rem; 
+  font-weight: 800; 
+  text-transform: uppercase; 
+  letter-spacing: 0.15em; 
+  opacity: 0.9; 
+  margin-top: 8px; 
+  display: block;
+}
+
+.bento-desc {
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.7;
+  margin-top: 4px;
+  display: block;
+}
+
+.bento-bg-icon {
+  position: absolute;
+  right: -10px;
+  bottom: -15px;
+  font-size: 8rem;
+  opacity: 0.15;
+  filter: blur(1px);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ── Personalized Dashboard ─────────────────── */
+
+.home-personalized {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.personal-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.personal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.personal-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.personal-link {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #4338ca;
+  text-decoration: none;
+}
+
+.personal-link:hover { text-decoration: underline; }
+
+.personal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.personal-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.personal-item:hover { background: #f1f5f9; }
+
+.item-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.item-info { flex: 1; min-width: 0; }
+.item-name { font-size: 0.95rem; font-weight: 700; color: #1e293b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-meta { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+
+.empty-personal {
+  padding: 20px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  background: #f8fafc;
+  border-radius: 16px;
+  border: 1px dashed #cbd5e1;
+}
+
+/* ── Launchpad (Row Action Cards) ───────────── */
+
+.home-launchpad {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.action-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: flex;
+  gap: 16px;
+}
+
+.action-card:hover {
+  border-color: #4338ca;
+  transform: translateY(-4px);
+  box-shadow: 0 15px 30px -10px rgba(67, 56, 202, 0.15);
+}
+
+.action-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: #f0f4ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.action-info h3 { font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0 0 4px; }
+.action-info p { font-size: 0.85rem; color: #64748b; margin: 0; line-height: 1.4; }

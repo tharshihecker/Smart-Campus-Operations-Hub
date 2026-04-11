@@ -1,0 +1,450 @@
+/* ── Manage Users Premium High-Density UI ───────────────────────────── */
+
+.mu-page {
+  animation: fade-in-up 0.5s ease-out;
+  padding-bottom: 40px;
+}
+
+.mu-header {
+  background: linear-gradient(135deg, #1e1b4b, #312e81, #4f46e5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 48px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.3);
+}
+
+.mu-title {
+  font-size: 2.8rem;
+  font-weight: 950;
+  color: #ffffff;
+  margin-bottom: 12px;
+  letter-spacing: -0.04em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.mu-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.1rem;
+  font-weight: 500;
+  max-width: 600px;
+}
+
+/* ── Search Bar ──────────────────────────────────── */
+
+.mu-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.mu-search-wrapper {
+  flex: 1;
+  position: relative;
+  min-width: 300px;
+}
+
+.mu-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 1.1rem;
+}
+
+.mu-search-input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  font-size: 0.95rem;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  transition: all 0.3s ease;
+}
+
+.mu-search-input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+.mu-search-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  outline: none;
+}
+
+.mu-btn {
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mu-btn-primary {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+.mu-btn-primary:hover:not(:disabled) {
+  background: #4338ca;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.mu-btn-clear {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.mu-btn-clear:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* ── Modern Table Container ─────────────────────────────────── */
+
+.mu-table-container {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  position: relative;
+}
+
+.mu-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+.mu-table thead {
+  background: #f8fafc;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mu-table th {
+  padding: 16px 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mu-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.mu-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.mu-table tbody tr.mu-row-disabled {
+  background: #fafaf9;
+}
+
+.mu-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.mu-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── User Profile Cell ─────────────────────────────────── */
+
+.mu-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mu-avatar-small {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+  color: #4f46e5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.mu-user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.mu-user-name {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.mu-user-email {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* ── Status Badge ─────────────────────────────────── */
+
+.mu-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.mu-status-pill::before {
+  content: "";
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.mu-status-pill-active {
+  background: #ecfdf5;
+  color: #059669;
+}
+.mu-status-pill-active::before { background: #10b981; }
+
+.mu-status-pill-disabled {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.mu-status-pill-disabled::before { background: #ef4444; }
+
+/* ── Role Select ─────────────────────────────────── */
+
+.mu-compact-select {
+  padding: 6px 30px 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 1em;
+  transition: all 0.2s;
+}
+
+.mu-compact-select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* ── Inline Actions ─────────────────────────────────── */
+
+.mu-inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mu-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+}
+
+.mu-icon-btn-toggle {
+  background: #f1f5f9;
+  color: #475569;
+}
+.mu-icon-btn-toggle:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.mu-icon-btn-delete {
+  background: #fef2f2;
+  color: #ef4444;
+}
+.mu-icon-btn-delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ── Misc ─────────────────────────────────── */
+
+.mu-meta-text {
+  font-size: 0.85rem;
+  color: #475569;
+  font-weight: 500;
+}
+
+.mu-empty {
+  text-align: center;
+  padding: 60px 20px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px dashed #cbd5e1;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Custom Confirmation Modal ───────────────────────── */
+
+.mu-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  animation: fade-in 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.mu-modal-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 32px;
+  width: 90%;
+  max-width: 440px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modal-slide-up 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modal-slide-up {
+  from { transform: translateY(30px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.mu-modal-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  display: inline-block;
+}
+
+.mu-modal-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 12px;
+}
+
+.mu-modal-msg {
+  font-size: 1rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
+.mu-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.mu-modal-actions button {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.mu-btn-cancel {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.mu-btn-cancel:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.mu-btn-confirm {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+.mu-btn-confirm:hover {
+  background: #4338ca;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.mu-btn-danger {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.mu-btn-danger:hover {
+  background: #dc2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.mu-btn-warning {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.mu-btn-warning:hover {
+  background: #d97706;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* ── Skeleton Loading ───────────────────────────────── */
+.sk-line {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
