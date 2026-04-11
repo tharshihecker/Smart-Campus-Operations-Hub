@@ -55,9 +55,9 @@ public class WaitlistService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         // Check not already on waitlist for this exact slot
-        boolean already = waitlistRepository.existsByFacilityIdAndUserIdAndBookingDateAndStartTimeAndEndTimeAndStatusIn(
+        Boolean already = waitlistRepository.existsByFacilityIdAndUserIdAndBookingDateAndStartTimeAndEndTimeAndStatusIn(
                 facilityId, userId, date, startTime, endTime, List.of(WaitlistStatus.WAITING, WaitlistStatus.NOTIFIED));
-        if (already) {
+        if (Boolean.TRUE.equals(already)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You are already on the waitlist for this slot.");
         }
 
