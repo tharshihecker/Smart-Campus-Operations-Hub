@@ -6,6 +6,7 @@ import {
   fetchAllUsers, fetchIncidentComments, addAdminIncidentComment,
   editIncidentComment, deleteAdminIncidentComment
 } from '../api';
+import AnnotationViewer from '../components/AnnotationViewer';
 
 const TICKET_STATUSES = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REJECTED'];
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
@@ -144,21 +145,95 @@ function PhotoModal({ url, onClose }) {
   );
 }
 
-/* ─── Admin Attachments ─── */
-function AdminAttachments({ urls }) {
+/* ─── Admin Attachments (with Annotation support) ─── */
+function AdminAttachments({ urls, attachments }) {
   const [open, setOpen] = useState(null);
+  const [viewingAnnotations, setViewingAnnotations] = useState(null);
   if (!urls?.length) return <p style={{ color: '#9ca3af', fontSize: 13, fontWeight: 600, margin: 0 }}>No photos attached</p>;
   return (
     <div style={{ marginTop: 16 }}>
       <p style={{ color: '#111827', fontSize: 12, fontWeight: 900, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
         📎 User Photos ({urls.length})
       </p>
-      <div className="adm-image-gallery">
-        {urls.map((url, i) => (
-          <div key={i} className="adm-image-item" onClick={() => setOpen(url)}>
-            <img src={url} alt={`photo-${i}`} onError={e => e.target.parentElement.style.display = 'none'} />
+
+      {/* Show annotation view if selected */}
+      {viewingAnnotations !== null && attachments && attachments[viewingAnnotations] && (
+        <div style={{ marginBottom: 16, background: '#f9fafb', border: '2px solid #e5e7eb', borderRadius: 12, padding: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <p style={{ color: '#111827', fontSize: 12, fontWeight: 900, margin: 0, textTransform: 'uppercase' }}>
+              📌 Annotations on Photo {viewingAnnotations + 1}
+            </p>
+            <button
+              onClick={() => setViewingAnnotations(null)}
+              style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#dc2626' }}
+            >
+              ✕
+            </button>
           </div>
-        ))}
+          <AnnotationViewer
+            imageUrl={urls[viewingAnnotations]}
+            annotations={attachments[viewingAnnotations].annotationData}
+          />
+        </div>
+      )}
+
+      <div className="adm-image-gallery">
+        {urls.map((url, i) => {
+          const attachment = attachments && attachments[i];
+          const hasAnnotations = attachment && attachment.annotationData;
+          return (
+            <div key={i} style={{ position: 'relative' }}>
+              <div className="adm-image-item" onClick={() => setOpen(url)}>
+                <img src={url} alt={`photo-${i}`} onError={e => e.target.parentElement.style.display = 'none'} />
+              </div>
+              {hasAnnotations && (
+                <div style={{
+                  position: 'absolute',
+                  top: 4,
+                  right: 4,
+                  background: '#dc2626',
+                  color: '#fff',
+                  borderRadius: '50%',
+                  width: 28,
+                  height: 28,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)',
+                }}>
+                  📌
+                  <span
+                    style={{
+                      position: 'absolute',
+                      bottom: -4,
+                      right: -4,
+                      background: '#2563eb',
+                      color: '#fff',
+                      borderRadius: '50%',
+                      width: 18,
+                      height: 18,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 10,
+                      fontWeight: 800,
+                      border: '2px solid #fff',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setViewingAnnotations(i);
+                    }}
+                  >
+                    👁
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
       {open && <PhotoModal url={open} onClose={() => setOpen(null)} />}
     </div>
@@ -396,7 +471,7 @@ function TicketDetailPanel({ ticket, onClose }) {
           </div>
         )}
 
-        <AdminAttachments urls={ticket.attachmentUrls} />
+        <AdminAttachments urls={ticket.attachmentUrls} attachments={ticket.attachments} />
 
         <hr style={{ borderColor: '#e5e7eb', margin: '20px 0', borderStyle: 'dashed' }} />
 

@@ -320,6 +320,11 @@ public class IncidentTicketService {
         List<String> attachmentUrls = t.getAttachments().stream()
                 .map(TicketAttachment::getFilePath)
                 .toList();
+        
+        // INNOVATION: Build attachment response objects with IDs and annotation data
+        List<TicketAttachmentResponse> attachments = t.getAttachments().stream()
+                .map(this::toAttachmentResponse)
+                .toList();
 
         return new IncidentTicketResponse(
                 t.getId(),
@@ -337,6 +342,7 @@ public class IncidentTicketService {
                 t.getAssignee() != null ? t.getAssignee().getId() : null,
                 t.getAssignee() != null ? (t.getAssignee().getFullName() != null ? t.getAssignee().getFullName() : t.getAssignee().getUsername()) : null,
                 attachmentUrls,
+                attachments,
                 java.util.List.of(), // Empty list for comments to prevent N+1
                 t.getCreatedAt(),
                 t.getUpdatedAt()
@@ -351,6 +357,48 @@ public class IncidentTicketService {
                 c.getAuthor().getFullName() != null ? c.getAuthor().getFullName() : c.getAuthor().getUsername(),
                 c.getCreatedAt(),
                 c.getUpdatedAt()
+        );
+    }
+
+    /**
+     * INNOVATION: Save annotation data for an attachment
+     * Allows users to mark/annotate evidence photos in incident reports
+     * @param attachmentId ID of the attachment
+     * @param annotationData JSON string with drawing/marking data from Fabric.js
+     */
+    @Transactional
+    public TicketAttachmentResponse saveAnnotation(String attachmentId, String annotationData) {
+        TicketAttachment attachment = attachmentRepository.findById(attachmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Attachment", attachmentId));
+        
+        attachment.setAnnotationData(annotationData);
+        TicketAttachment saved = attachmentRepository.save(attachment);
+        
+        return toAttachmentResponse(saved);
+    }
+
+    /**
+     * Get attachment with annotation data
+     */
+    @Transactional(readOnly = true)
+    public TicketAttachmentResponse getAttachmentWithAnnotations(String attachmentId) {
+        TicketAttachment attachment = attachmentRepository.findById(attachmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Attachment", attachmentId));
+        return toAttachmentResponse(attachment);
+    }
+
+    /**
+     * Convert TicketAttachment to response DTO
+     */
+    private TicketAttachmentResponse toAttachmentResponse(TicketAttachment att) {
+        return new TicketAttachmentResponse(
+                att.getId(),
+                att.getFileName(),
+                att.getFilePath(),
+                att.getContentType(),
+                att.getFileSize(),
+                att.getAnnotationData(),
+                att.getAnnotationData() != null && !att.getAnnotationData().isBlank()
         );
     }
 }
