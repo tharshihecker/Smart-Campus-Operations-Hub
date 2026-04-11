@@ -19,6 +19,7 @@ public record IncidentTicketResponse(
         String assigneeId,
         String assigneeName,
         List<String> attachmentUrls,
+        List<TicketAttachmentResponse> attachments,
         List<TicketCommentResponse> comments,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
