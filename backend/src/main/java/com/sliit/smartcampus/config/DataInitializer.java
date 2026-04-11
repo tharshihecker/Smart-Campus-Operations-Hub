@@ -1,30 +1,29 @@
 package com.sliit.smartcampus.config;
 
-import com.sliit.smartcampus.event.CampusEvent;
-import com.sliit.smartcampus.event.CampusEventRepository;
-import com.sliit.smartcampus.facility.Facility;
-import com.sliit.smartcampus.facility.FacilityRepository;
-import com.sliit.smartcampus.facility.ResourceStatus;
-import com.sliit.smartcampus.facility.ResourceType;
-import com.sliit.smartcampus.incident.IncidentTicket;
-import com.sliit.smartcampus.incident.IncidentTicketRepository;
-import com.sliit.smartcampus.incident.TicketPriority;
-import com.sliit.smartcampus.incident.TicketStatus;
-import com.sliit.smartcampus.resource.LearningResource;
-import com.sliit.smartcampus.resource.LearningResourceRepository;
-import com.sliit.smartcampus.service.CampusServiceItem;
-import com.sliit.smartcampus.service.CampusServiceRepository;
-import com.sliit.smartcampus.user.User;
-import com.sliit.smartcampus.user.UserRepository;
-import com.sliit.smartcampus.user.UserRole;
+import com.sliit.smartcampus.model.CampusEvent;
+import com.sliit.smartcampus.model.CampusServiceItem;
+import com.sliit.smartcampus.model.Facility;
+import com.sliit.smartcampus.model.IncidentTicket;
+import com.sliit.smartcampus.model.LearningResource;
+import com.sliit.smartcampus.model.ResourceStatus;
+import com.sliit.smartcampus.model.ResourceType;
+import com.sliit.smartcampus.model.TicketPriority;
+import com.sliit.smartcampus.model.TicketStatus;
+import com.sliit.smartcampus.model.User;
+import com.sliit.smartcampus.model.UserRole;
+import com.sliit.smartcampus.repository.CampusEventRepository;
+import com.sliit.smartcampus.repository.CampusServiceRepository;
+import com.sliit.smartcampus.repository.FacilityRepository;
+import com.sliit.smartcampus.repository.IncidentTicketRepository;
+import com.sliit.smartcampus.repository.LearningResourceRepository;
+import com.sliit.smartcampus.repository.UserRepository;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
 import java.time.LocalTime;
 import java.util.List;
-
 @Configuration
 public class DataInitializer {
 
@@ -162,3 +161,6 @@ public class DataInitializer {
         return t;
     }
 }
+
+
+
