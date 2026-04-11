@@ -6,8 +6,8 @@ import com.sliit.smartcampus.model.EventBooking;
 import org.springframework.data.mongodb.repository.MongoRepository;
 public interface EventBookingRepository extends MongoRepository<EventBooking, String> {
     long countByEventId(String eventId);
-    boolean existsByEventIdAndUser_Id(String eventId, String userId);
-    boolean existsByEventIdAndUser_IdAndStatusNot(String eventId, String userId, EventBooking.BookingStatus status);
+    Boolean existsByEventIdAndUser_Id(String eventId, String userId);
+    Boolean existsByEventIdAndUser_IdAndStatusNot(String eventId, String userId, EventBooking.BookingStatus status);
     java.util.List<EventBooking> findByUser_Id(String userId);
     java.util.List<EventBooking> findByUser_IdAndStatusNot(String userId, EventBooking.BookingStatus status);
     java.util.List<EventBooking> findByEventId(String eventId);
