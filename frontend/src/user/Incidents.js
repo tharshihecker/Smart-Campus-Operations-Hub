@@ -5,8 +5,10 @@ import './Incidents.css';
 import {
   fetchMyIncidents, createIncident, fetchIncidentComments,
   addIncidentComment, editIncidentComment, deleteIncidentComment,
-  deleteIncident
+  deleteIncident, saveAnnotation
 } from '../api';
+import AnnotationEditor from '../components/AnnotationEditor';
+import AnnotationViewer from '../components/AnnotationViewer';
 
 const TERMINAL_STATUSES = new Set(['CLOSED', 'REJECTED']);
 
@@ -157,21 +159,101 @@ function PhotoModal({ url, onClose }) {
 }
 
 /* ─── Attachments ─── */
-function AttachmentsSection({ urls }) {
+function AttachmentsSection({ urls, attachments }) {
   const [open, setOpen] = useState(null);
+  const [viewingAnnotations, setViewingAnnotations] = useState(null);
+  
   if (!urls?.length) return null;
+  
   return (
     <div style={{ marginTop: 16 }}>
       <p className="inc-section-title">
         <span className="inc-section-badge">📎 Evidence Photos ({urls.length})</span>
       </p>
-      <div className="inc-image-gallery">
-        {urls.map((url, i) => (
-          <div key={i} className="inc-image-item" onClick={() => setOpen(url)}>
-            <img src={url} alt={`photo-${i}`} onError={e => e.target.parentElement.style.display = 'none'} />
+      
+      {/* Show annotation view if selected */}
+      {viewingAnnotations !== null && attachments && attachments[viewingAnnotations] && (
+        <div style={{ marginBottom: 16, background: '#f9fafb', border: '2px solid #e5e7eb', borderRadius: 12, padding: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <p style={{ color: '#111827', fontSize: 12, fontWeight: 900, margin: 0, textTransform: 'uppercase' }}>
+              📌 Annotations on Photo {viewingAnnotations + 1}
+            </p>
+            <button
+              onClick={() => setViewingAnnotations(null)}
+              style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#dc2626' }}
+            >
+              ✕
+            </button>
           </div>
-        ))}
+          <AnnotationViewer
+            imageUrl={urls[viewingAnnotations]}
+            annotations={attachments[viewingAnnotations].annotationData}
+          />
+        </div>
+      )}
+      
+      {/* Image gallery */}
+      <div className="inc-image-gallery">
+        {urls && urls.map((url, i) => {
+          const attachment = attachments && attachments[i];
+          const hasAnnotations = attachment && attachment.annotationData;
+          return (
+            <div key={i} style={{ position: 'relative' }}>
+              <div className="inc-image-item" onClick={() => setOpen(url)}>
+                <img src={url} alt={`photo-${i}`} onError={e => e.target.parentElement.style.display = 'none'} />
+              </div>
+              {hasAnnotations && (
+                <div style={{
+                  position: 'absolute',
+                  top: 4,
+                  right: 4,
+                  background: '#dc2626',
+                  color: '#fff',
+                  borderRadius: '50%',
+                  width: 28,
+                  height: 28,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)',
+                }}>
+                  📌
+                  <span
+                    style={{
+                      position: 'absolute',
+                      bottom: -4,
+                      right: -4,
+                      background: '#2563eb',
+                      color: '#fff',
+                      borderRadius: '50%',
+                      width: 18,
+                      height: 18,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 10,
+                      fontWeight: 800,
+                      border: '2px solid #fff',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setViewingAnnotations(i);
+                    }}
+                  >
+                    👁
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
+      
+      {/* Photo modal */}
+      {open && <PhotoModal url={open} onClose={() => setOpen(null)} />}
     </div>
   );
 }
@@ -346,6 +428,8 @@ function CreateTicketModal({ onClose, onCreated }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [previews, setPreviews] = useState([]);
+  const [annotatingIndex, setAnnotatingIndex] = useState(null); // Which image is being annotated
+  const [annotations, setAnnotations] = useState({}); // { [index]: annotationData }
 
   const handle = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -353,6 +437,7 @@ function CreateTicketModal({ onClose, onCreated }) {
     const chosen = Array.from(e.target.files).slice(0, 3);
     setFiles(chosen);
     setPreviews(chosen.map(f => URL.createObjectURL(f)));
+    setAnnotations({}); // Reset annotations when new files selected
   };
 
   const submit = async e => {
@@ -362,7 +447,26 @@ function CreateTicketModal({ onClose, onCreated }) {
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
     files.forEach(f => fd.append('files', f));
-    try { const ticket = await createIncident(fd); onCreated(ticket); onClose(); }
+    try { 
+      const ticket = await createIncident(fd); 
+      
+      // INNOVATION: Save annotations for each attachment
+      if (ticket.id && ticket.attachments && Object.keys(annotations).length > 0) {
+        for (let i = 0; i < ticket.attachments.length; i++) {
+          if (annotations[i]) {
+            const attachmentId = ticket.attachments[i].id;
+            try {
+              await saveAnnotation(attachmentId, annotations[i]);
+            } catch (err) {
+              console.error(`Failed to save annotation for attachment ${i}:`, err);
+            }
+          }
+        }
+      }
+      
+      onCreated(ticket); 
+      onClose(); 
+    }
     catch (err) { setError(err.message); }
     finally { setLoading(false); }
   };
@@ -405,8 +509,24 @@ function CreateTicketModal({ onClose, onCreated }) {
               <LB>Evidence Photos (max 3)</LB>
               <input type="file" accept="image/*" multiple onChange={handleFiles} style={{ ...IS_BASE, padding: '8px 14px', cursor: 'pointer' }} />
               {previews.length > 0 && (
-                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  {previews.map((p, i) => <img key={i} src={p} alt="preview" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '2px solid var(--border-medium)' }} />)}
+                <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                  {previews.map((p, i) => (
+                    <div key={i} style={{ position: 'relative' }}>
+                      <img src={p} alt="preview" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '2px solid var(--border-medium)' }} />
+                      {annotations[i] && (
+                        <span style={{ position: 'absolute', top: -8, right: -8, background: '#10b981', color: '#fff', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>
+                          ✓
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setAnnotatingIndex(i)}
+                        style={{ position: 'absolute', bottom: 0, right: 0, background: '#2563eb', color: '#fff', border: 'none', borderRadius: '0 6px', padding: '2px 6px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        🖍️
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -418,6 +538,31 @@ function CreateTicketModal({ onClose, onCreated }) {
             <button type="button" onClick={onClose} className="btn-profile secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
           </div>
         </form>
+
+        {/* INNOVATION: Annotation Editor Modal */}
+        {annotatingIndex !== null && (
+          <div style={{
+            background: '#ffffff',
+            border: '2px solid #e5e7eb',
+            borderRadius: 12,
+            padding: 16,
+            marginTop: 20,
+            borderTop: '3px solid #2563eb',
+          }}>
+            <h3 style={{ color: '#111827', fontWeight: 900, fontSize: 14, margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              🎯 Annotate Image {annotatingIndex + 1}
+            </h3>
+            <AnnotationEditor
+              imageUrl={previews[annotatingIndex]}
+              existingAnnotations={annotations[annotatingIndex]}
+              onSave={(annotationData) => {
+                setAnnotations(a => ({ ...a, [annotatingIndex]: annotationData }));
+                setAnnotatingIndex(null);
+              }}
+              onCancel={() => setAnnotatingIndex(null)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -530,7 +675,7 @@ function TicketDetailPanel({ ticket, onClose, onTicketUpdated }) {
         )}
 
         {/* Attachments */}
-        <AttachmentsSection urls={ticket.attachmentUrls} />
+        <AttachmentsSection urls={ticket.attachmentUrls} attachments={ticket.attachments} />
 
         <hr style={{ borderColor: 'var(--border-subtle)', margin: '20px 0', borderStyle: 'dashed' }} />
 

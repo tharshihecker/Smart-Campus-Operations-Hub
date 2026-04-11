@@ -349,6 +349,17 @@ export async function deleteAdminIncidentComment(commentId, adminId) {
 export async function fetchIncidentStatuses() { return fetchJson("/admin/incidents/statuses"); }
 export async function fetchIncidentPriorities() { return fetchJson("/admin/incidents/priorities"); }
 
+/**
+ * INNOVATION: Photo annotation endpoints
+ * Save and retrieve annotations (markings, circles) on evidence photos
+ */
+export async function saveAnnotation(attachmentId, annotationData) {
+  return sendJson("PUT", `/incidents/attachments/${attachmentId}/annotations`, { annotationData });
+}
+export async function fetchAnnotations(attachmentId) {
+  return fetchJson(`/incidents/attachments/${attachmentId}/annotations`);
+}
+
 /* ── Notifications ────────────────────────────────────── */
 export async function fetchNotifications() { return fetchJson("/notifications"); }
 export async function fetchUnreadCount() { return fetchJson("/notifications/unread-count"); }
