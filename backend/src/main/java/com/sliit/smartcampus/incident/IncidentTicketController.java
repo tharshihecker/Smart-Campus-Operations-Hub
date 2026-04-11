@@ -52,26 +52,34 @@ public class IncidentTicketController {
     @GetMapping
     public ResponseEntity<List<IncidentTicketResponse>> getMyTickets(Principal principal) {
         String userId = getCurrentUserId(principal);
-        return ResponseEntity.ok(incidentTicketService.getMyTickets(userId));
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate") // Real-time polling every 15s
+                .body(incidentTicketService.getMyTickets(userId));
     }
 
     /** GET /api/incidents/assigned – Technician's assigned tickets */
     @GetMapping("/assigned")
     public ResponseEntity<List<IncidentTicketResponse>> getAssignedTickets(Principal principal) {
         String userId = getCurrentUserId(principal);
-        return ResponseEntity.ok(incidentTicketService.getAssignedTickets(userId));
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate") // Real-time polling every 15s
+                .body(incidentTicketService.getAssignedTickets(userId));
     }
 
     /** GET /api/incidents/{id} */
     @GetMapping("/{id}")
     public ResponseEntity<IncidentTicketResponse> getTicket(@PathVariable String id) {
-        return ResponseEntity.ok(incidentTicketService.getTicketById(id));
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate") // Real-time polling
+                .body(incidentTicketService.getTicketById(id));
     }
 
     /** GET /api/incidents/{id}/comments */
     @GetMapping("/{id}/comments")
     public ResponseEntity<List<TicketCommentResponse>> getComments(@PathVariable String id) {
-        return ResponseEntity.ok(incidentTicketService.getComments(id));
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate") // Real-time polling
+                .body(incidentTicketService.getComments(id));
     }
 
     /** POST /api/incidents/{id}/comments */
