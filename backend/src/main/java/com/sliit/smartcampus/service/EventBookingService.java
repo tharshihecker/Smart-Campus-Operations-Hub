@@ -77,7 +77,7 @@ public class EventBookingService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "User not found"));
             // Prevent duplicate booking by same user (exclude cancelled bookings)
-            if (bookingRepository.existsByEventIdAndUser_IdAndStatusNot(eventId, userId, EventBooking.BookingStatus.CANCELLED)) {
+            if (Boolean.TRUE.equals(bookingRepository.existsByEventIdAndUser_IdAndStatusNot(eventId, userId, EventBooking.BookingStatus.CANCELLED))) {
                 throw new ResponseStatusException(BAD_REQUEST, "You have already booked this event");
             }
             b.setUser(user);
