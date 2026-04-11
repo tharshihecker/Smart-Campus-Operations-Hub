@@ -22,13 +22,17 @@ public class IncidentAdminController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String priority,
             @RequestParam(required = false) String category) {
-        return ResponseEntity.ok(incidentTicketService.getAllTickets(status, priority, category));
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate") // Real-time polling every 15s
+                .body(incidentTicketService.getAllTickets(status, priority, category));
     }
 
     /** GET /api/admin/incidents/{id} */
     @GetMapping("/{id}")
     public ResponseEntity<IncidentTicketResponse> getTicket(@PathVariable String id) {
-        return ResponseEntity.ok(incidentTicketService.getTicketById(id));
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate") // Real-time polling
+                .body(incidentTicketService.getTicketById(id));
     }
 
     /** PUT /api/admin/incidents/{id}/status – Update ticket status */
@@ -69,12 +73,16 @@ public class IncidentAdminController {
     /** GET /api/admin/incidents/statuses */
     @GetMapping("/statuses")
     public ResponseEntity<TicketStatus[]> getStatuses() {
-        return ResponseEntity.ok(TicketStatus.values());
+        return ResponseEntity.ok()
+                .header("Cache-Control", "public, max-age=3600") // Cache for 1 hour, static data
+                .body(TicketStatus.values());
     }
 
     /** GET /api/admin/incidents/priorities */
     @GetMapping("/priorities")
     public ResponseEntity<TicketPriority[]> getPriorities() {
-        return ResponseEntity.ok(TicketPriority.values());
+        return ResponseEntity.ok()
+                .header("Cache-Control", "public, max-age=3600") // Cache for 1 hour, static data
+                .body(TicketPriority.values());
     }
 }

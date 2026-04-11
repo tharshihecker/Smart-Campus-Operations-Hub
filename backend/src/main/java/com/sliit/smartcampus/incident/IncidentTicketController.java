@@ -52,26 +52,34 @@ public class IncidentTicketController {
     @GetMapping
     public ResponseEntity<List<IncidentTicketResponse>> getMyTickets(Principal principal) {
         String userId = getCurrentUserId(principal);
-        return ResponseEntity.ok(incidentTicketService.getMyTickets(userId));
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate") // Real-time polling every 15s
+                .body(incidentTicketService.getMyTickets(userId));
     }
 
     /** GET /api/incidents/assigned – Technician's assigned tickets */
     @GetMapping("/assigned")
     public ResponseEntity<List<IncidentTicketResponse>> getAssignedTickets(Principal principal) {
         String userId = getCurrentUserId(principal);
-        return ResponseEntity.ok(incidentTicketService.getAssignedTickets(userId));
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate") // Real-time polling every 15s
+                .body(incidentTicketService.getAssignedTickets(userId));
     }
 
     /** GET /api/incidents/{id} */
     @GetMapping("/{id}")
     public ResponseEntity<IncidentTicketResponse> getTicket(@PathVariable String id) {
-        return ResponseEntity.ok(incidentTicketService.getTicketById(id));
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate") // Real-time polling
+                .body(incidentTicketService.getTicketById(id));
     }
 
     /** GET /api/incidents/{id}/comments */
     @GetMapping("/{id}/comments")
     public ResponseEntity<List<TicketCommentResponse>> getComments(@PathVariable String id) {
-        return ResponseEntity.ok(incidentTicketService.getComments(id));
+        return ResponseEntity.ok()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate") // Real-time polling
+                .body(incidentTicketService.getComments(id));
     }
 
     /** POST /api/incidents/{id}/comments */
@@ -110,5 +118,30 @@ public class IncidentTicketController {
         String userId = getCurrentUserId(principal);
         incidentTicketService.deleteTicket(id, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * INNOVATION: PUT /api/incidents/attachments/{attachmentId}/annotations
+     * Save annotation data (markings, circles, text) on an evidence photo
+     * Allows users to mark problem areas on images
+     */
+    @PutMapping("/attachments/{attachmentId}/annotations")
+    public ResponseEntity<TicketAttachmentResponse> saveAnnotation(
+            @PathVariable String attachmentId,
+            @RequestBody Map<String, String> body) {
+        String annotationData = body.get("annotationData");
+        if (annotationData == null || annotationData.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(incidentTicketService.saveAnnotation(attachmentId, annotationData));
+    }
+
+    /**
+     * INNOVATION: GET /api/incidents/attachments/{attachmentId}/annotations
+     * Retrieve annotation data for an attachment
+     */
+    @GetMapping("/attachments/{attachmentId}/annotations")
+    public ResponseEntity<TicketAttachmentResponse> getAnnotations(@PathVariable String attachmentId) {
+        return ResponseEntity.ok(incidentTicketService.getAttachmentWithAnnotations(attachmentId));
     }
 }
