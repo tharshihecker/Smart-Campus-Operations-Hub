@@ -1,8 +1,9 @@
-# Smart Campus Operations Hub
-
+<div align="center">
+Smart Campus Operations Hub
+</div>
 <div align="center">
 
-## IT3030 - PAF Assignment 2026 (Semester 1)
+
 ### Faculty of Computing - SLIIT
 
 [![Spring Boot](https://img.shields.io/badge/Backend-Spring_Boot_3.4.2-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](./backend)
